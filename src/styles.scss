@@ -1,0 +1,58 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$dp-primary: mat.define-palette(mat.$indigo-palette, 900, 700, 50);
+$dp-accent: mat.define-palette(mat.$blue-palette, A200, A100, A400);
+$dp-warn: mat.define-palette(mat.$red-palette);
+
+$dp-theme: mat.define-light-theme((
+  color: (
+    primary: $dp-primary,
+    accent: $dp-accent,
+    warn: $dp-warn,
+  ),
+  typography: mat.define-typography-config(
+    $font-family: '"Inter", "Roboto", "Helvetica Neue", sans-serif',
+  ),
+  density: -1,
+));
+
+@include mat.all-component-themes($dp-theme);
+
+// Global styles
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
+  background: #f5f5f5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Scrollbar styling
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #999; }
+
+// Material overrides
+.mat-mdc-card {
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.mat-mdc-chip {
+  font-size: 12px !important;
+}
+
+// Notification snackbar styles
+.snack-success { --mdc-snackbar-container-color: #2e7d32; --mdc-snackbar-supporting-text-color: white; }
+.snack-error { --mdc-snackbar-container-color: #c62828; --mdc-snackbar-supporting-text-color: white; }
+.snack-info { --mdc-snackbar-container-color: #1565c0; --mdc-snackbar-supporting-text-color: white; }
+.snack-warn { --mdc-snackbar-container-color: #e65100; --mdc-snackbar-supporting-text-color: white; }
+
+// Utility
+.text-muted { color: #888; }
+.text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
