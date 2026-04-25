@@ -25,11 +25,11 @@ import { MOCK_GLUE_JOBS } from '../../../core/mocks/infrastructure.mock';
       </div>
       <table mat-table [dataSource]="jobs" matSort class="full-width">
         <ng-container matColumnDef="state">
-          <th mat-header-cell *matHeaderCellDef>State</th>
-          <td mat-cell *matCellDef="let j"><app-status-badge [status]="j.state"></app-status-badge></td>
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let j"><app-status-badge [status]="j.state" [label]="stateLabel(j.state)"></app-status-badge></td>
         </ng-container>
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
           <td mat-cell *matCellDef="let j"><strong>{{ j.name }}</strong><br><span class="desc">{{ j.description }}</span></td>
         </ng-container>
         <ng-container matColumnDef="database">
@@ -41,11 +41,11 @@ import { MOCK_GLUE_JOBS } from '../../../core/mocks/infrastructure.mock';
           <td mat-cell *matCellDef="let j">{{ j.numberOfWorkers }}x {{ j.workerType }}</td>
         </ng-container>
         <ng-container matColumnDef="avgDuration">
-          <th mat-header-cell *matHeaderCellDef>Avg Duration</th>
+          <th mat-header-cell *matHeaderCellDef>Duração Média</th>
           <td mat-cell *matCellDef="let j">{{ j.avgDuration | duration }}</td>
         </ng-container>
         <ng-container matColumnDef="lastRun">
-          <th mat-header-cell *matHeaderCellDef>Last Run</th>
+          <th mat-header-cell *matHeaderCellDef>Última Execução</th>
           <td mat-cell *matCellDef="let j">{{ j.lastRun | relativeTime }}</td>
         </ng-container>
         <ng-container matColumnDef="schedule">
@@ -55,8 +55,8 @@ import { MOCK_GLUE_JOBS } from '../../../core/mocks/infrastructure.mock';
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let j">
-            <button mat-icon-button matTooltip="Run now"><mat-icon>play_arrow</mat-icon></button>
-            <button mat-icon-button matTooltip="View logs"><mat-icon>description</mat-icon></button>
+            <button mat-icon-button matTooltip="Executar agora"><mat-icon>play_arrow</mat-icon></button>
+            <button mat-icon-button matTooltip="Ver logs"><mat-icon>description</mat-icon></button>
           </td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
@@ -79,4 +79,17 @@ import { MOCK_GLUE_JOBS } from '../../../core/mocks/infrastructure.mock';
 export class GlueJobsComponent {
   jobs = MOCK_GLUE_JOBS;
   columns = ['state', 'name', 'database', 'workerType', 'avgDuration', 'lastRun', 'schedule', 'actions'];
+
+  readonly stateLabels: Record<string, string> = {
+    pending: 'Pendente',
+    running: 'Executando',
+    completed: 'Completado',
+    failed: 'Falha',
+    delayed: 'Atrasado',
+    offline: 'Desligado',
+  };
+
+  stateLabel(state: string): string {
+    return this.stateLabels[state.toLowerCase()] || state;
+  }
 }

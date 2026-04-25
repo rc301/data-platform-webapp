@@ -40,7 +40,7 @@ interface NavGroup {
             <mat-icon class="logo-icon">hub</mat-icon>
             <div class="logo-text">
               <span class="logo-title">DataPlatform</span>
-              <span class="logo-subtitle">Management Console</span>
+              <span class="logo-subtitle">Console de Gerenciamento</span>
             </div>
           </div>
           <div class="logo-mini" *ngIf="collapsed()">
@@ -72,7 +72,7 @@ interface NavGroup {
           <mat-divider></mat-divider>
           <div class="env-badge">
             <mat-icon>cloud</mat-icon>
-            <span>LOCAL DEV</span>
+            <span>DEV LOCAL</span>
           </div>
         </div>
       </mat-sidenav>
@@ -85,36 +85,36 @@ interface NavGroup {
 
           <span class="toolbar-spacer"></span>
 
-          <button mat-icon-button matTooltip="Notifications" [matMenuTriggerFor]="notifMenu">
+          <button mat-icon-button matTooltip="Notificações" [matMenuTriggerFor]="notifMenu">
             <mat-icon matBadge="3" matBadgeColor="warn" matBadgeSize="small">notifications</mat-icon>
           </button>
 
           <mat-menu #notifMenu="matMenu" class="notif-menu">
             <div class="notif-header" mat-menu-item disabled>
-              <strong>Notifications</strong>
+              <strong>Notificações</strong>
             </div>
             <button mat-menu-item>
               <mat-icon color="warn">error</mat-icon>
-              <span>Pipeline ingestion_orders failed</span>
+              <span>Pipeline ingestion_orders falhou</span>
             </button>
             <button mat-menu-item>
               <mat-icon class="text-orange">warning</mat-icon>
-              <span>Data quality below threshold</span>
+              <span>Qualidade de dados abaixo do limite</span>
             </button>
             <button mat-menu-item>
               <mat-icon color="primary">info</mat-icon>
-              <span>RDS connections near limit</span>
+              <span>Conexões RDS próximas do limite</span>
             </button>
           </mat-menu>
 
-          <button mat-icon-button matTooltip="Help" [matMenuTriggerFor]="helpMenu">
+          <button mat-icon-button matTooltip="Ajuda" [matMenuTriggerFor]="helpMenu">
             <mat-icon>help_outline</mat-icon>
           </button>
 
           <mat-menu #helpMenu="matMenu">
-            <button mat-menu-item><mat-icon>description</mat-icon> Documentation</button>
+            <button mat-menu-item><mat-icon>description</mat-icon> Documentação</button>
             <button mat-menu-item><mat-icon>open_in_new</mat-icon> Atlan Catalog</button>
-            <button mat-menu-item><mat-icon>support</mat-icon> Support</button>
+            <button mat-menu-item><mat-icon>support</mat-icon> Suporte</button>
           </mat-menu>
 
           <button mat-button [matMenuTriggerFor]="userMenu" class="user-btn">
@@ -129,8 +129,8 @@ interface NavGroup {
               <div class="user-role">{{ auth.user()?.role | titlecase }} · {{ auth.user()?.team }}</div>
             </div>
             <mat-divider></mat-divider>
-            <button mat-menu-item><mat-icon>settings</mat-icon> Settings</button>
-            <button mat-menu-item (click)="auth.logout()"><mat-icon>logout</mat-icon> Logout</button>
+            <button mat-menu-item><mat-icon>settings</mat-icon> Configurações</button>
+            <button mat-menu-item (click)="auth.logout()"><mat-icon>logout</mat-icon> Sair</button>
           </mat-menu>
         </mat-toolbar>
 
@@ -223,35 +223,34 @@ export class LayoutComponent {
 
   navGroups: NavGroup[] = [
     {
-      title: 'Overview',
+      title: 'Visão Geral',
       items: [
         { icon: 'dashboard', label: 'Dashboard', route: '/dashboard' },
-        { icon: 'notifications_active', label: 'Alerts', route: '/monitoring/alerts', badge: 3 },
+        { icon: 'notifications_active', label: 'Alertas', route: '/monitoring/alerts', badge: 3 },
       ]
     },
     {
-      title: 'Data Management',
+      title: 'Gestão de Dados',
       items: [
         { icon: 'account_tree', label: 'Pipelines', route: '/pipelines' },
-        { icon: 'verified', label: 'Data Quality', route: '/data-quality' },
-        { icon: 'menu_book', label: 'Data Catalog', route: '/catalog' },
+        { icon: 'verified', label: 'Qualidade de Dados', route: '/data-quality' },
+        { icon: 'menu_book', label: 'Catálogo de Dados', route: '/catalog' },
+        { icon: 'mediation', label: 'Linhagem de Dados', route: '/lineage' },
       ]
     },
     {
-      title: 'Infrastructure',
+      title: 'Infraestrutura',
       items: [
         { icon: 'integration_instructions', label: 'Glue Jobs', route: '/infrastructure/glue-jobs' },
         { icon: 'device_hub', label: 'Step Functions', route: '/infrastructure/step-functions' },
         { icon: 'cloud_queue', label: 'S3 Buckets', route: '/infrastructure/s3' },
-        { icon: 'storage', label: 'Databases', route: '/infrastructure/databases' },
-        { icon: 'security', label: 'IAM Roles', route: '/infrastructure/iam' },
       ]
     },
     {
-      title: 'Operations',
+      title: 'Operações',
       items: [
-        { icon: 'monitoring', label: 'Monitoring', route: '/monitoring' },
-        { icon: 'attach_money', label: 'Cost Explorer', route: '/monitoring/costs' },
+        { icon: 'monitoring', label: 'Monitoramento', route: '/monitoring' },
+        { icon: 'attach_money', label: 'Explorador de Custos', route: '/monitoring/costs' },
       ]
     },
   ];

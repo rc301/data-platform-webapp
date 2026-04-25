@@ -2,40 +2,30 @@ export interface Pipeline {
   id: string;
   name: string;
   description: string;
-  type: 'ingestion' | 'transformation' | 'export' | 'orchestration';
-  status: 'active' | 'paused' | 'failed' | 'running';
+  type: 'GlueJob' | 'Munin' | 'Phoenix' | 'CDP' | 'Outros';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'delayed' | 'offline';
   schedule: string;
   lastRun: PipelineRun;
   owner: string;
   team: string;
-  source: string;
+  sources: string[];
   target: string;
   tags: string[];
   stepFunctionArn?: string;
   glueJobNames?: string[];
-  sla?: number;
+  sla?: string;
   avgDuration: number;
 }
 
 export interface PipelineRun {
   id: string;
   pipelineId: string;
-  status: 'running' | 'succeeded' | 'failed' | 'cancelled' | 'timed_out';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'delayed' | 'offline';
   startTime: string;
   endTime?: string;
   duration?: number;
   recordsProcessed?: number;
   errorMessage?: string;
-  steps: PipelineStep[];
-}
-
-export interface PipelineStep {
-  name: string;
-  status: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped';
-  startTime?: string;
-  endTime?: string;
-  type: 'glue_job' | 'lambda' | 'step_function' | 'query' | 'notification';
-  details?: string;
 }
 
 export interface PipelineAlert {

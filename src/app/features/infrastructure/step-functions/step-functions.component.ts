@@ -18,7 +18,7 @@ import { MOCK_STEP_FUNCTIONS } from '../../../core/mocks/infrastructure.mock';
     <mat-card>
       <div class="table-header">
         <h3>Step Functions</h3>
-        <span class="count">{{ stepFunctions.length }} state machines</span>
+        <span class="count">{{ stepFunctions.length }} máquinas de estado</span>
       </div>
       <table mat-table [dataSource]="stepFunctions" class="full-width">
         <ng-container matColumnDef="status">
@@ -26,25 +26,25 @@ import { MOCK_STEP_FUNCTIONS } from '../../../core/mocks/infrastructure.mock';
           <td mat-cell *matCellDef="let sf"><app-status-badge [status]="sf.status"></app-status-badge></td>
         </ng-container>
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <th mat-header-cell *matHeaderCellDef>Nome</th>
           <td mat-cell *matCellDef="let sf"><strong>{{ sf.name }}</strong></td>
         </ng-container>
         <ng-container matColumnDef="lastExecution">
-          <th mat-header-cell *matHeaderCellDef>Last Execution</th>
+          <th mat-header-cell *matHeaderCellDef>Última Execução</th>
           <td mat-cell *matCellDef="let sf">
             <app-status-badge [status]="sf.lastExecution.status"></app-status-badge>
             <span class="exec-time">{{ sf.lastExecution.startDate | relativeTime }}</span>
           </td>
         </ng-container>
         <ng-container matColumnDef="owner">
-          <th mat-header-cell *matHeaderCellDef>Owner</th>
+          <th mat-header-cell *matHeaderCellDef>Responsável</th>
           <td mat-cell *matCellDef="let sf">{{ sf.owner }}</td>
         </ng-container>
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let sf">
-            <button mat-icon-button matTooltip="Start execution"><mat-icon>play_arrow</mat-icon></button>
-            <button mat-icon-button matTooltip="View executions"><mat-icon>history</mat-icon></button>
+            <button mat-icon-button matTooltip="Iniciar execução"><mat-icon>play_arrow</mat-icon></button>
+            <button mat-icon-button matTooltip="Ver execuções"><mat-icon>history</mat-icon></button>
           </td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="columns"></tr>

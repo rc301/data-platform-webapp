@@ -26,41 +26,41 @@ import { MonitoringAlert, HealthCheck } from '../../core/models';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Dashboard" subtitle="Data Platform overview and health status" icon="dashboard">
+    <app-page-header title="Dashboard" subtitle="Visão geral e status de saúde da Data Platform" icon="dashboard">
       <button mat-stroked-button color="primary" routerLink="/monitoring/alerts">
-        <mat-icon>notifications</mat-icon> View All Alerts
+        <mat-icon>notifications</mat-icon> Ver Todos os Alertas
       </button>
     </app-page-header>
 
     <!-- KPI Metrics -->
     <div class="metrics-grid">
       <app-metric-card
-        label="Pipelines Active" [value]="metrics[0].value" icon="account_tree"
+        label="Pipelines Ativos" [value]="metrics[0].value" icon="account_tree"
         [trend]="metrics[0].trend" [changePercent]="metrics[0].changePercent"
         iconBg="#e8eaf6" iconColor="#1a237e" [clickable]="true"
       ></app-metric-card>
       <app-metric-card
-        label="Data Quality" [value]="metrics[1].value" icon="verified" suffix="%"
+        label="Qualidade de Dados" [value]="metrics[1].value" icon="verified" suffix="%"
         [trend]="metrics[1].trend" [changePercent]="metrics[1].changePercent"
         iconBg="#e8f5e9" iconColor="#2e7d32" [clickable]="true"
       ></app-metric-card>
       <app-metric-card
-        label="Jobs Running" [value]="metrics[2].value" icon="play_circle"
+        label="Jobs em Execução" [value]="metrics[2].value" icon="play_circle"
         [trend]="metrics[2].trend" [changePercent]="metrics[2].changePercent"
         iconBg="#fff3e0" iconColor="#e65100" [clickable]="true"
       ></app-metric-card>
       <app-metric-card
-        label="Active Alerts" [value]="metrics[3].value" icon="warning"
+        label="Alertas Ativos" [value]="metrics[3].value" icon="warning"
         [trend]="metrics[3].trend" [changePercent]="metrics[3].changePercent"
         iconBg="#ffebee" iconColor="#c62828" [clickable]="true"
       ></app-metric-card>
       <app-metric-card
-        label="S3 Storage" [value]="metrics[4].value" icon="cloud_queue" suffix=" TB"
+        label="Armazenamento S3" [value]="metrics[4].value" icon="cloud_queue" suffix=" TB"
         [trend]="metrics[4].trend" [changePercent]="metrics[4].changePercent"
         iconBg="#e3f2fd" iconColor="#1565c0"
       ></app-metric-card>
       <app-metric-card
-        label="Monthly Cost" [value]="metrics[5].value" icon="attach_money" prefix="$"
+        label="Custo Mensal" [value]="metrics[5].value" icon="attach_money" prefix="$"
         [trend]="metrics[5].trend" [changePercent]="metrics[5].changePercent"
         iconBg="#f3e5f5" iconColor="#7b1fa2"
       ></app-metric-card>
@@ -71,8 +71,8 @@ import { MonitoringAlert, HealthCheck } from '../../core/models';
       <mat-card class="alerts-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="card-avatar warn-avatar">warning</mat-icon>
-          <mat-card-title>Recent Alerts</mat-card-title>
-          <mat-card-subtitle>{{ activeAlerts }} active alerts</mat-card-subtitle>
+          <mat-card-title>Alertas Recentes</mat-card-title>
+          <mat-card-subtitle>{{ activeAlerts }} alertas ativos</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <mat-list>
@@ -89,7 +89,7 @@ import { MonitoringAlert, HealthCheck } from '../../core/models';
           </mat-list>
         </mat-card-content>
         <mat-card-actions>
-          <button mat-button color="primary" routerLink="/monitoring/alerts">View All Alerts</button>
+          <button mat-button color="primary" routerLink="/monitoring/alerts">Ver Todos os Alertas</button>
         </mat-card-actions>
       </mat-card>
 
@@ -97,8 +97,8 @@ import { MonitoringAlert, HealthCheck } from '../../core/models';
       <mat-card class="health-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="card-avatar health-avatar">favorite</mat-icon>
-          <mat-card-title>Service Health</mat-card-title>
-          <mat-card-subtitle>{{ healthyServices }}/{{ healthChecks.length }} services healthy</mat-card-subtitle>
+          <mat-card-title>Saúde dos Serviços</mat-card-title>
+          <mat-card-subtitle>{{ healthyServices }}/{{ healthChecks.length }} serviços saudáveis</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <div class="health-list">
@@ -119,8 +119,8 @@ import { MonitoringAlert, HealthCheck } from '../../core/models';
       <mat-card class="pipeline-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="card-avatar pipeline-avatar">account_tree</mat-icon>
-          <mat-card-title>Pipeline Status</mat-card-title>
-          <mat-card-subtitle>{{ runningPipelines }} running, {{ failedPipelines }} failed</mat-card-subtitle>
+          <mat-card-title>Status dos Pipelines</mat-card-title>
+          <mat-card-subtitle>{{ runningPipelines }} em execução, {{ failedPipelines }} com falha</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <div class="pipeline-list">
@@ -134,7 +134,7 @@ import { MonitoringAlert, HealthCheck } from '../../core/models';
           </div>
         </mat-card-content>
         <mat-card-actions>
-          <button mat-button color="primary" routerLink="/pipelines">View All Pipelines</button>
+          <button mat-button color="primary" routerLink="/pipelines">Ver Todos os Pipelines</button>
         </mat-card-actions>
       </mat-card>
     </div>

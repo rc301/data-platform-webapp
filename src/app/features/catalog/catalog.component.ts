@@ -32,45 +32,45 @@ import { CatalogAsset } from '../../core/models';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Data Catalog" subtitle="Discover and manage data assets" icon="menu_book">
-      <a mat-stroked-button color="primary" matTooltip="Open Atlan catalog">
-        <mat-icon>open_in_new</mat-icon> Open Atlan
+    <app-page-header title="Catálogo de Dados" subtitle="Descubra e gerencie ativos de dados" icon="menu_book">
+      <a mat-stroked-button color="primary" matTooltip="Abrir Atlan Catalog">
+        <mat-icon>open_in_new</mat-icon> Abrir Atlan
       </a>
     </app-page-header>
 
     <!-- Overview -->
     <div class="metrics-grid">
-      <app-metric-card label="Total Assets" [value]="assets.length" icon="inventory_2" iconBg="#e8eaf6" iconColor="#1a237e" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Domains" [value]="domains.length" icon="category" iconBg="#e3f2fd" iconColor="#1565c0" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Certified" [value]="certifiedCount" icon="verified" iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Glossary Terms" [value]="glossary.length" icon="book" iconBg="#f3e5f5" iconColor="#7b1fa2" [showTrend]="false"></app-metric-card>
+      <app-metric-card label="Total de Ativos" [value]="assets.length" icon="inventory_2" iconBg="#e8eaf6" iconColor="#1a237e" [showTrend]="false"></app-metric-card>
+      <app-metric-card label="Domínios" [value]="domains.length" icon="category" iconBg="#e3f2fd" iconColor="#1565c0" [showTrend]="false"></app-metric-card>
+      <app-metric-card label="Certificados" [value]="certifiedCount" icon="verified" iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
+      <app-metric-card label="Termos do Glossário" [value]="glossary.length" icon="book" iconBg="#f3e5f5" iconColor="#7b1fa2" [showTrend]="false"></app-metric-card>
     </div>
 
     <mat-tab-group animationDuration="200ms">
       <!-- Assets Tab -->
       <mat-tab>
-        <ng-template mat-tab-label><mat-icon class="tab-icon">table_chart</mat-icon> Assets</ng-template>
+        <ng-template mat-tab-label><mat-icon class="tab-icon">table_chart</mat-icon> Ativos</ng-template>
         <div class="tab-content">
           <mat-card class="filters-card">
             <div class="filters-row">
               <mat-form-field appearance="outline" class="filter-field search-field">
                 <mat-icon matPrefix>search</mat-icon>
-                <input matInput placeholder="Search assets..." [(ngModel)]="searchTerm" (ngModelChange)="filterAssets()">
+                <input matInput placeholder="Buscar ativos..." [(ngModel)]="searchTerm" (ngModelChange)="filterAssets()">
               </mat-form-field>
               <mat-form-field appearance="outline" class="filter-field">
-                <mat-label>Domain</mat-label>
+                <mat-label>Domínio</mat-label>
                 <mat-select [(ngModel)]="domainFilter" (ngModelChange)="filterAssets()">
-                  <mat-option value="all">All Domains</mat-option>
+                  <mat-option value="all">Todos os Domínios</mat-option>
                   <mat-option *ngFor="let d of domains" [value]="d.name">{{ d.name }}</mat-option>
                 </mat-select>
               </mat-form-field>
               <mat-form-field appearance="outline" class="filter-field">
-                <mat-label>Certification</mat-label>
+                <mat-label>Certificação</mat-label>
                 <mat-select [(ngModel)]="certFilter" (ngModelChange)="filterAssets()">
-                  <mat-option value="all">All</mat-option>
-                  <mat-option value="certified">Certified</mat-option>
-                  <mat-option value="in_review">In Review</mat-option>
-                  <mat-option value="draft">Draft</mat-option>
+                  <mat-option value="all">Todos</mat-option>
+                  <mat-option value="certified">Certificado</mat-option>
+                  <mat-option value="in_review">Em Revisão</mat-option>
+                  <mat-option value="draft">Rascunho</mat-option>
                 </mat-select>
               </mat-form-field>
             </div>
@@ -85,7 +85,7 @@ import { CatalogAsset } from '../../core/models';
                   <code class="asset-qualified">{{ asset.qualifiedName }}</code>
                 </div>
                 <app-status-badge [status]="asset.certificationStatus" [label]="asset.certificationStatus | titlecase"></app-status-badge>
-                <div class="asset-popularity" matTooltip="Popularity score">
+                <div class="asset-popularity" matTooltip="Índice de popularidade">
                   <mat-icon>trending_up</mat-icon>
                   {{ asset.popularity }}
                 </div>
@@ -129,7 +129,7 @@ import { CatalogAsset } from '../../core/models';
 
       <!-- Domains Tab -->
       <mat-tab>
-        <ng-template mat-tab-label><mat-icon class="tab-icon">category</mat-icon> Domains</ng-template>
+        <ng-template mat-tab-label><mat-icon class="tab-icon">category</mat-icon> Domínios</ng-template>
         <div class="tab-content">
           <div class="domains-grid">
             <mat-card *ngFor="let domain of domains" class="domain-card">
@@ -142,11 +142,11 @@ import { CatalogAsset } from '../../core/models';
                 <div class="domain-stats">
                   <div class="domain-stat">
                     <span class="stat-value">{{ domain.assetCount }}</span>
-                    <span class="stat-label">Assets</span>
+                    <span class="stat-label">Ativos</span>
                   </div>
                   <div class="domain-stat">
                     <span class="stat-value">{{ domain.subDomains.length }}</span>
-                    <span class="stat-label">Sub-domains</span>
+                    <span class="stat-label">Subdomínios</span>
                   </div>
                 </div>
                 <mat-chip-set>
@@ -154,7 +154,7 @@ import { CatalogAsset } from '../../core/models';
                 </mat-chip-set>
               </mat-card-content>
               <mat-card-actions>
-                <button mat-button color="primary">View Assets</button>
+                <button mat-button color="primary">Ver Ativos</button>
               </mat-card-actions>
             </mat-card>
           </div>
@@ -163,20 +163,20 @@ import { CatalogAsset } from '../../core/models';
 
       <!-- Glossary Tab -->
       <mat-tab>
-        <ng-template mat-tab-label><mat-icon class="tab-icon">book</mat-icon> Glossary</ng-template>
+        <ng-template mat-tab-label><mat-icon class="tab-icon">book</mat-icon> Glossário</ng-template>
         <div class="tab-content">
           <mat-card>
             <table mat-table [dataSource]="glossary" class="glossary-table">
               <ng-container matColumnDef="term">
-                <th mat-header-cell *matHeaderCellDef>Term</th>
+                <th mat-header-cell *matHeaderCellDef>Termo</th>
                 <td mat-cell *matCellDef="let item"><strong>{{ item.term }}</strong></td>
               </ng-container>
               <ng-container matColumnDef="definition">
-                <th mat-header-cell *matHeaderCellDef>Definition</th>
+                <th mat-header-cell *matHeaderCellDef>Definição</th>
                 <td mat-cell *matCellDef="let item">{{ item.definition }}</td>
               </ng-container>
               <ng-container matColumnDef="domain">
-                <th mat-header-cell *matHeaderCellDef>Domain</th>
+                <th mat-header-cell *matHeaderCellDef>Domínio</th>
                 <td mat-cell *matCellDef="let item"><mat-chip>{{ item.domain }}</mat-chip></td>
               </ng-container>
               <ng-container matColumnDef="status">
@@ -184,7 +184,7 @@ import { CatalogAsset } from '../../core/models';
                 <td mat-cell *matCellDef="let item"><app-status-badge [status]="item.status"></app-status-badge></td>
               </ng-container>
               <ng-container matColumnDef="assets">
-                <th mat-header-cell *matHeaderCellDef>Assets</th>
+                <th mat-header-cell *matHeaderCellDef>Ativos</th>
                 <td mat-cell *matCellDef="let item">{{ item.assignedAssets }}</td>
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="glossaryColumns"></tr>

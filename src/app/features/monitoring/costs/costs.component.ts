@@ -19,36 +19,36 @@ import { MOCK_COST_METRICS } from '../../../core/mocks/dashboard.mock';
   template: `
     <!-- Summary -->
     <div class="metrics-grid">
-      <app-metric-card label="Current Month" [value]="totalCurrent" icon="attach_money" prefix="$"
+      <app-metric-card label="Mês Atual" [value]="totalCurrent" icon="attach_money" prefix="$"
         iconBg="#e8eaf6" iconColor="#1a237e" [trend]="'up'" [changePercent]="totalTrend"></app-metric-card>
-      <app-metric-card label="Forecast" [value]="totalForecast" icon="trending_up" prefix="$"
+      <app-metric-card label="Previsão" [value]="totalForecast" icon="trending_up" prefix="$"
         iconBg="#fff3e0" iconColor="#e65100" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Budget" [value]="totalBudget" icon="account_balance" prefix="$"
+      <app-metric-card label="Orçamento" [value]="totalBudget" icon="account_balance" prefix="$"
         iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Budget Usage" [value]="budgetUsage" icon="pie_chart" suffix="%"
+      <app-metric-card label="Uso do Orçamento" [value]="budgetUsage" icon="pie_chart" suffix="%"
         iconBg="#f3e5f5" iconColor="#7b1fa2" [showTrend]="false"></app-metric-card>
     </div>
 
     <!-- Cost Breakdown -->
     <mat-card>
       <div class="table-header">
-        <h3>Cost Breakdown by Service</h3>
+        <h3>Detalhamento de Custos por Serviço</h3>
       </div>
       <table mat-table [dataSource]="costs" class="full-width">
         <ng-container matColumnDef="service">
-          <th mat-header-cell *matHeaderCellDef>Service</th>
+          <th mat-header-cell *matHeaderCellDef>Serviço</th>
           <td mat-cell *matCellDef="let c"><strong>{{ c.service }}</strong></td>
         </ng-container>
         <ng-container matColumnDef="current">
-          <th mat-header-cell *matHeaderCellDef>Current Month</th>
+          <th mat-header-cell *matHeaderCellDef>Mês Atual</th>
           <td mat-cell *matCellDef="let c">\${{ c.currentMonth | number:'1.0-0' }}</td>
         </ng-container>
         <ng-container matColumnDef="previous">
-          <th mat-header-cell *matHeaderCellDef>Previous Month</th>
+          <th mat-header-cell *matHeaderCellDef>Mês Anterior</th>
           <td mat-cell *matCellDef="let c">\${{ c.previousMonth | number:'1.0-0' }}</td>
         </ng-container>
         <ng-container matColumnDef="trend">
-          <th mat-header-cell *matHeaderCellDef>Trend</th>
+          <th mat-header-cell *matHeaderCellDef>Tendência</th>
           <td mat-cell *matCellDef="let c">
             <span [class.trend-up]="c.trend > 0" [class.trend-down]="c.trend < 0" [class.trend-flat]="c.trend === 0">
               <mat-icon inline>{{ c.trend > 0 ? 'trending_up' : c.trend < 0 ? 'trending_down' : 'trending_flat' }}</mat-icon>
@@ -57,11 +57,11 @@ import { MOCK_COST_METRICS } from '../../../core/mocks/dashboard.mock';
           </td>
         </ng-container>
         <ng-container matColumnDef="budget">
-          <th mat-header-cell *matHeaderCellDef>Budget</th>
+          <th mat-header-cell *matHeaderCellDef>Orçamento</th>
           <td mat-cell *matCellDef="let c">\${{ c.budget | number:'1.0-0' }}</td>
         </ng-container>
         <ng-container matColumnDef="usage">
-          <th mat-header-cell *matHeaderCellDef>Budget Usage</th>
+          <th mat-header-cell *matHeaderCellDef>Uso do Orçamento</th>
           <td mat-cell *matCellDef="let c">
             <div class="usage-cell">
               <mat-progress-bar [value]="(c.currentMonth / c.budget) * 100"
@@ -71,7 +71,7 @@ import { MOCK_COST_METRICS } from '../../../core/mocks/dashboard.mock';
           </td>
         </ng-container>
         <ng-container matColumnDef="forecast">
-          <th mat-header-cell *matHeaderCellDef>Forecast</th>
+          <th mat-header-cell *matHeaderCellDef>Previsão</th>
           <td mat-cell *matCellDef="let c">
             <span [class.forecast-over]="c.forecast > c.budget">\${{ c.forecast | number:'1.0-0' }}</span>
           </td>

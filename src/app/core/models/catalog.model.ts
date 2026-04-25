@@ -17,6 +17,10 @@ export interface CatalogAsset {
   schema?: CatalogSchema;
   sourceSystem: string;
   atlanLink?: string;
+  ingestionFlows?: {
+    name: string;
+    type: 'munin' | 'glue_job' | 'outro';
+  }[];
 }
 
 export interface CatalogLineage {

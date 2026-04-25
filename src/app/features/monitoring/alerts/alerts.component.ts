@@ -47,9 +47,9 @@ import { MonitoringAlert } from '../../../core/models';
     <!-- Filters -->
     <div class="filters-row">
       <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Severity</mat-label>
+        <mat-label>Severidade</mat-label>
         <mat-select [(ngModel)]="severityFilter" (ngModelChange)="applyFilter()">
-          <mat-option value="all">All</mat-option>
+          <mat-option value="all">Todas</mat-option>
           <mat-option value="critical">Critical</mat-option>
           <mat-option value="high">High</mat-option>
           <mat-option value="medium">Medium</mat-option>
@@ -59,21 +59,21 @@ import { MonitoringAlert } from '../../../core/models';
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Status</mat-label>
         <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()">
-          <mat-option value="all">All</mat-option>
-          <mat-option value="active">Active</mat-option>
-          <mat-option value="acknowledged">Acknowledged</mat-option>
-          <mat-option value="resolved">Resolved</mat-option>
+          <mat-option value="all">Todos</mat-option>
+          <mat-option value="active">Ativo</mat-option>
+          <mat-option value="acknowledged">Reconhecido</mat-option>
+          <mat-option value="resolved">Resolvido</mat-option>
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Category</mat-label>
+        <mat-label>Categoria</mat-label>
         <mat-select [(ngModel)]="categoryFilter" (ngModelChange)="applyFilter()">
-          <mat-option value="all">All</mat-option>
+          <mat-option value="all">Todas</mat-option>
           <mat-option value="pipeline">Pipeline</mat-option>
-          <mat-option value="data_quality">Data Quality</mat-option>
-          <mat-option value="infrastructure">Infrastructure</mat-option>
-          <mat-option value="cost">Cost</mat-option>
-          <mat-option value="security">Security</mat-option>
+          <mat-option value="data_quality">Qualidade de Dados</mat-option>
+          <mat-option value="infrastructure">Infraestrutura</mat-option>
+          <mat-option value="cost">Custo</mat-option>
+          <mat-option value="security">Segurança</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -102,10 +102,10 @@ import { MonitoringAlert } from '../../../core/models';
             </div>
           </div>
           <div class="alert-actions">
-            <button mat-icon-button matTooltip="Acknowledge" *ngIf="alert.status === 'active'">
+            <button mat-icon-button matTooltip="Reconhecer" *ngIf="alert.status === 'active'">
               <mat-icon>check_circle_outline</mat-icon>
             </button>
-            <button mat-icon-button matTooltip="View details">
+            <button mat-icon-button matTooltip="Ver detalhes">
               <mat-icon>open_in_new</mat-icon>
             </button>
           </div>

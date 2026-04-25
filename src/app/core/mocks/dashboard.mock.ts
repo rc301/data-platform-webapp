@@ -1,12 +1,12 @@
 import { MonitoringMetric, HealthCheck, CostMetric, MonitoringAlert } from '../models';
 
 export const MOCK_METRICS: MonitoringMetric[] = [
-  { name: 'Pipelines Active', value: 47, unit: '', trend: 'up', changePercent: 12, timestamp: '2026-03-15T10:00:00Z' },
-  { name: 'Data Quality Score', value: 94.2, unit: '%', trend: 'up', changePercent: 2.1, timestamp: '2026-03-15T10:00:00Z' },
-  { name: 'Jobs Running', value: 8, unit: '', trend: 'stable', changePercent: 0, timestamp: '2026-03-15T10:00:00Z' },
-  { name: 'Alerts Active', value: 3, unit: '', trend: 'down', changePercent: -25, timestamp: '2026-03-15T10:00:00Z' },
-  { name: 'S3 Storage', value: 12.4, unit: 'TB', trend: 'up', changePercent: 8.3, timestamp: '2026-03-15T10:00:00Z' },
-  { name: 'Monthly Cost', value: 34520, unit: 'USD', trend: 'up', changePercent: 5.2, timestamp: '2026-03-15T10:00:00Z' },
+  { name: 'Pipelines Ativos', value: 47, unit: '', trend: 'up', changePercent: 12, timestamp: '2026-03-15T10:00:00Z' },
+  { name: 'Qualidade de Dados', value: 94.2, unit: '%', trend: 'up', changePercent: 2.1, timestamp: '2026-03-15T10:00:00Z' },
+  { name: 'Jobs em Execução', value: 8, unit: '', trend: 'stable', changePercent: 0, timestamp: '2026-03-15T10:00:00Z' },
+  { name: 'Alertas Ativos', value: 3, unit: '', trend: 'down', changePercent: -25, timestamp: '2026-03-15T10:00:00Z' },
+  { name: 'Armazenamento S3', value: 12.4, unit: 'TB', trend: 'up', changePercent: 8.3, timestamp: '2026-03-15T10:00:00Z' },
+  { name: 'Custo Mensal', value: 34520, unit: 'USD', trend: 'up', changePercent: 5.2, timestamp: '2026-03-15T10:00:00Z' },
 ];
 
 export const MOCK_HEALTH_CHECKS: HealthCheck[] = [
@@ -14,7 +14,7 @@ export const MOCK_HEALTH_CHECKS: HealthCheck[] = [
   { service: 'Step Functions', status: 'healthy', latency: 32, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.99 },
   { service: 'S3', status: 'healthy', latency: 12, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.99 },
   { service: 'DynamoDB', status: 'healthy', latency: 8, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.99 },
-  { service: 'RDS PostgreSQL', status: 'degraded', latency: 250, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.85, details: 'High connection count detected' },
+  { service: 'RDS PostgreSQL', status: 'degraded', latency: 250, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.85, details: 'Alto número de conexões detectado' },
   { service: 'Glue Catalog', status: 'healthy', latency: 28, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.95 },
   { service: 'Atlan Catalog', status: 'healthy', latency: 120, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.90 },
   { service: 'Data Quality Engine', status: 'healthy', latency: 55, lastCheck: '2026-03-15T10:00:00Z', uptime: 99.92 },
@@ -33,28 +33,28 @@ export const MOCK_COST_METRICS: CostMetric[] = [
 
 export const MOCK_RECENT_ALERTS: MonitoringAlert[] = [
   {
-    id: 'alert-1', severity: 'critical', source: 'Pipeline Monitor', title: 'Pipeline ingestion_orders failed',
-    message: 'Glue Job raw_orders_etl failed after 3 retries. Error: Connection timeout to source database.',
+    id: 'alert-1', severity: 'critical', source: 'Monitor de Pipelines', title: 'Pipeline ingestion_orders falhou',
+    message: 'Glue Job raw_orders_etl falhou após 3 tentativas. Erro: Timeout de conexão com o banco de dados de origem.',
     timestamp: '2026-03-15T09:45:00Z', status: 'active', relatedResource: 'pipeline-1', category: 'pipeline'
   },
   {
-    id: 'alert-2', severity: 'high', source: 'Data Quality', title: 'Data quality below threshold',
-    message: 'Dataset customer_master completeness score dropped to 87% (threshold: 95%).',
+    id: 'alert-2', severity: 'high', source: 'Qualidade de Dados', title: 'Qualidade de dados abaixo do limite',
+    message: 'Dataset customer_master com score de completude caiu para 87% (limite: 95%).',
     timestamp: '2026-03-15T08:30:00Z', status: 'active', relatedResource: 'dq-rule-3', category: 'data_quality'
   },
   {
-    id: 'alert-3', severity: 'medium', source: 'Infrastructure', title: 'RDS connection pool near limit',
-    message: 'RDS instance prod-analytics-db has 180/200 active connections.',
+    id: 'alert-3', severity: 'medium', source: 'Infraestrutura', title: 'Pool de conexões RDS próximo do limite',
+    message: 'Instância RDS prod-analytics-db com 180/200 conexões ativas.',
     timestamp: '2026-03-15T07:15:00Z', status: 'acknowledged', acknowledgedBy: 'rafael.carvalho', relatedResource: 'rds-1', category: 'infrastructure'
   },
   {
-    id: 'alert-4', severity: 'low', source: 'Cost Monitor', title: 'Glue cost 15% above forecast',
-    message: 'AWS Glue spend is trending 15% above monthly forecast. Current: $8,750, Forecast: $7,600.',
+    id: 'alert-4', severity: 'low', source: 'Monitor de Custos', title: 'Custo Glue 15% acima da previsão',
+    message: 'Gasto com AWS Glue está 15% acima da previsão mensal. Atual: $8.750, Previsão: $7.600.',
     timestamp: '2026-03-14T16:00:00Z', status: 'active', relatedResource: 'cost-glue', category: 'cost'
   },
   {
-    id: 'alert-5', severity: 'high', source: 'Pipeline Monitor', title: 'SLA breach risk: financial_reporting',
-    message: 'Pipeline financial_reporting is running 45min behind schedule. SLA deadline in 2h.',
+    id: 'alert-5', severity: 'high', source: 'Monitor de Pipelines', title: 'Risco de violação de SLA: financial_reporting',
+    message: 'Pipeline financial_reporting está 45min atrasado. Prazo do SLA em 2h.',
     timestamp: '2026-03-15T09:00:00Z', status: 'active', relatedResource: 'pipeline-5', category: 'pipeline'
   },
 ];

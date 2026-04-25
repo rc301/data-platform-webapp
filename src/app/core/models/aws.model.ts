@@ -3,7 +3,7 @@ export interface GlueJob {
   name: string;
   database: string;
   description: string;
-  state: 'READY' | 'RUNNING' | 'FAILED' | 'STOPPED' | 'SUCCEEDED';
+  state: 'READY' | 'RUNNING' | 'FAILED' | 'STOPPED' | 'SUCCEEDED' | 'OFFLINE';
   lastRun: string;
   nextRun?: string;
   avgDuration: number;
@@ -48,45 +48,6 @@ export interface S3Bucket {
   tags: Record<string, string>;
 }
 
-export interface DynamoTable {
-  tableName: string;
-  status: 'ACTIVE' | 'CREATING' | 'DELETING' | 'UPDATING';
-  itemCount: number;
-  sizeBytes: number;
-  readCapacity: number;
-  writeCapacity: number;
-  billingMode: 'PROVISIONED' | 'PAY_PER_REQUEST';
-  partitionKey: string;
-  sortKey?: string;
-  gsiCount: number;
-  lastBackup?: string;
-}
-
-export interface RdsInstance {
-  id: string;
-  engine: string;
-  engineVersion: string;
-  instanceClass: string;
-  status: 'available' | 'stopped' | 'starting' | 'stopping' | 'modifying';
-  endpoint: string;
-  port: number;
-  multiAZ: boolean;
-  storageGB: number;
-  cpu: number;
-  connections: number;
-  maxConnections: number;
-}
-
-export interface GlueCatalogDatabase {
-  name: string;
-  description: string;
-  tables: number;
-  location: string;
-  owner: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface GlueCatalogTable {
   name: string;
   database: string;
@@ -112,12 +73,45 @@ export interface GlueCatalogColumn {
   isPartitionKey?: boolean;
 }
 
-export interface IamRole {
-  roleName: string;
-  arn: string;
+// Munin ETL Flow models
+
+export type MuninFlowStatus = 'running' | 'succeeded' | 'failed' | 'pending' | 'stopped';
+export type MuninStepStatus = 'running' | 'succeeded' | 'failed' | 'pending' | 'skipped';
+
+export interface MuninFlow {
+  id: string;
+  name: string;
   description: string;
-  createdAt: string;
-  lastUsed?: string;
-  attachedPolicies: string[];
-  trustPolicy: string;
+  status: MuninFlowStatus;
+  schedule: string;
+  owner: string;
+  targetTable: string;
+  targetDatabase: string;
+  targetBucket: string;
+  lastExecution: MuninExecution;
+  executions: MuninExecution[];
+  tags: string[];
+}
+
+export interface MuninExecution {
+  id: string;
+  flowId: string;
+  status: MuninFlowStatus;
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  athenaStep: MuninStep;
+  glueStep: MuninStep;
+  recordsProcessed?: number;
+  errorMessage?: string;
+}
+
+export interface MuninStep {
+  name: string;
+  type: 'athena_query' | 'glue_etl';
+  status: MuninStepStatus;
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
+  details?: string;
 }

@@ -31,6 +31,10 @@ export const routes: Routes = [
         path: 'monitoring',
         loadChildren: () => import('./features/monitoring/monitoring.routes').then(m => m.MONITORING_ROUTES),
       },
+      {
+        path: 'lineage',
+        loadChildren: () => import('./features/lineage/lineage.routes').then(m => m.LINEAGE_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

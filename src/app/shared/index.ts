@@ -1,4 +1,5 @@
 export * from './components/status-badge/status-badge.component';
+export * from './components/mermaid-diagram/mermaid-diagram.component';
 export * from './components/metric-card/metric-card.component';
 export * from './components/page-header/page-header.component';
 export * from './components/data-table/data-table.component';

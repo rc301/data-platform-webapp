@@ -62,7 +62,7 @@ export class DataTableComponent {
   @Input({ required: true }) data: any[] = [];
   @Input({ required: true }) columns: TableColumn[] = [];
   @Input() showSearch = true;
-  @Input() searchPlaceholder = 'Search...';
+  @Input() searchPlaceholder = 'Pesquisar...';
   @Input() showPaginator = true;
   @Input() totalItems = 0;
   @Input() pageSize = 10;

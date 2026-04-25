@@ -12,10 +12,10 @@ export class RelativeTimePipe implements PipeTransform {
     const diffHour = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHour / 24);
 
-    if (diffSec < 60) return 'just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHour < 24) return `${diffHour}h ago`;
-    if (diffDay < 7) return `${diffDay}d ago`;
-    return date.toLocaleDateString();
+    if (diffSec < 60) return 'agora mesmo';
+    if (diffMin < 60) return `há ${diffMin}m`;
+    if (diffHour < 24) return `há ${diffHour}h`;
+    if (diffDay < 7) return `há ${diffDay}d`;
+    return date.toLocaleDateString('pt-BR');
   }
 }

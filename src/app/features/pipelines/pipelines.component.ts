@@ -32,9 +32,9 @@ import { Pipeline, PipelineAlert } from '../../core/models';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Pipelines" subtitle="Manage and monitor data pipelines" icon="account_tree">
+    <app-page-header title="Pipelines" subtitle="Gerencie e monitore pipelines de dados" icon="account_tree">
       <button mat-stroked-button color="primary">
-        <mat-icon>refresh</mat-icon> Refresh
+        <mat-icon>refresh</mat-icon> Atualizar
       </button>
     </app-page-header>
 
@@ -53,26 +53,38 @@ import { Pipeline, PipelineAlert } from '../../core/models';
       <div class="filters-row">
         <mat-form-field appearance="outline" class="filter-field search-field">
           <mat-icon matPrefix>search</mat-icon>
-          <input matInput placeholder="Search pipelines..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
+          <input matInput placeholder="Buscar pipelines..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Status</mat-label>
           <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
-            <mat-option value="all">All</mat-option>
-            <mat-option value="active">Active</mat-option>
-            <mat-option value="running">Running</mat-option>
-            <mat-option value="failed">Failed</mat-option>
-            <mat-option value="paused">Paused</mat-option>
+            <mat-option value="all">Todos</mat-option>
+            <mat-option value="pending">Pendente</mat-option>
+            <mat-option value="running">Executando</mat-option>
+            <mat-option value="completed">Completado</mat-option>
+            <mat-option value="failed">Falha</mat-option>
+            <mat-option value="delayed">Atrasado</mat-option>
+            <mat-option value="offline">Desligado</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
-          <mat-label>Type</mat-label>
+          <mat-label>Tipo</mat-label>
           <mat-select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()">
-            <mat-option value="all">All</mat-option>
-            <mat-option value="ingestion">Ingestion</mat-option>
-            <mat-option value="transformation">Transformation</mat-option>
-            <mat-option value="export">Export</mat-option>
-            <mat-option value="orchestration">Orchestration</mat-option>
+            <mat-option value="all">Todos</mat-option>
+            <mat-option value="GlueJob">GlueJob</mat-option>
+            <mat-option value="Munin">Munin</mat-option>
+            <mat-option value="Phoenix">Phoenix</mat-option>
+            <mat-option value="CDP">CDP</mat-option>
+            <mat-option value="Outros">Outros</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Squad</mat-label>
+          <mat-select [(ngModel)]="squadFilter" (ngModelChange)="applyFilters()">
+            <mat-option value="all">Todas</mat-option>
+            <mat-option value="Squad A">Squad A</mat-option>
+            <mat-option value="Squad B">Squad B</mat-option>
+            <mat-option value="Squad C">Squad C</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
@@ -81,10 +93,10 @@ import { Pipeline, PipelineAlert } from '../../core/models';
     <!-- Alerts Banner -->
     <mat-card class="alerts-banner" *ngIf="unresolvedAlerts.length > 0">
       <mat-icon color="warn">warning</mat-icon>
-      <span><strong>{{ unresolvedAlerts.length }} pipeline alerts</strong> require attention</span>
+      <span><strong>{{ unresolvedAlerts.length }} alertas de pipeline</strong> requerem atenção</span>
       <span class="spacer"></span>
       <button mat-button color="warn" (click)="showAlerts = !showAlerts">
-        {{ showAlerts ? 'Hide' : 'Show' }} Alerts
+        {{ showAlerts ? 'Ocultar' : 'Mostrar' }} Alertas
       </button>
     </mat-card>
 
@@ -108,11 +120,11 @@ import { Pipeline, PipelineAlert } from '../../core/models';
         <mat-expansion-panel *ngFor="let pipeline of filteredPipelines()" class="pipeline-panel">
           <mat-expansion-panel-header>
             <mat-panel-title class="panel-title">
-              <app-status-badge [status]="pipeline.status"></app-status-badge>
+              <app-status-badge [status]="pipeline.status" [label]="statusLabel(pipeline.status)"></app-status-badge>
               <strong>{{ pipeline.name }}</strong>
             </mat-panel-title>
             <mat-panel-description class="panel-description">
-              <mat-chip>{{ pipeline.type | titlecase }}</mat-chip>
+              <mat-chip>{{ pipeline.type }}</mat-chip>
               <span class="schedule-text">{{ pipeline.schedule }}</span>
               <span class="owner-text">{{ pipeline.team }}</span>
             </mat-panel-description>
@@ -122,29 +134,31 @@ import { Pipeline, PipelineAlert } from '../../core/models';
             <p class="description">{{ pipeline.description }}</p>
             <div class="detail-grid">
               <div class="detail-item">
-                <span class="detail-label">Source</span>
-                <span class="detail-value">{{ pipeline.source }}</span>
+                <span class="detail-label">Origens</span>
+                <div class="detail-value sources-list">
+                  <code *ngFor="let s of pipeline.sources">{{ s }}</code>
+                </div>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Target</span>
+                <span class="detail-label">Destino</span>
                 <span class="detail-value">{{ pipeline.target }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">SLA</span>
-                <span class="detail-value">{{ pipeline.sla | duration }}</span>
+                <span class="detail-value">{{ pipeline.sla || '-' }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Avg Duration</span>
+                <span class="detail-label">Duração Média</span>
                 <span class="detail-value">{{ pipeline.avgDuration | duration }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Owner</span>
+                <span class="detail-label">Responsável</span>
                 <span class="detail-value">{{ pipeline.owner }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Last Run</span>
+                <span class="detail-label">Última Execução</span>
                 <span class="detail-value">
-                  <app-status-badge [status]="pipeline.lastRun.status"></app-status-badge>
+                  <app-status-badge [status]="pipeline.lastRun.status" [label]="statusLabel(pipeline.lastRun.status)"></app-status-badge>
                   {{ pipeline.lastRun.startTime | relativeTime }}
                 </span>
               </div>
@@ -156,16 +170,6 @@ import { Pipeline, PipelineAlert } from '../../core/models';
               </mat-chip-set>
             </div>
 
-            <div class="steps-section" *ngIf="pipeline.lastRun.steps?.length">
-              <h4>Last Run Steps</h4>
-              <div class="steps-row">
-                <div *ngFor="let step of pipeline.lastRun.steps; let last = last" class="step-item">
-                  <div class="step-dot" [class]="'dot-' + step.status"></div>
-                  <span class="step-name">{{ step.name }}</span>
-                  <mat-icon class="step-arrow" *ngIf="!last">arrow_forward</mat-icon>
-                </div>
-              </div>
-            </div>
           </div>
         </mat-expansion-panel>
       </mat-accordion>
@@ -211,20 +215,8 @@ import { Pipeline, PipelineAlert } from '../../core/models';
     .detail-value { font-size: 14px; color: #333; display: flex; align-items: center; gap: 8px; }
 
     .tags-row { margin-bottom: 16px; }
-
-    .steps-section h4 { margin: 0 0 12px; font-size: 14px; color: #444; }
-    .steps-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-    .step-item { display: flex; align-items: center; gap: 6px; }
-    .step-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot-succeeded { background: #2e7d32; }
-    .dot-running { background: #e65100; animation: pulse 1.5s infinite; }
-    .dot-failed { background: #c62828; }
-    .dot-pending { background: #bdbdbd; }
-    .dot-skipped { background: #9e9e9e; }
-    .step-name { font-size: 13px; }
-    .step-arrow { font-size: 16px; width: 16px; height: 16px; color: #bbb; }
-
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .sources-list { display: flex; flex-direction: column; gap: 4px; }
+    .sources-list code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; }
   `],
 })
 export class PipelinesComponent {
@@ -233,17 +225,33 @@ export class PipelinesComponent {
   searchTerm = '';
   statusFilter = 'all';
   typeFilter = 'all';
+  squadFilter = 'all';
   showAlerts = false;
 
   filteredPipelines = signal<Pipeline[]>(this.allPipelines);
 
   summaries = [
     { label: 'Total', count: this.allPipelines.length, color: '#333' },
-    { label: 'Active', count: this.allPipelines.filter(p => p.status === 'active').length, color: '#2e7d32' },
-    { label: 'Running', count: this.allPipelines.filter(p => p.status === 'running').length, color: '#e65100' },
-    { label: 'Failed', count: this.allPipelines.filter(p => p.status === 'failed').length, color: '#c62828' },
-    { label: 'Paused', count: this.allPipelines.filter(p => p.status === 'paused').length, color: '#757575' },
+    { label: 'Completados', count: this.allPipelines.filter(p => p.status === 'completed').length, color: '#2e7d32' },
+    { label: 'Executando', count: this.allPipelines.filter(p => p.status === 'running').length, color: '#e65100' },
+    { label: 'Com Falha', count: this.allPipelines.filter(p => p.status === 'failed').length, color: '#c62828' },
+    { label: 'Atrasados', count: this.allPipelines.filter(p => p.status === 'delayed').length, color: '#f57c00' },
+    { label: 'Pendentes', count: this.allPipelines.filter(p => p.status === 'pending').length, color: '#757575' },
+    { label: 'Desligados', count: this.allPipelines.filter(p => p.status === 'offline').length, color: '#9e9e9e' },
   ];
+
+  readonly statusLabels: Record<string, string> = {
+    pending: 'Pendente',
+    running: 'Executando',
+    completed: 'Completado',
+    failed: 'Falha',
+    delayed: 'Atrasado',
+    offline: 'Desligado',
+  };
+
+  statusLabel(status: string): string {
+    return this.statusLabels[status] || status;
+  }
 
   get unresolvedAlerts(): PipelineAlert[] {
     return this.allAlerts.filter(a => !a.acknowledged);
@@ -260,6 +268,9 @@ export class PipelinesComponent {
     }
     if (this.typeFilter !== 'all') {
       result = result.filter(p => p.type === this.typeFilter);
+    }
+    if (this.squadFilter !== 'all') {
+      result = result.filter(p => p.team === this.squadFilter);
     }
     this.filteredPipelines.set(result);
   }

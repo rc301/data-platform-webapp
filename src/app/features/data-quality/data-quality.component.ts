@@ -29,25 +29,25 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Data Quality" subtitle="Monitor data quality rules and scores across datasets" icon="verified">
+    <app-page-header title="Qualidade de Dados" subtitle="Monitore regras e scores de qualidade de dados em datasets" icon="verified">
       <button mat-stroked-button color="primary">
-        <mat-icon>add</mat-icon> New Rule
+        <mat-icon>add</mat-icon> Nova Regra
       </button>
     </app-page-header>
 
     <!-- Score Overview -->
     <div class="metrics-grid">
-      <app-metric-card label="Overall Score" [value]="overallScore" icon="speed" suffix="%" iconBg="#e8f5e9" iconColor="#2e7d32" [trend]="'up'" [changePercent]="2.1"></app-metric-card>
-      <app-metric-card label="Rules Passing" [value]="passingCount" icon="check_circle" iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Rules Failing" [value]="failingCount" icon="cancel" iconBg="#ffebee" iconColor="#c62828" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Rules Warning" [value]="warningCount" icon="warning" iconBg="#fff3e0" iconColor="#e65100" [showTrend]="false"></app-metric-card>
+      <app-metric-card label="Score Geral" [value]="overallScore" icon="speed" suffix="%" iconBg="#e8f5e9" iconColor="#2e7d32" [trend]="'up'" [changePercent]="2.1"></app-metric-card>
+      <app-metric-card label="Regras Aprovadas" [value]="passingCount" icon="check_circle" iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
+      <app-metric-card label="Regras Reprovadas" [value]="failingCount" icon="cancel" iconBg="#ffebee" iconColor="#c62828" [showTrend]="false"></app-metric-card>
+      <app-metric-card label="Regras em Alerta" [value]="warningCount" icon="warning" iconBg="#fff3e0" iconColor="#e65100" [showTrend]="false"></app-metric-card>
     </div>
 
     <!-- Score Breakdown -->
     <mat-card class="breakdown-card">
       <mat-card-header>
-        <mat-card-title>Quality Dimensions</mat-card-title>
-        <mat-card-subtitle>Score breakdown by quality dimension</mat-card-subtitle>
+        <mat-card-title>Dimensões de Qualidade</mat-card-title>
+        <mat-card-subtitle>Detalhamento do score por dimensão de qualidade</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         <div class="dimension-grid">
@@ -68,27 +68,27 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
       <div class="filters-row">
         <mat-form-field appearance="outline" class="filter-field search-field">
           <mat-icon matPrefix>search</mat-icon>
-          <input matInput placeholder="Search rules..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
+          <input matInput placeholder="Buscar regras..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Status</mat-label>
           <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
-            <mat-option value="all">All</mat-option>
-            <mat-option value="passing">Passing</mat-option>
-            <mat-option value="failing">Failing</mat-option>
-            <mat-option value="warning">Warning</mat-option>
+            <mat-option value="all">Todos</mat-option>
+            <mat-option value="passing">Aprovada</mat-option>
+            <mat-option value="failing">Reprovada</mat-option>
+            <mat-option value="warning">Alerta</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline" class="filter-field">
-          <mat-label>Type</mat-label>
+          <mat-label>Tipo</mat-label>
           <mat-select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()">
-            <mat-option value="all">All</mat-option>
-            <mat-option value="completeness">Completeness</mat-option>
-            <mat-option value="uniqueness">Uniqueness</mat-option>
-            <mat-option value="validity">Validity</mat-option>
-            <mat-option value="consistency">Consistency</mat-option>
-            <mat-option value="freshness">Freshness</mat-option>
-            <mat-option value="accuracy">Accuracy</mat-option>
+            <mat-option value="all">Todos</mat-option>
+            <mat-option value="completeness">Completude</mat-option>
+            <mat-option value="uniqueness">Unicidade</mat-option>
+            <mat-option value="validity">Validade</mat-option>
+            <mat-option value="consistency">Consistência</mat-option>
+            <mat-option value="freshness">Atualidade</mat-option>
+            <mat-option value="accuracy">Acurácia</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
@@ -102,7 +102,7 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
           <td mat-cell *matCellDef="let rule"><app-status-badge [status]="rule.status"></app-status-badge></td>
         </ng-container>
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
           <td mat-cell *matCellDef="let rule">
             <div class="rule-name-cell">
               <strong>{{ rule.name }}</strong>
@@ -115,7 +115,7 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
           <td mat-cell *matCellDef="let rule"><code>{{ rule.dataset }}</code></td>
         </ng-container>
         <ng-container matColumnDef="ruleType">
-          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
           <td mat-cell *matCellDef="let rule"><mat-chip>{{ rule.ruleType | titlecase }}</mat-chip></td>
         </ng-container>
         <ng-container matColumnDef="score">
@@ -128,7 +128,7 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
           </td>
         </ng-container>
         <ng-container matColumnDef="lastEvaluated">
-          <th mat-header-cell *matHeaderCellDef>Last Evaluated</th>
+          <th mat-header-cell *matHeaderCellDef>Última Avaliação</th>
           <td mat-cell *matCellDef="let rule">{{ rule.lastEvaluated | relativeTime }}</td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
@@ -180,11 +180,11 @@ export class DataQualityComponent {
   latestTrend = this.trends[this.trends.length - 1];
 
   dimensions = [
-    { name: 'Completeness', score: this.latestTrend.completeness, icon: 'check_box', color: '#1a237e' },
-    { name: 'Uniqueness', score: this.latestTrend.uniqueness, icon: 'fingerprint', color: '#4a148c' },
-    { name: 'Validity', score: this.latestTrend.validity, icon: 'rule', color: '#004d40' },
-    { name: 'Consistency', score: this.latestTrend.consistency, icon: 'sync', color: '#e65100' },
-    { name: 'Freshness', score: this.latestTrend.freshness, icon: 'schedule', color: '#1565c0' },
+    { name: 'Completude', score: this.latestTrend.completeness, icon: 'check_box', color: '#1a237e' },
+    { name: 'Unicidade', score: this.latestTrend.uniqueness, icon: 'fingerprint', color: '#4a148c' },
+    { name: 'Validade', score: this.latestTrend.validity, icon: 'rule', color: '#004d40' },
+    { name: 'Consistência', score: this.latestTrend.consistency, icon: 'sync', color: '#e65100' },
+    { name: 'Atualidade', score: this.latestTrend.freshness, icon: 'schedule', color: '#1565c0' },
   ];
 
   get overallScore(): number { return this.latestTrend.overallScore; }

@@ -11,7 +11,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   imports: [CommonModule, RouterModule, MatTabsModule, MatIconModule, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Infrastructure" subtitle="AWS resources and services management" icon="cloud"></app-page-header>
+    <app-page-header title="Infraestrutura" subtitle="Gerenciamento de recursos e serviços AWS" icon="cloud"></app-page-header>
     <nav mat-tab-nav-bar [tabPanel]="tabPanel">
       <a mat-tab-link *ngFor="let link of navLinks" [routerLink]="link.path" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">
         <mat-icon class="tab-icon">{{ link.icon }}</mat-icon> {{ link.label }}
@@ -28,7 +28,5 @@ export class InfrastructureComponent {
     { path: 'glue-jobs', label: 'Glue Jobs', icon: 'integration_instructions' },
     { path: 'step-functions', label: 'Step Functions', icon: 'device_hub' },
     { path: 's3', label: 'S3 Buckets', icon: 'cloud_queue' },
-    { path: 'databases', label: 'Databases', icon: 'storage' },
-    { path: 'iam', label: 'IAM Roles', icon: 'security' },
   ];
 }
