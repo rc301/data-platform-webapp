@@ -1,5 +1,5 @@
 import {
-  Component, signal, computed, ChangeDetectionStrategy,
+  Component, signal, computed, ChangeDetectionStrategy, inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,8 +17,8 @@ import { MatDividerModule } from '@angular/material/divider';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { MermaidDiagramComponent } from '../../shared/components/mermaid-diagram/mermaid-diagram.component';
-import { MOCK_LINEAGE_GRAPHS } from '../../core/mocks/lineage.mock';
 import { LineageEntityType, LineageGraph } from '../../core/models/lineage.model';
+import { PlatformDataService } from '../../core/services/platform-data.service';
 
 interface SelectOption { value: string; label: string; }
 
@@ -353,6 +353,8 @@ interface SelectOption { value: string; label: string; }
   `],
 })
 export class LineageComponent {
+  private readonly data = inject(PlatformDataService);
+
   // ── Filter state (signals for computed dependency tracking) ──────────────
   readonly entityType = signal<LineageEntityType | null>(null);
   readonly subType    = signal('');
@@ -430,7 +432,7 @@ export class LineageComponent {
     const sub   = this.subType();
     const query = this.entityName().toLowerCase();
     if (!type) return [];
-    return MOCK_LINEAGE_GRAPHS
+    return this.data.lineageGraphs()
       .filter(g =>
         g.entityType === type &&
         (!sub || g.subType === sub) &&
@@ -460,7 +462,7 @@ export class LineageComponent {
     const query = this.entityName().trim().toLowerCase();
     if (!type || !query) return;
 
-    const graph = MOCK_LINEAGE_GRAPHS.find(g =>
+    const graph = this.data.lineageGraphs().find(g =>
       g.entityType === type &&
       (!sub || g.subType === sub) &&
       (g.entityName.toLowerCase().includes(query) ||

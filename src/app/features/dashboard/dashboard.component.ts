@@ -12,9 +12,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { MetricCardComponent } from '../../shared/components/metric-card/metric-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
-import { MOCK_METRICS, MOCK_HEALTH_CHECKS, MOCK_RECENT_ALERTS } from '../../core/mocks/dashboard.mock';
-import { MOCK_PIPELINES } from '../../core/mocks/pipelines.mock';
 import { MonitoringAlert, HealthCheck } from '../../core/models';
+import { PlatformDataService } from '../../core/services/platform-data.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -187,10 +186,12 @@ import { MonitoringAlert, HealthCheck } from '../../core/models';
   `],
 })
 export class DashboardComponent {
-  metrics = MOCK_METRICS;
-  healthChecks = MOCK_HEALTH_CHECKS;
-  recentAlerts = MOCK_RECENT_ALERTS;
-  pipelines = MOCK_PIPELINES;
+  private readonly data = inject(PlatformDataService);
+
+  metrics = this.data.metrics();
+  healthChecks = this.data.healthChecks();
+  recentAlerts = this.data.monitoringAlerts();
+  pipelines = this.data.pipelines();
 
   get activeAlerts(): number {
     return this.recentAlerts.filter(a => a.status === 'active').length;

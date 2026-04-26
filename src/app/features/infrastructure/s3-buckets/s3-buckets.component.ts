@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -8,7 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { BytesPipe } from '../../../shared/pipes/bytes.pipe';
 import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
-import { MOCK_S3_BUCKETS } from '../../../core/mocks/infrastructure.mock';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
 
 @Component({
   selector: 'app-s3-buckets',
@@ -62,7 +62,9 @@ import { MOCK_S3_BUCKETS } from '../../../core/mocks/infrastructure.mock';
   `],
 })
 export class S3BucketsComponent {
-  buckets = MOCK_S3_BUCKETS;
+  private readonly data = inject(PlatformDataService);
+
+  buckets = this.data.s3Buckets();
   columns = ['name', 'size', 'objects', 'encryption', 'versioning', 'lastModified'];
   get totalSize(): number { return this.buckets.reduce((sum, b) => sum + b.sizeBytes, 0); }
 }

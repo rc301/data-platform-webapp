@@ -26,10 +26,10 @@ import { MatIconModule } from '@angular/material/icon';
   styles: [`
     .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
     .header-left { display: flex; align-items: center; gap: 16px; }
-    .header-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #1a237e, #283593); display: flex; align-items: center; justify-content: center; }
-    .header-icon mat-icon { color: white; font-size: 24px; width: 24px; height: 24px; }
-    h1 { margin: 0; font-size: 24px; font-weight: 700; color: #1a1a1a; }
-    p { margin: 4px 0 0; font-size: 14px; color: #666; }
+    .header-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--brand-500), var(--brand-700)); display: flex; align-items: center; justify-content: center; }
+    .header-icon mat-icon { color: var(--text-on-brand); font-size: 24px; width: 24px; height: 24px; }
+    h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary); }
+    p { margin: 4px 0 0; font-size: 14px; color: var(--text-secondary); }
     .header-actions { display: flex; align-items: center; gap: 8px; }
   `],
 })

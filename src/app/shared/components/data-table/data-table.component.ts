@@ -12,8 +12,10 @@ export interface TableColumn {
   key: string;
   label: string;
   sortable?: boolean;
-  template?: TemplateRef<any>;
+  template?: TemplateRef<TableRow>;
 }
+
+export type TableRow = Record<string, unknown>;
 
 @Component({
   selector: 'app-data-table',
@@ -53,13 +55,13 @@ export interface TableColumn {
     .table-container { overflow-x: auto; }
     table { width: 100%; }
     .table-row { cursor: pointer; transition: background-color 0.15s; }
-    .table-row:hover { background-color: rgba(0,0,0,0.04); }
-    th.mat-mdc-header-cell { font-weight: 600; color: #444; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-row:hover { background-color: rgba(76,141,255,0.04); }
+    th.mat-mdc-header-cell { font-weight: 600; color: var(--text-secondary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
     td.mat-mdc-cell { font-size: 14px; }
   `],
 })
 export class DataTableComponent {
-  @Input({ required: true }) data: any[] = [];
+  @Input({ required: true }) data: TableRow[] = [];
   @Input({ required: true }) columns: TableColumn[] = [];
   @Input() showSearch = true;
   @Input() searchPlaceholder = 'Pesquisar...';
@@ -70,7 +72,7 @@ export class DataTableComponent {
   @Output() search = new EventEmitter<string>();
   @Output() sort = new EventEmitter<Sort>();
   @Output() page = new EventEmitter<PageEvent>();
-  @Output() rowClick = new EventEmitter<any>();
+  @Output() rowClick = new EventEmitter<TableRow>();
 
   get displayedColumns(): string[] {
     return this.columns.map(c => c.key);

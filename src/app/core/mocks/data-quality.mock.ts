@@ -1,4 +1,4 @@
-import { DataQualityRule, DataQualityReport, DataQualityTrend } from '../models';
+import { DataQualityRule, DataQualityReport, DataQualityTableRegistration, DataQualityTrend } from '../models';
 
 export const MOCK_DQ_RULES: DataQualityRule[] = [
   { id: 'dq-1', name: 'Orders Not Null', description: 'Order ID e Customer ID não podem ser nulos', dataset: 'raw.orders', column: 'order_id', ruleType: 'completeness', threshold: 99.9, currentScore: 99.95, status: 'passing', lastEvaluated: '2026-03-15T08:00:00Z', owner: 'Data Engineering', tags: ['critical', 'orders'] },
@@ -11,19 +11,54 @@ export const MOCK_DQ_RULES: DataQualityRule[] = [
   { id: 'dq-8', name: 'Clickstream Freshness', description: 'Dados de clickstream com atraso máximo de 10 min', dataset: 'raw.clickstream', ruleType: 'freshness', threshold: 100, currentScore: 100, status: 'passing', lastEvaluated: '2026-03-15T09:55:00Z', owner: 'Data Engineering', tags: ['clickstream', 'real-time'] },
 ];
 
+export const MOCK_DQ_TABLE_REGISTRATIONS: DataQualityTableRegistration[] = [
+  {
+    id: 'dq-table-1',
+    database: 'spec',
+    tableName: 'customer_360',
+    qualifiedName: 'spec.customer_360',
+    owner: 'Squad B',
+    engineRole: 'role_data_quality_engine_prod',
+    rowCount: 2500000,
+    sizeGb: 42.7,
+    columns: [
+      { name: 'customer_id', type: 'STRING', nullable: false, description: 'Chave funcional do cliente' },
+      { name: 'email', type: 'STRING', nullable: true, description: 'E-mail principal' },
+      { name: 'total_orders', type: 'INT', nullable: false },
+      { name: 'ltv', type: 'DECIMAL(18,2)', nullable: false },
+      { name: 'updated_at', type: 'TIMESTAMP', nullable: false },
+    ],
+    primaryKeyColumns: ['customer_id'],
+    qualitativeValidations: 'Campos de identificação devem estar coerentes com o cadastro mestre. Segmento deve pertencer ao domínio corporativo vigente.',
+    quantitativeValidations: 'Volume diário não deve variar mais de 20% sem evento operacional registrado. Freshness máxima: D-1 até 07h30.',
+    customRules: [
+      { field: 'email', expression: 'Percentual de nulos não pode ultrapassar 5%', threshold: 95, severity: 'high' },
+      { field: 'customer_id', expression: 'Não pode haver duplicidade', threshold: 100, severity: 'critical' },
+    ],
+    status: 'ready_to_scan',
+    createdAt: '2026-03-15T07:25:00Z',
+    updatedAt: '2026-03-15T07:40:00Z',
+  },
+];
+
 export const MOCK_DQ_TRENDS: DataQualityTrend[] = Array.from({ length: 30 }, (_, i) => {
   const date = new Date(2026, 1, 14 + i);
-  const base = 92 + Math.random() * 6;
+  const base = 92 + seededWave(i, 6);
   return {
     date: date.toISOString().split('T')[0],
     overallScore: +base.toFixed(1),
-    completeness: +(base + Math.random() * 3 - 1).toFixed(1),
-    uniqueness: +(98 + Math.random() * 2).toFixed(1),
-    validity: +(base - 1 + Math.random() * 4).toFixed(1),
-    consistency: +(base + Math.random() * 2).toFixed(1),
-    freshness: +(97 + Math.random() * 3).toFixed(1),
+    completeness: +(base + seededWave(i + 11, 3) - 1).toFixed(1),
+    uniqueness: +(98 + seededWave(i + 19, 2)).toFixed(1),
+    validity: +(base - 1 + seededWave(i + 23, 4)).toFixed(1),
+    consistency: +(base + seededWave(i + 29, 2)).toFixed(1),
+    freshness: +(97 + seededWave(i + 31, 3)).toFixed(1),
   };
 });
+
+function seededWave(seed: number, amplitude: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return (x - Math.floor(x)) * amplitude;
+}
 
 export const MOCK_DQ_REPORT: DataQualityReport = {
   id: 'report-1',

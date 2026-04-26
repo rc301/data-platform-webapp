@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -15,8 +15,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { MetricCardComponent } from '../../shared/components/metric-card/metric-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+import { DataQualityTableFormComponent } from '../../shared/components/data-quality-table-form/data-quality-table-form.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
-import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.mock';
+import { PlatformDataService } from '../../core/services/platform-data.service';
+import { DataQualityCustomRule, DataQualityTableRegistration, DataQualityTableRegistrationDraft } from '../../core/models';
 
 @Component({
   selector: 'app-data-quality',
@@ -25,23 +27,56 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
     CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule,
     MatTableModule, MatSortModule, MatTooltipModule,
-    PageHeaderComponent, MetricCardComponent, StatusBadgeComponent, RelativeTimePipe,
+    PageHeaderComponent, MetricCardComponent, StatusBadgeComponent, DataQualityTableFormComponent, RelativeTimePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Qualidade de Dados" subtitle="Monitore regras e scores de qualidade de dados em datasets" icon="verified">
-      <button mat-stroked-button color="primary">
-        <mat-icon>add</mat-icon> Nova Regra
+    <app-page-header title="Qualidade de Dados" subtitle="Cadastre tabelas para o motor de qualidade e monitore regras derivadas" icon="verified">
+      <button mat-stroked-button color="primary" (click)="showCreateForm.set(true)">
+        <mat-icon>add</mat-icon> Cadastrar Tabela
       </button>
     </app-page-header>
+
+    <section class="create-panel" *ngIf="showCreateForm()">
+      <app-data-quality-table-form
+        [value]="tableRegistrationDraft"
+        title="Cadastrar qualidade por tabela"
+        description="Após liberar acesso à role do motor de qualidade, consulte a tabela e complete chave primária, validações genéricas e regras customizadas."
+        submitLabel="Cadastrar tabela"
+        (metadataRequested)="loadSampleMetadata()"
+        (saved)="saveTableRegistration($event)"
+        (cancelled)="showCreateForm.set(false)">
+      </app-data-quality-table-form>
+    </section>
 
     <!-- Score Overview -->
     <div class="metrics-grid">
       <app-metric-card label="Score Geral" [value]="overallScore" icon="speed" suffix="%" iconBg="#e8f5e9" iconColor="#2e7d32" [trend]="'up'" [changePercent]="2.1"></app-metric-card>
+      <app-metric-card label="Tabelas Cadastradas" [value]="tableRegistrations().length" icon="table_chart" iconBg="#e3f2fd" iconColor="#1565c0" [showTrend]="false"></app-metric-card>
       <app-metric-card label="Regras Aprovadas" [value]="passingCount" icon="check_circle" iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
       <app-metric-card label="Regras Reprovadas" [value]="failingCount" icon="cancel" iconBg="#ffebee" iconColor="#c62828" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Regras em Alerta" [value]="warningCount" icon="warning" iconBg="#fff3e0" iconColor="#e65100" [showTrend]="false"></app-metric-card>
     </div>
+
+    <mat-card class="registrations-card">
+      <mat-card-header>
+        <mat-card-title>Tabelas sob qualidade</mat-card-title>
+        <mat-card-subtitle>Cadastros por tabela disponíveis para varredura do motor</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="registration-list">
+          <div class="registration-row registration-row--head">
+            <span>Tabela</span><span>Role</span><span>PK</span><span>Customizadas</span><span>Status</span>
+          </div>
+          <div class="registration-row" *ngFor="let registration of tableRegistrations()">
+            <code>{{ registration.qualifiedName }}</code>
+            <span>{{ registration.engineRole }}</span>
+            <span>{{ registration.primaryKeyColumns.join(', ') || '-' }}</span>
+            <span>{{ registration.customRules.length }}</span>
+            <app-status-badge [status]="registration.status" [label]="registrationStatusLabel(registration.status)"></app-status-badge>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
 
     <!-- Score Breakdown -->
     <mat-card class="breakdown-card">
@@ -96,7 +131,7 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
 
     <!-- Rules Table -->
     <mat-card class="rules-card">
-      <table mat-table [dataSource]="filteredRules" matSort class="rules-table">
+      <table mat-table [dataSource]="filteredRules()" matSort class="rules-table">
         <ng-container matColumnDef="status">
           <th mat-header-cell *matHeaderCellDef>Status</th>
           <td mat-cell *matCellDef="let rule"><app-status-badge [status]="rule.status"></app-status-badge></td>
@@ -138,6 +173,13 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
   `,
   styles: [`
     .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .create-panel { margin-bottom: 20px; }
+
+    .registrations-card { margin-bottom: 16px; }
+    .registration-list { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
+    .registration-row { display: grid; grid-template-columns: 1.2fr 1.4fr 1fr 110px 150px; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); font-size: 13px; }
+    .registration-row:last-child { border-bottom: 0; }
+    .registration-row--head { background: var(--bg-app); color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
 
     .breakdown-card { margin-bottom: 16px; }
     .dimension-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
@@ -169,13 +211,30 @@ import { MOCK_DQ_RULES, MOCK_DQ_TRENDS } from '../../core/mocks/data-quality.moc
   `],
 })
 export class DataQualityComponent {
-  allRules = MOCK_DQ_RULES;
-  trends = MOCK_DQ_TRENDS;
-  filteredRules = [...this.allRules];
+  private readonly data = inject(PlatformDataService);
+
+  allRules = signal(this.data.dqRules());
+  tableRegistrations = signal(this.data.dqTableRegistrations());
+  trends = this.data.dqTrends();
+  filteredRules = signal([...this.allRules()]);
+  showCreateForm = signal(false);
   searchTerm = '';
   statusFilter = 'all';
   typeFilter = 'all';
   displayedColumns = ['status', 'name', 'dataset', 'ruleType', 'score', 'lastEvaluated'];
+
+  tableRegistrationDraft: Partial<DataQualityTableRegistrationDraft> = {
+    database: '',
+    tableName: '',
+    qualifiedName: '',
+    owner: 'Data Platform',
+    engineRole: 'role_data_quality_engine_prod',
+    columns: [],
+    primaryKeyColumns: [],
+    qualitativeValidations: '',
+    quantitativeValidations: '',
+    customRulesText: '',
+  };
 
   latestTrend = this.trends[this.trends.length - 1];
 
@@ -188,18 +247,98 @@ export class DataQualityComponent {
   ];
 
   get overallScore(): number { return this.latestTrend.overallScore; }
-  get passingCount(): number { return this.allRules.filter(r => r.status === 'passing').length; }
-  get failingCount(): number { return this.allRules.filter(r => r.status === 'failing').length; }
-  get warningCount(): number { return this.allRules.filter(r => r.status === 'warning').length; }
+  get passingCount(): number { return this.allRules().filter(r => r.status === 'passing').length; }
+  get failingCount(): number { return this.allRules().filter(r => r.status === 'failing').length; }
+  get warningCount(): number { return this.allRules().filter(r => r.status === 'warning').length; }
 
   applyFilters(): void {
-    let result = this.allRules;
+    let result = this.allRules();
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
       result = result.filter(r => r.name.toLowerCase().includes(term) || r.dataset.toLowerCase().includes(term));
     }
     if (this.statusFilter !== 'all') result = result.filter(r => r.status === this.statusFilter);
     if (this.typeFilter !== 'all') result = result.filter(r => r.ruleType === this.typeFilter);
-    this.filteredRules = result;
+    this.filteredRules.set(result);
+  }
+
+  registrationStatusLabel(status: DataQualityTableRegistration['status']): string {
+    return ({
+      draft: 'Rascunho',
+      registered: 'Cadastrada',
+      waiting_access: 'Aguardando acesso',
+      ready_to_scan: 'Pronta para scan',
+    } as const)[status];
+  }
+
+  loadSampleMetadata(): void {
+    this.tableRegistrationDraft = {
+      database: 'spec',
+      tableName: 'customer_360',
+      qualifiedName: 'spec.customer_360',
+      owner: 'Squad B',
+      engineRole: 'role_data_quality_engine_prod',
+      rowCount: 2500000,
+      sizeGb: 42.7,
+      columns: [
+        { name: 'customer_id', type: 'STRING', nullable: false, description: 'Chave funcional do cliente' },
+        { name: 'email', type: 'STRING', nullable: true, description: 'E-mail principal' },
+        { name: 'total_orders', type: 'INT', nullable: false },
+        { name: 'ltv', type: 'DECIMAL(18,2)', nullable: false },
+        { name: 'updated_at', type: 'TIMESTAMP', nullable: false },
+      ],
+      primaryKeyColumns: ['customer_id'],
+      qualitativeValidations: '',
+      quantitativeValidations: '',
+      customRulesText: '',
+    };
+  }
+
+  saveTableRegistration(draft: DataQualityTableRegistrationDraft): void {
+    this.data.addDataQualityTableRegistration(this.toTableRegistration(draft));
+    this.tableRegistrations.set(this.data.dqTableRegistrations());
+    this.showCreateForm.set(false);
+  }
+
+  private toTableRegistration(draft: DataQualityTableRegistrationDraft): DataQualityTableRegistration {
+    const now = new Date().toISOString();
+    return {
+      id: `dq-table-${this.tableRegistrations().length + 1}`,
+      database: draft.database,
+      tableName: draft.tableName,
+      qualifiedName: draft.qualifiedName || `${draft.database}.${draft.tableName}`,
+      owner: draft.owner,
+      engineRole: draft.engineRole,
+      rowCount: draft.rowCount,
+      sizeGb: draft.sizeGb,
+      columns: draft.columns,
+      primaryKeyColumns: draft.primaryKeyColumns,
+      qualitativeValidations: draft.qualitativeValidations,
+      quantitativeValidations: draft.quantitativeValidations,
+      customRules: this.parseCustomRules(draft.customRulesText),
+      status: draft.columns.length ? 'ready_to_scan' : 'waiting_access',
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  private parseCustomRules(text: string): DataQualityCustomRule[] {
+    return text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => {
+        const [field = '', expression = '', threshold = '0', severity = 'medium'] = line.split('|').map(part => part.trim());
+        return {
+          field,
+          expression,
+          threshold: Number(threshold) || 0,
+          severity: this.normalizeSeverity(severity),
+        };
+      });
+  }
+
+  private normalizeSeverity(value: string): DataQualityCustomRule['severity'] {
+    return value === 'low' || value === 'medium' || value === 'high' || value === 'critical' ? value : 'medium';
   }
 }

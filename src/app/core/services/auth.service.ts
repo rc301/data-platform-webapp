@@ -4,8 +4,10 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  userPrincipal: string;
   role: 'admin' | 'engineer' | 'analyst' | 'viewer';
   team: string;
+  groups: string[];
   avatar?: string;
 }
 
@@ -15,8 +17,13 @@ export class AuthService {
     id: 'user-1',
     name: 'Rafael Carvalho',
     email: 'rafael.carvalho@company.com',
+    userPrincipal: 'rafael.carvalho@company.com',
     role: 'admin',
     team: 'Data Platform',
+    groups: [
+      'dp.role.platform-admin',
+      'dp.scope.gerencia.mgmt-data-platform',
+    ],
   });
 
   readonly user = this.currentUser.asReadonly();
