@@ -1,58 +1,255 @@
 @use '@angular/material' as mat;
 
+/* ============================================================
+   DESIGN TOKENS — Paleta corporativa escura
+   ------------------------------------------------------------
+   Altere aqui para mudar a identidade visual da plataforma.
+   Todos os componentes consomem essas variáveis via var(--token).
+   ============================================================ */
+:root {
+  /* ---------- Brand / Primary ---------- */
+  --brand-50:  #E8EEFB;
+  --brand-100: #C7D5F5;
+  --brand-200: #94B0EC;
+  --brand-300: #6189D8;
+  --brand-400: #4170C4;
+  --brand-500: #2E5BB0;   /* Primária — azul corporativo profundo */
+  --brand-600: #244A95;
+  --brand-700: #1B3A7A;
+  --brand-800: #142C5F;
+  --brand-900: #0E1F44;
+
+  /* ---------- Accent (sofisticado, dourado fosco) ---------- */
+  --accent-300: #F4D58A;
+  --accent-400: #E0B96A;
+  --accent-500: #C99B4E;
+  --accent-600: #A87E3A;
+
+  /* ---------- Neutros (superfícies escuras) ---------- */
+  --bg-app:        #0A0E14;   /* fundo geral da aplicação */
+  --bg-surface:    #121822;   /* cards, painéis */
+  --bg-elevated:   #1A2230;   /* hover, popovers, menus */
+  --bg-overlay:    #232C3D;   /* destaques, inputs */
+  --bg-inverse:    #F4F6FA;
+
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+
+  /* ---------- Texto ---------- */
+  --text-primary:   #E8ECF4;
+  --text-secondary: #A6B0C3;
+  --text-muted:     #6F7A91;
+  --text-disabled:  #4A5468;
+  --text-on-brand:  #FFFFFF;
+
+  /* ---------- Estado / Semântico ---------- */
+  --success-500: #2BB673;
+  --success-700: #1F8A56;
+  --success-bg:  rgba(43, 182, 115, 0.12);
+
+  --warning-500: #E5A23C;
+  --warning-700: #B47C24;
+  --warning-bg:  rgba(229, 162, 60, 0.12);
+
+  --danger-500:  #E5484D;
+  --danger-700:  #B5343A;
+  --danger-bg:   rgba(229, 72, 77, 0.12);
+
+  --info-500:    #4C8DFF;
+  --info-700:    #2E6BD9;
+  --info-bg:     rgba(76, 141, 255, 0.12);
+
+  --neutral-500: #6F7A91;
+  --neutral-bg:  rgba(111, 122, 145, 0.12);
+
+  /* ---------- Faróis de SLA ---------- */
+  --farol-green:  #2BB673;
+  --farol-yellow: #E5A23C;
+  --farol-red:    #E5484D;
+  --farol-gray:   #6F7A91;
+
+  /* ---------- Tipografia ---------- */
+  --font-sans: 'Inter', 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  /* ---------- Raio / Sombra / Espaçamento ---------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.32), 0 1px 1px rgba(0,0,0,0.20);
+  --shadow-2: 0 4px 12px rgba(0,0,0,0.36), 0 2px 4px rgba(0,0,0,0.20);
+  --shadow-3: 0 12px 32px rgba(0,0,0,0.48), 0 4px 8px rgba(0,0,0,0.24);
+  --shadow-glow: 0 0 0 1px rgba(76,141,255,0.35), 0 0 24px rgba(46,91,176,0.20);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+}
+
+/* ============================================================
+   ANGULAR MATERIAL — tema escuro alinhado aos tokens
+   ============================================================ */
 @include mat.core();
 
-$dp-primary: mat.define-palette(mat.$indigo-palette, 900, 700, 50);
-$dp-accent: mat.define-palette(mat.$blue-palette, A200, A100, A400);
-$dp-warn: mat.define-palette(mat.$red-palette);
+$dp-primary: mat.define-palette(mat.$blue-palette, 600, 400, 800);
+$dp-accent:  mat.define-palette(mat.$amber-palette, 400, 200, 700);
+$dp-warn:    mat.define-palette(mat.$red-palette, 500);
 
-$dp-theme: mat.define-light-theme((
+$dp-theme: mat.define-dark-theme((
   color: (
     primary: $dp-primary,
-    accent: $dp-accent,
-    warn: $dp-warn,
+    accent:  $dp-accent,
+    warn:    $dp-warn,
   ),
   typography: mat.define-typography-config(
-    $font-family: '"Inter", "Roboto", "Helvetica Neue", sans-serif',
+    $font-family: 'Inter, "IBM Plex Sans", Roboto, sans-serif',
   ),
   density: -1,
 ));
 
 @include mat.all-component-themes($dp-theme);
 
-// Global styles
+/* ============================================================
+   GLOBAL
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
 html, body {
   height: 100%;
   margin: 0;
-  font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
-  background: #f5f5f5;
+  font-family: var(--font-sans);
+  background: var(--bg-app);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02', 'cv03', 'cv11', 'ss01';
+  letter-spacing: -0.005em;
 }
 
-// Scrollbar styling
-::-webkit-scrollbar { width: 6px; height: 6px; }
+h1, h2, h3, h4, h5, h6 { color: var(--text-primary); font-weight: 600; letter-spacing: -0.015em; }
+p { color: var(--text-secondary); }
+a { color: var(--brand-300); text-decoration: none; }
+a:hover { color: var(--brand-200); text-decoration: underline; }
+
+::selection { background: rgba(76,141,255,0.35); color: #fff; }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #999; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
-// Material overrides
+/* ============================================================
+   MATERIAL OVERRIDES — alinhar com tokens
+   ============================================================ */
 .mat-mdc-card {
-  border-radius: 12px !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-1) !important;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
+.mat-mdc-card:hover {
+  border-color: var(--border-default);
+}
+
+.mat-mdc-card-title { color: var(--text-primary) !important; font-weight: 600 !important; letter-spacing: -0.01em; }
+.mat-mdc-card-subtitle { color: var(--text-secondary) !important; }
 
 .mat-mdc-chip {
   font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius-sm) !important;
 }
 
-// Notification snackbar styles
-.snack-success { --mdc-snackbar-container-color: #2e7d32; --mdc-snackbar-supporting-text-color: white; }
-.snack-error { --mdc-snackbar-container-color: #c62828; --mdc-snackbar-supporting-text-color: white; }
-.snack-info { --mdc-snackbar-container-color: #1565c0; --mdc-snackbar-supporting-text-color: white; }
-.snack-warn { --mdc-snackbar-container-color: #e65100; --mdc-snackbar-supporting-text-color: white; }
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: var(--border-default);
+  --mdc-outlined-text-field-hover-outline-color: var(--border-strong);
+  --mdc-outlined-text-field-focus-outline-color: var(--brand-400);
+  --mdc-outlined-text-field-input-text-color: var(--text-primary);
+  --mdc-outlined-text-field-label-text-color: var(--text-secondary);
+}
 
-// Utility
-.text-muted { color: #888; }
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-flat-button.mat-primary {
+  --mdc-protected-button-container-color: var(--brand-500);
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.mat-mdc-stroked-button {
+  --mdc-outlined-button-outline-color: var(--border-default);
+  --mdc-outlined-button-label-text-color: var(--text-primary);
+}
+
+.mat-mdc-menu-panel {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md) !important;
+}
+
+.mat-mdc-tab-header { border-bottom: 1px solid var(--border-subtle); }
+
+.mat-divider { border-top-color: var(--border-subtle) !important; }
+
+/* ---------- Snackbars ---------- */
+.snack-success { --mdc-snackbar-container-color: var(--success-700); --mdc-snackbar-supporting-text-color: #fff; }
+.snack-error   { --mdc-snackbar-container-color: var(--danger-700);  --mdc-snackbar-supporting-text-color: #fff; }
+.snack-info    { --mdc-snackbar-container-color: var(--info-700);    --mdc-snackbar-supporting-text-color: #fff; }
+.snack-warn    { --mdc-snackbar-container-color: var(--warning-700); --mdc-snackbar-supporting-text-color: #fff; }
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+.text-primary { color: var(--text-primary); }
 .text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.surface-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+}
+
+/* ---------- Faróis (semáforo) ---------- */
+.farol {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid transparent;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+.farol::before {
+  content: ''; width: 8px; height: 8px; border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+}
+.farol--green  { color: var(--farol-green);  border-color: rgba(43,182,115,0.30); }
+.farol--green::before  { background: var(--farol-green);  box-shadow: 0 0 8px rgba(43,182,115,0.6); }
+.farol--yellow { color: var(--farol-yellow); border-color: rgba(229,162,60,0.30); }
+.farol--yellow::before { background: var(--farol-yellow); box-shadow: 0 0 8px rgba(229,162,60,0.6); }
+.farol--red    { color: var(--farol-red);    border-color: rgba(229,72,77,0.30); }
+.farol--red::before    { background: var(--farol-red);    box-shadow: 0 0 8px rgba(229,72,77,0.6); }
+.farol--gray   { color: var(--farol-gray);   border-color: rgba(111,122,145,0.30); }
+.farol--gray::before   { background: var(--farol-gray); }

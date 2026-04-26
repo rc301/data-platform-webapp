@@ -6,11 +6,28 @@ export const routes: Routes = [
     path: '',
     component: LayoutComponent,
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: 'dev', pathMatch: 'full' },
+
+      /* ===== Persona: Desenvolvedor ===== */
       {
-        path: 'dashboard',
-        loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.DASHBOARD_ROUTES),
+        path: 'dev',
+        loadChildren: () => import('./features/dev/dev.routes').then(m => m.DEV_ROUTES),
       },
+
+      /* ===== Persona: Sustentação (Bombeiro) ===== */
+      {
+        path: 'ops',
+        loadChildren: () => import('./features/ops/ops.routes').then(m => m.OPS_ROUTES),
+      },
+
+      /* ===== Persona: Gestão ===== */
+      {
+        path: 'executive',
+        loadChildren: () => import('./features/executive/executive.routes').then(m => m.EXECUTIVE_ROUTES),
+      },
+
+      /* ===== Páginas transversais (usadas por mais de uma persona) ===== */
+      { path: 'dashboard', redirectTo: 'dev', pathMatch: 'full' },
       {
         path: 'pipelines',
         loadChildren: () => import('./features/pipelines/pipelines.routes').then(m => m.PIPELINES_ROUTES),
@@ -37,5 +54,5 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: 'dev' },
 ];
