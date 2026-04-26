@@ -1,135 +1,102 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MetricCardComponent } from '../../../shared/components/metric-card/metric-card.component';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PlatformDataService } from '../../../core/services/platform-data.service';
 
 @Component({
   selector: 'app-costs',
   standalone: true,
-  imports: [
-    CommonModule, MatCardModule, MatIconModule, MatTableModule,
-    MatProgressBarModule, MatTooltipModule, MetricCardComponent,
-  ],
+  imports: [CommonModule, FormsModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Summary -->
-    <div class="metrics-grid">
-      <app-metric-card label="Mês Atual" [value]="totalCurrent" icon="attach_money" prefix="$"
-        iconBg="#e8eaf6" iconColor="#1a237e" [trend]="'up'" [changePercent]="totalTrend"></app-metric-card>
-      <app-metric-card label="Previsão" [value]="totalForecast" icon="trending_up" prefix="$"
-        iconBg="#fff3e0" iconColor="#e65100" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Orçamento" [value]="totalBudget" icon="account_balance" prefix="$"
-        iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Uso do Orçamento" [value]="budgetUsage" icon="pie_chart" suffix="%"
-        iconBg="#f3e5f5" iconColor="#7b1fa2" [showTrend]="false"></app-metric-card>
-    </div>
+    <app-page-header
+      title="Custos de execução"
+      subtitle="Análise pontual de custo por execução de pipeline de dados, sem agregações globais incompletas"
+      icon="attach_money">
+    </app-page-header>
 
-    <!-- Cost Breakdown -->
-    <mat-card>
-      <div class="table-header">
-        <h3>Detalhamento de Custos por Serviço</h3>
+    <section class="filters">
+      <mat-form-field appearance="outline">
+        <mat-label>Pipeline</mat-label>
+        <mat-select [(ngModel)]="pipelineFilter">
+          <mat-option value="all">Todas com acesso</mat-option>
+          <mat-option *ngFor="let name of pipelineNames()" [value]="name">{{ name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Job run</mat-label>
+        <input matInput placeholder="run-2a" [(ngModel)]="runFilter">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Motor</mat-label>
+        <mat-select [(ngModel)]="engineFilter">
+          <mat-option value="all">Todos</mat-option>
+          <mat-option value="GlueJob">GlueJob</mat-option>
+          <mat-option value="Munin">Munin SQL</mat-option>
+          <mat-option value="CDP">CDP</mat-option>
+          <mat-option value="Phoenix">Phoenix</mat-option>
+          <mat-option value="Outros">Outros</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </section>
+
+    <section class="cost-table">
+      <div class="cost-row cost-row--head">
+        <span>Pipeline</span><span>Run</span><span>Motor</span><span>Duração</span><span>Registros</span><span>Custo</span><span>Discriminação</span>
       </div>
-      <table mat-table [dataSource]="costs" class="full-width">
-        <ng-container matColumnDef="service">
-          <th mat-header-cell *matHeaderCellDef>Serviço</th>
-          <td mat-cell *matCellDef="let c"><strong>{{ c.service }}</strong></td>
-        </ng-container>
-        <ng-container matColumnDef="current">
-          <th mat-header-cell *matHeaderCellDef>Mês Atual</th>
-          <td mat-cell *matCellDef="let c">\${{ c.currentMonth | number:'1.0-0' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="previous">
-          <th mat-header-cell *matHeaderCellDef>Mês Anterior</th>
-          <td mat-cell *matCellDef="let c">\${{ c.previousMonth | number:'1.0-0' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="trend">
-          <th mat-header-cell *matHeaderCellDef>Tendência</th>
-          <td mat-cell *matCellDef="let c">
-            <span [class.trend-up]="c.trend > 0" [class.trend-down]="c.trend < 0" [class.trend-flat]="c.trend === 0">
-              <mat-icon inline>{{ c.trend > 0 ? 'trending_up' : c.trend < 0 ? 'trending_down' : 'trending_flat' }}</mat-icon>
-              {{ c.trend > 0 ? '+' : '' }}{{ c.trend | number:'1.1-1' }}%
-            </span>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="budget">
-          <th mat-header-cell *matHeaderCellDef>Orçamento</th>
-          <td mat-cell *matCellDef="let c">\${{ c.budget | number:'1.0-0' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="usage">
-          <th mat-header-cell *matHeaderCellDef>Uso do Orçamento</th>
-          <td mat-cell *matCellDef="let c">
-            <div class="usage-cell">
-              <mat-progress-bar [value]="(c.currentMonth / c.budget) * 100"
-                [color]="c.currentMonth / c.budget > 0.9 ? 'warn' : 'primary'"></mat-progress-bar>
-              <span class="usage-pct">{{ ((c.currentMonth / c.budget) * 100) | number:'1.0-0' }}%</span>
-            </div>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="forecast">
-          <th mat-header-cell *matHeaderCellDef>Previsão</th>
-          <td mat-cell *matCellDef="let c">
-            <span [class.forecast-over]="c.forecast > c.budget">\${{ c.forecast | number:'1.0-0' }}</span>
-          </td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="columns"></tr>
-        <tr mat-row *matRowDef="let row; columns: columns;"></tr>
-        <tr mat-footer-row *matFooterRowDef="columns" class="total-row"></tr>
-
-        <ng-container matColumnDef="service" stickyEnd>
-          <td mat-footer-cell *matFooterCellDef><strong>Total</strong></td>
-        </ng-container>
-        <ng-container matColumnDef="current">
-          <td mat-footer-cell *matFooterCellDef><strong>\${{ totalCurrent | number:'1.0-0' }}</strong></td>
-        </ng-container>
-        <ng-container matColumnDef="previous">
-          <td mat-footer-cell *matFooterCellDef><strong>\${{ totalPrevious | number:'1.0-0' }}</strong></td>
-        </ng-container>
-        <ng-container matColumnDef="trend">
-          <td mat-footer-cell *matFooterCellDef></td>
-        </ng-container>
-        <ng-container matColumnDef="budget">
-          <td mat-footer-cell *matFooterCellDef><strong>\${{ totalBudget | number:'1.0-0' }}</strong></td>
-        </ng-container>
-        <ng-container matColumnDef="usage">
-          <td mat-footer-cell *matFooterCellDef></td>
-        </ng-container>
-        <ng-container matColumnDef="forecast">
-          <td mat-footer-cell *matFooterCellDef><strong>\${{ totalForecast | number:'1.0-0' }}</strong></td>
-        </ng-container>
-      </table>
-    </mat-card>
+      <article class="cost-row" *ngFor="let item of visibleCosts()">
+        <div class="main">
+          <strong>{{ item.pipelineName }}</strong>
+          <span>{{ item.startedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <code>{{ item.runId }}</code>
+        <span class="engine">{{ item.engine }}</span>
+        <span>{{ item.durationMinutes }} min</span>
+        <span>{{ item.recordsProcessed ?? '-' | number }}</span>
+        <strong *ngIf="item.hasDiscriminatedCost; else noCost">US$ {{ item.costUsd | number:'1.2-2' }}</strong>
+        <ng-template #noCost><span class="missing">Sem custo discriminado</span></ng-template>
+        <span class="breakdown" *ngIf="item.hasDiscriminatedCost; else noBreakdown">
+          Compute {{ item.costBreakdown?.computeUsd | number:'1.2-2' }} · Orch {{ item.costBreakdown?.orchestrationUsd | number:'1.2-2' }} · Logs {{ item.costBreakdown?.logsUsd | number:'1.2-2' }}
+        </span>
+        <ng-template #noBreakdown><span class="missing">{{ item.note || 'Informação não disponível para este run.' }}</span></ng-template>
+      </article>
+    </section>
   `,
   styles: [`
-    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .table-header { padding: 16px; }
-    .table-header h3 { margin: 0; }
-    .full-width { width: 100%; }
-    .trend-up { color: #c62828; display: flex; align-items: center; gap: 4px; }
-    .trend-down { color: #2e7d32; display: flex; align-items: center; gap: 4px; }
-    .trend-flat { color: #666; display: flex; align-items: center; gap: 4px; }
-    .trend-up mat-icon, .trend-down mat-icon, .trend-flat mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .usage-cell { display: flex; align-items: center; gap: 8px; min-width: 120px; }
-    .usage-pct { font-size: 13px; color: #666; white-space: nowrap; }
-    .forecast-over { color: #c62828; font-weight: 600; }
-    .total-row { font-weight: 700; background: #fafafa; }
-    th.mat-mdc-header-cell { font-weight: 600; font-size: 12px; text-transform: uppercase; color: #444; }
+    .filters { display: grid; grid-template-columns: minmax(240px, 1fr) 220px 180px; gap: 12px; margin-bottom: 18px; padding: 14px; border-radius: var(--radius-lg); background: var(--bg-surface); }
+    .cost-table { border-radius: var(--radius-lg); background: var(--bg-surface); overflow-x: auto; }
+    .cost-row { display: grid; grid-template-columns: minmax(240px, 2fr) 130px 110px 100px 110px 150px minmax(280px, 2fr); gap: 12px; align-items: center; min-width: 1120px; padding: 13px 16px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 13px; }
+    .cost-row:last-child { border-bottom: 0; }
+    .cost-row--head { background: var(--bg-app); color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .main strong { color: var(--text-primary); }
+    .main span { color: var(--text-muted); font-size: 12px; }
+    code { width: fit-content; padding: 2px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); }
+    .engine { width: fit-content; padding: 3px 8px; border-radius: 6px; background: var(--bg-app); color: var(--text-secondary); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .missing { color: var(--text-muted); font-style: italic; }
+    .breakdown { color: var(--text-secondary); font-size: 12px; }
+    @media (max-width: 760px) { .filters { grid-template-columns: 1fr; } }
   `],
 })
 export class CostsComponent {
   private readonly data = inject(PlatformDataService);
 
-  costs = this.data.costMetrics();
-  columns = ['service', 'current', 'previous', 'trend', 'budget', 'usage', 'forecast'];
+  pipelineFilter = 'all';
+  runFilter = '';
+  engineFilter = 'all';
 
-  get totalCurrent(): number { return this.costs.reduce((s, c) => s + c.currentMonth, 0); }
-  get totalPrevious(): number { return this.costs.reduce((s, c) => s + c.previousMonth, 0); }
-  get totalBudget(): number { return this.costs.reduce((s, c) => s + c.budget, 0); }
-  get totalForecast(): number { return this.costs.reduce((s, c) => s + c.forecast, 0); }
-  get totalTrend(): number { return +((this.totalCurrent - this.totalPrevious) / this.totalPrevious * 100).toFixed(1); }
-  get budgetUsage(): number { return +(this.totalCurrent / this.totalBudget * 100).toFixed(1); }
+  readonly pipelineNames = computed(() => Array.from(new Set(this.data.pipelineRunCosts().map(item => item.pipelineName))).sort());
+  readonly visibleCosts = computed(() => {
+    const run = this.runFilter.trim().toLowerCase();
+    return this.data.pipelineRunCosts().filter(item =>
+      (this.pipelineFilter === 'all' || item.pipelineName === this.pipelineFilter)
+      && (this.engineFilter === 'all' || item.engine === this.engineFilter)
+      && (!run || item.runId.toLowerCase().includes(run))
+    );
+  });
 }

@@ -2,7 +2,7 @@
  * Configuracao da jornada do desenvolvedor.
  *
  * A etapa e uma capacidade reutilizavel. O template de jornada decide a ordem,
- * quais etapas entram e qual tecnologia sera usada em cada pipeline.
+ * quais etapas entram e qual tecnologia sera usada em cada jornada de projeto.
  * Hoje e mock local; futuramente pode vir de uma API/CMS sem alterar a UI.
  */
 
@@ -289,7 +289,7 @@ export function getStagesForTemplate(templateId: JourneyTemplateId): StageDefini
 
 /**
  * Stage que abre como "ativa" em uma jornada recém-criada.
- * Por contrato, uma pipeline nova começa zerada — nenhuma etapa concluída,
+ * Por contrato, uma jornada nova começa zerada — nenhuma etapa concluída,
  * apenas a primeira aguardando ação do usuário.
  */
 export function firstOpenStageId(templateId: JourneyTemplateId): JourneyStageId {

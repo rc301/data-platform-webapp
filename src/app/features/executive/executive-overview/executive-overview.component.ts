@@ -5,14 +5,6 @@ import {
   UiPageHeaderComponent, UiCardComponent, UiBadgeComponent, UiButtonComponent, UiStatComponent, UiFarolComponent,
 } from '../../../shared/ui';
 
-interface DomainSpend {
-  domain: string;
-  monthly: number;   // BRL
-  pctOfTotal: number;
-  trend: 'up' | 'down' | 'flat';
-  delta: string;
-}
-
 interface SLAStatus { domain: string; total: number; healthy: number; }
 
 @Component({
@@ -36,7 +28,7 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
 
     <!-- KPIs principais -->
     <div class="kpis">
-      <ui-stat label="Custo do mês (parcial)" value="R$ 184,2K" trend="up" delta="+6.8%" deltaPeriod="vs. mar/26" hint="forecast R$ 312K" />
+      <ui-stat label="Runs com custo detalhado" value="2" trend="flat" delta="mock" deltaPeriod="job run" hint="sem total global" />
       <ui-stat label="Pipelines em produção" value="142" trend="up" delta="+9" deltaPeriod="trimestre" />
       <ui-stat label="Saúde média (SLA)" value="97.4%" trend="flat" delta="—" deltaPeriod="objetivo: 99%" />
       <ui-stat label="Volume processado" value="48.6 TB" trend="up" delta="+12%" deltaPeriod="vs. mar/26" />
@@ -45,26 +37,6 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
     </div>
 
     <div class="grid">
-      <!-- Custos por domínio -->
-      <ui-card eyebrow="Custos" title="Distribuição mensal por domínio" subtitle="Soma S3 + Glue + Step Functions + RDS rateado.">
-        <div card-actions>
-          <ui-button variant="ghost" size="sm" link="/monitoring/costs">Detalhar →</ui-button>
-        </div>
-        <div class="cost-list">
-          <div class="cost-row" *ngFor="let d of costsByDomain">
-            <div class="cost-row__head">
-              <span class="cost-row__domain">{{ d.domain }}</span>
-              <span class="cost-row__amount">R$ {{ d.monthly | number:'1.0-0' }}</span>
-            </div>
-            <div class="cost-row__bar"><div [style.width.%]="d.pctOfTotal"></div></div>
-            <div class="cost-row__meta">
-              <span>{{ d.pctOfTotal }}% do total</span>
-              <span [class]="'delta delta--' + d.trend">{{ d.delta }}</span>
-            </div>
-          </div>
-        </div>
-      </ui-card>
-
       <!-- Saúde por domínio -->
       <ui-card eyebrow="Operação" title="Saúde de SLA por domínio" subtitle="Janela atual — abril/26.">
         <div class="sla-grid">
@@ -118,19 +90,6 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
     .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; }
 
-    /* Custos */
-    .cost-list { display: flex; flex-direction: column; gap: 14px; }
-    .cost-row { display: flex; flex-direction: column; gap: 6px; }
-    .cost-row__head { display: flex; justify-content: space-between; align-items: baseline; }
-    .cost-row__domain { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-    .cost-row__amount { font-size: 14px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-    .cost-row__bar { height: 6px; background: var(--bg-overlay); border-radius: 3px; overflow: hidden; }
-    .cost-row__bar > div { height: 100%; background: linear-gradient(90deg, var(--brand-400), var(--accent-500)); }
-    .cost-row__meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
-    .delta--up   { color: var(--danger-500); font-weight: 600; }
-    .delta--down { color: var(--success-500); font-weight: 600; }
-    .delta--flat { color: var(--text-muted); }
-
     /* SLA */
     .sla-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .sla-tile {
@@ -171,14 +130,6 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
   `],
 })
 export class ExecutiveOverviewComponent {
-  costsByDomain: DomainSpend[] = [
-    { domain: 'Comercial',  monthly: 58400, pctOfTotal: 32, trend: 'up',   delta: '+8.1%' },
-    { domain: 'Financeiro', monthly: 42100, pctOfTotal: 23, trend: 'up',   delta: '+3.4%' },
-    { domain: 'Operações',  monthly: 33600, pctOfTotal: 18, trend: 'down', delta: '-2.0%' },
-    { domain: 'Marketing',  monthly: 26900, pctOfTotal: 15, trend: 'up',   delta: '+11.4%' },
-    { domain: 'Risco',      monthly: 23200, pctOfTotal: 12, trend: 'flat', delta: '0.2%' },
-  ];
-
   slaByDomain: SLAStatus[] = [
     { domain: 'Comercial', total: 38, healthy: 37 },
     { domain: 'Financeiro', total: 24, healthy: 22 },

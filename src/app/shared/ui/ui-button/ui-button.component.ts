@@ -20,6 +20,7 @@ export type UiButtonSize = 'sm' | 'md' | 'lg';
   template: `
     <ng-container *ngIf="link; else asButton">
       <a [routerLink]="link"
+         [queryParams]="queryParams"
          [class]="classes"
          [attr.aria-disabled]="disabled || null"
          (click)="onClick($event)">
@@ -91,6 +92,7 @@ export class UiButtonComponent {
   @Input() icon?: string;
   /** Se preenchido, renderiza como link de roteamento ao invés de <button>. */
   @Input() link?: string | unknown[];
+  @Input() queryParams?: Record<string, unknown>;
   @Output() clicked = new EventEmitter<MouseEvent>();
 
   get classes(): string {

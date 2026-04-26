@@ -2,8 +2,9 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { AuditService } from '../audit/audit.service';
 import { OrgService } from '../org/org.service';
+import { AccessPolicyService } from './access-policy.service';
 import { AccessContext, AccessScope, Capability, ParsedAccessClaims, Role, ScopeLevel } from './access.types';
-import { AD_GROUP_PATTERNS, ALL_ROLES, DEFAULT_ROLE_CAPABILITIES, SCOPE_LEVEL_LABELS } from './naming.config';
+import { AD_GROUP_PATTERNS, ALL_ROLES, SCOPE_LEVEL_LABELS } from './naming.config';
 
 const ACTIVE_SCOPE_KEY = 'dp.activeAccessScope';
 
@@ -12,6 +13,7 @@ export class AccessService {
   private readonly auth = inject(AuthService);
   private readonly org = inject(OrgService);
   private readonly audit = inject(AuditService);
+  private readonly policy = inject(AccessPolicyService);
   private readonly requestedScopeId = signal<string | null>(this.loadStoredScopeId());
 
   readonly claims = computed<ParsedAccessClaims>(() => this.parseGroups(this.auth.user()?.groups ?? []));
@@ -22,7 +24,7 @@ export class AccessService {
 
     const claims = this.claims();
     const roles: Role[] = claims.roles.length ? claims.roles : ['public-viewer'];
-    const capabilities: Capability[] = Array.from(new Set(roles.flatMap(role => DEFAULT_ROLE_CAPABILITIES[role])));
+    const capabilities: Capability[] = Array.from(new Set(roles.flatMap(role => this.policy.capabilitiesFor(role))));
     const activeScope = this.resolveActiveScope(claims.scopes, this.requestedScopeId());
 
     return {

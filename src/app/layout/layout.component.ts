@@ -460,30 +460,38 @@ export class LayoutComponent {
       title: 'Início',
       items: [
         { label: 'Visão do Desenvolvedor', icon: 'home', route: '/dev', exact: true, requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Nova Pipeline', icon: 'build', route: '/dev/new-pipeline', primary: true, requiredCapabilities: ['pipeline.create'] },
+        { label: 'Nova Jornada', icon: 'build', route: '/dev/journeys/new', primary: true, requiredCapabilities: ['pipeline.create'] },
       ],
     },
     {
       title: 'Meu trabalho',
       items: [
-        { label: 'Minhas Jornadas', icon: 'list', route: '/dev/journeys', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
+        { label: 'Meus Projetos', icon: 'list', route: '/dev/journeys', requiredCapabilities: ['dev.viewProjects'] },
       ],
     },
     {
       title: 'Conhecimento de dados',
       items: [
+        { label: 'Central de Demandas', icon: 'docs', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Cadastro de LUPs', icon: 'docs', route: '/lups', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Histórico de Projetos', icon: 'list', route: '/projects', requiredCapabilities: ['dev.viewProjects'] },
         { label: 'Catálogo', icon: 'catalog', route: '/catalog', requiredCapabilities: ['catalog.viewBasic'] },
         { label: 'Linhagem', icon: 'lineage', route: '/lineage', requiredCapabilities: ['lineage.view'] },
         { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
       ],
     },
     {
-      title: 'Plataforma',
+      title: 'Operação da Plataforma',
       items: [
-        { label: 'Glue Jobs', icon: 'infra', route: '/infrastructure/glue-jobs', requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Step Functions', icon: 'infra', route: '/infrastructure/step-functions', requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'S3 Buckets', icon: 'infra', route: '/infrastructure/s3', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
+        { label: 'Orquestrador', icon: 'infra', route: '/orchestrator', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Custos de Execução', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
+      ],
+    },
+    {
+      title: 'Utilidades',
+      items: [
+        { label: 'Padrões de Nomes', icon: 'catalog', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
       ],
     },
   ];
@@ -500,17 +508,24 @@ export class LayoutComponent {
     {
       title: 'Investigação',
       items: [
+        { label: 'Central de Demandas', icon: 'docs', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Cadastro de LUPs', icon: 'docs', route: '/lups', requiredCapabilities: ['dev.viewProjects'] },
         { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
         { label: 'Linhagem', icon: 'lineage', route: '/lineage', requiredCapabilities: ['lineage.view'] },
         { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
       ],
     },
     {
-      title: 'Infra',
+      title: 'Operação da Plataforma',
       items: [
-        { label: 'Glue Jobs', icon: 'infra', route: '/infrastructure/glue-jobs', requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Step Functions', icon: 'infra', route: '/infrastructure/step-functions', requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'S3 Buckets', icon: 'infra', route: '/infrastructure/s3', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Orquestrador', icon: 'infra', route: '/orchestrator', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Custos de Execução', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
+      ],
+    },
+    {
+      title: 'Utilidades',
+      items: [
+        { label: 'Padrões de Nomes', icon: 'catalog', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
       ],
     },
   ];
@@ -526,10 +541,30 @@ export class LayoutComponent {
     {
       title: 'Análises',
       items: [
-        { label: 'Custos', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
         { label: 'Capacidade & SLAs', icon: 'capacity', route: '/executive/capacity', requiredCapabilities: ['executive.viewOwnScope'] },
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
         { label: 'Catálogo', icon: 'catalog', route: '/catalog', requiredCapabilities: ['catalog.viewBasic'] },
+      ],
+    },
+    {
+      title: 'Governança',
+      items: [
+        { label: 'Central de Demandas', icon: 'docs', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Cadastro de LUPs', icon: 'docs', route: '/lups', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Histórico de Projetos', icon: 'list', route: '/projects', requiredCapabilities: ['dev.viewProjects'] },
+      ],
+    },
+    {
+      title: 'Operação da Plataforma',
+      items: [
+        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
+        { label: 'Orquestrador', icon: 'infra', route: '/orchestrator', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Custos de Execução', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
+      ],
+    },
+    {
+      title: 'Utilidades',
+      items: [
+        { label: 'Padrões de Nomes', icon: 'catalog', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
       ],
     },
   ];

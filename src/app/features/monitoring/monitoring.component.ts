@@ -11,7 +11,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   imports: [CommonModule, RouterModule, MatTabsModule, MatIconModule, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Monitoramento" subtitle="Saúde da plataforma, alertas e gestão de custos" icon="monitoring"></app-page-header>
+    <app-page-header title="Monitoramento" subtitle="Alertas operacionais e custos discriminados por execução de pipeline" icon="monitoring"></app-page-header>
     <nav mat-tab-nav-bar [tabPanel]="tabPanel">
       <a mat-tab-link *ngFor="let link of navLinks" [routerLink]="link.path" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">
         <mat-icon class="tab-icon">{{ link.icon }}</mat-icon> {{ link.label }}
@@ -26,6 +26,6 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 export class MonitoringComponent {
   navLinks = [
     { path: 'alerts', label: 'Alertas', icon: 'notifications_active' },
-    { path: 'costs', label: 'Explorador de Custos', icon: 'attach_money' },
+    { path: 'costs', label: 'Custos de Execução', icon: 'attach_money' },
   ];
 }

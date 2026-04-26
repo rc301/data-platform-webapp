@@ -12,12 +12,13 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
-import { DataLayer, Pipeline, PipelineAlert } from '../../core/models';
+import { DataLayer, IngestionFlowKind, Pipeline, PipelineAlert, PipelineRegistryDraft } from '../../core/models';
 import { AccessService } from '../../core/access/access.service';
 import { OrgService } from '../../core/org/org.service';
 import { PlatformDataService } from '../../core/services/platform-data.service';
 
 type GoldenFilter = 'all' | 'yes' | 'no';
+type RegistryPanelMode = 'closed' | 'manual' | 'json';
 
 @Component({
   selector: 'app-pipelines',
@@ -30,10 +31,91 @@ type GoldenFilter = 'all' | 'yes' | 'no';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="Pipelines" subtitle="Monitore pipelines em uma lista operacional com filtros por escopo de dados" icon="account_tree">
+      <button mat-stroked-button color="primary" *ngIf="canManageRegistry()" (click)="openJsonImport()">
+        <mat-icon>upload_file</mat-icon> Importar JSON
+      </button>
+      <button mat-flat-button color="primary" *ngIf="canManageRegistry()" (click)="openManualForm()">
+        <mat-icon>add</mat-icon> Cadastrar fluxo
+      </button>
       <button mat-stroked-button color="primary" (click)="refresh()">
         <mat-icon>refresh</mat-icon> Atualizar
       </button>
     </app-page-header>
+
+    <section class="registry-panel" *ngIf="registryPanel() !== 'closed'">
+      <div class="registry-panel__head">
+        <div>
+          <strong>{{ editingPipelineId() ? 'Editar fluxo de ingestão' : registryPanel() === 'json' ? 'Importar fluxos por JSON' : 'Cadastrar fluxo de ingestão' }}</strong>
+          <span>Use para registrar processos legados ou fluxos não descobertos automaticamente.</span>
+        </div>
+        <button mat-icon-button type="button" matTooltip="Fechar" (click)="closeRegistryPanel()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <div class="json-import" *ngIf="registryPanel() === 'json'; else manualRegistryForm">
+        <textarea [(ngModel)]="jsonImportText" rows="10" placeholder='Cole um objeto ou array JSON. Ex: [{"name":"legacy_daily","sigla":"ab1","ingestionKind":"munin_sql","team":"Squad A","target":"sor.legacy"}]'></textarea>
+        <div class="registry-panel__footer">
+          <span>{{ jsonImportError || 'Campos ausentes recebem defaults seguros para mock e podem ser editados depois.' }}</span>
+          <button mat-flat-button color="primary" type="button" (click)="importFromJson()">
+            <mat-icon>playlist_add</mat-icon> Importar lote
+          </button>
+        </div>
+      </div>
+
+      <ng-template #manualRegistryForm>
+        <div class="registry-grid">
+          <mat-form-field appearance="outline"><mat-label>Nome</mat-label><input matInput [(ngModel)]="draft.name"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Sigla</mat-label><input matInput [(ngModel)]="draft.sigla"></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de ingestão</mat-label>
+            <mat-select [(ngModel)]="draft.ingestionKind">
+              <mat-option value="glue_job">Glue Job</mat-option>
+              <mat-option value="munin_sql">Munin SQL</mat-option>
+              <mat-option value="phoenix">Phoenix</mat-option>
+              <mat-option value="cdp">CDP</mat-option>
+              <mat-option value="other">Outro legado</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select [(ngModel)]="draft.status">
+              <mat-option value="pending">Pendente</mat-option>
+              <mat-option value="running">Executando</mat-option>
+              <mat-option value="completed">Completado</mat-option>
+              <mat-option value="failed">Falha</mat-option>
+              <mat-option value="delayed">Atrasado</mat-option>
+              <mat-option value="offline">Desligado</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Squad</mat-label><input matInput [(ngModel)]="draft.team"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Responsável</mat-label><input matInput [(ngModel)]="draft.owner"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Schedule</mat-label><input matInput [(ngModel)]="draft.schedule"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>SLA</mat-label><input matInput [(ngModel)]="draft.sla"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Target</mat-label><input matInput [(ngModel)]="draft.target"></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Camada alvo</mat-label>
+            <mat-select [(ngModel)]="draft.targetLayer">
+              <mat-option [value]="undefined">Não catalogável</mat-option>
+              <mat-option value="sor">SOR</mat-option>
+              <mat-option value="sot">SOT</mat-option>
+              <mat-option value="spec">SPEC</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Origens (vírgula)</mat-label><input matInput [ngModel]="draft.sources.join(', ')" (ngModelChange)="draft.sources = splitCsv($event)"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Tags (vírgula)</mat-label><input matInput [ngModel]="draft.tags.join(', ')" (ngModelChange)="draft.tags = splitCsv($event)"></mat-form-field>
+          <mat-form-field appearance="outline" class="registry-grid__wide"><mat-label>Descrição</mat-label><textarea matInput rows="3" [(ngModel)]="draft.description"></textarea></mat-form-field>
+        </div>
+        <label class="manual-source">
+          <input type="checkbox" [(ngModel)]="draft.targetGoldenSource"> Tabela alvo é golden source
+        </label>
+        <div class="registry-panel__footer">
+          <span>Referências criadas por essa tela ficam marcadas como cadastro manual.</span>
+          <button mat-flat-button color="primary" type="button" (click)="saveDraft()">
+            <mat-icon>{{ editingPipelineId() ? 'save' : 'add' }}</mat-icon>
+            {{ editingPipelineId() ? 'Salvar alterações' : 'Cadastrar fluxo' }}
+          </button>
+        </div>
+      </ng-template>
+    </section>
 
     <section class="summary-strip">
       <div class="summary-item" *ngFor="let s of summaries">
@@ -110,13 +192,16 @@ type GoldenFilter = 'all' | 'yes' | 'no';
         </mat-select>
       </mat-form-field>
 
-      <button mat-button color="primary" class="clear-button" (click)="clearFilters()">Limpar filtros</button>
+      <button mat-button color="primary" class="clear-button" (click)="clearFilters()">
+        <mat-icon>filter_alt_off</mat-icon> Limpar filtros
+      </button>
     </section>
 
     <section class="alerts-banner" *ngIf="unresolvedAlerts.length > 0">
       <mat-icon color="warn">warning</mat-icon>
       <span><strong>{{ unresolvedAlerts.length }} alertas</strong> requerem atenção</span>
       <button mat-button color="warn" (click)="showAlerts = !showAlerts">
+        <mat-icon>{{ showAlerts ? 'visibility_off' : 'visibility' }}</mat-icon>
         {{ showAlerts ? 'Ocultar' : 'Mostrar' }}
       </button>
     </section>
@@ -147,6 +232,7 @@ type GoldenFilter = 'all' | 'yes' | 'no';
         <span>Squad</span>
         <span>Schedule</span>
         <span>Última execução</span>
+        <span>Cadastro</span>
         <span></span>
       </div>
 
@@ -172,9 +258,20 @@ type GoldenFilter = 'all' | 'yes' | 'no';
             <app-status-badge [status]="pipeline.lastRun.status" [label]="statusLabel(pipeline.lastRun.status)"></app-status-badge>
             {{ pipeline.lastRun.startTime | relativeTime }}
           </span>
-          <button mat-icon-button type="button" matTooltip="Ver detalhes" (click)="togglePipeline(pipeline.id)">
-            <mat-icon>{{ expandedPipelineId() === pipeline.id ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
+          <span class="manual-pill" [class.manual-pill--manual]="pipeline.registrationSource === 'manual'">
+            {{ pipeline.registrationSource === 'manual' ? 'Manual' : 'Auto' }}
+          </span>
+          <div class="row-actions">
+            <button mat-icon-button type="button" matTooltip="Editar referência" *ngIf="canManageRegistry()" (click)="editPipeline(pipeline)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button type="button" matTooltip="Excluir referência" *ngIf="canManageRegistry()" (click)="deletePipeline(pipeline)">
+              <mat-icon>delete</mat-icon>
+            </button>
+            <button mat-icon-button type="button" matTooltip="Ver detalhes" (click)="togglePipeline(pipeline.id)">
+              <mat-icon>{{ expandedPipelineId() === pipeline.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+          </div>
         </div>
 
         <div class="pipeline-detail" *ngIf="expandedPipelineId() === pipeline.id">
@@ -194,24 +291,35 @@ type GoldenFilter = 'all' | 'yes' | 'no';
     </section>
   `,
   styles: [`
-    .summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 1px; margin-bottom: 18px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; background: var(--border-subtle); }
+    .registry-panel { margin-bottom: 18px; padding: 16px; border-radius: var(--radius-lg); background: var(--bg-surface); }
+    .registry-panel__head, .registry-panel__footer { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+    .registry-panel__head { margin-bottom: 14px; }
+    .registry-panel__head div { display: flex; flex-direction: column; gap: 4px; }
+    .registry-panel__head strong { color: var(--text-primary); font-size: 15px; }
+    .registry-panel__head span, .registry-panel__footer span { color: var(--text-secondary); font-size: 12px; }
+    .registry-grid { display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 12px; }
+    .registry-grid__wide { grid-column: 1 / -1; }
+    .json-import textarea { width: 100%; box-sizing: border-box; resize: vertical; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-default); background: var(--bg-app); color: var(--text-primary); font: inherit; font-family: var(--font-mono); font-size: 12px; }
+    .manual-source { display: inline-flex; align-items: center; gap: 8px; margin: 2px 0 14px; color: var(--text-secondary); font-size: 13px; }
+
+    .summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 1px; margin-bottom: 18px; border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-overlay); }
     .summary-item { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; background: var(--bg-surface); }
     .summary-value { font-size: 26px; font-weight: 800; line-height: 1; }
 
-    .filters-panel { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; padding: 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface); }
+    .filters-panel { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; padding: 14px; border-radius: var(--radius-lg); background: var(--bg-surface); }
     .filter-field { width: 168px; margin-bottom: -20px; }
     .search-field { flex: 1 1 280px; min-width: 260px; }
     .clear-button { margin-left: auto; }
 
-    .alerts-banner { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 12px 14px; border: 1px solid var(--warning-500); border-radius: var(--radius-md); background: var(--warning-bg); color: var(--text-primary); }
+    .alerts-banner { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--warning-bg); color: var(--text-primary); }
     .alerts-banner button { margin-left: auto; }
     .alerts-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-    .alert-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--border-subtle); border-left-width: 4px; border-radius: var(--radius-md); background: var(--bg-surface); }
+    .alert-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; padding: 12px 14px; border-left: 4px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); }
 
-    .list-shell { border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow-x: auto; background: var(--bg-surface); }
+    .list-shell { border-radius: var(--radius-lg); overflow-x: auto; background: var(--bg-surface); }
     .list-toolbar { display: flex; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); }
     .list-toolbar span { color: var(--text-secondary); font-size: 12px; }
-    .pipeline-grid { display: grid; grid-template-columns: minmax(280px, 2.2fr) 76px 92px minmax(210px, 1.4fr) 96px 150px minmax(190px, 1.2fr) 44px; gap: 12px; align-items: center; padding: 12px 16px; }
+    .pipeline-grid { display: grid; grid-template-columns: minmax(280px, 2.2fr) 76px 92px minmax(210px, 1.4fr) 96px 150px minmax(190px, 1.2fr) 74px 124px; gap: 12px; align-items: center; padding: 12px 16px; }
     .pipeline-grid--head { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; background: var(--bg-app); border-bottom: 1px solid var(--border-subtle); }
     .pipeline-row { border-bottom: 1px solid var(--border-subtle); }
     .pipeline-row:last-child { border-bottom: 0; }
@@ -228,6 +336,9 @@ type GoldenFilter = 'all' | 'yes' | 'no';
     .target-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
     code { max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); font-size: 12px; }
     .last-run { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 12px; }
+    .manual-pill { display: inline-flex; width: fit-content; padding: 3px 7px; border-radius: 6px; background: var(--bg-app); color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .manual-pill--manual { background: var(--info-bg); color: var(--info-500); }
+    .row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 2px; }
 
     .pipeline-detail { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 14px; padding: 0 16px 16px 16px; }
     .detail-item { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -262,9 +373,14 @@ export class PipelinesComponent {
   layerFilter: DataLayer | 'all' = 'all';
   goldenFilter: GoldenFilter = 'all';
   showAlerts = false;
+  jsonImportText = '';
+  jsonImportError = '';
+  draft: PipelineRegistryDraft = this.emptyDraft();
 
   filteredPipelines = signal<Pipeline[]>(this.accessiblePipelines());
   expandedPipelineId = signal<string | null>(null);
+  registryPanel = signal<RegistryPanelMode>('closed');
+  editingPipelineId = signal<string | null>(null);
 
   siglas = Array.from(new Set(this.accessiblePipelines().map(pipeline => pipeline.sigla))).sort();
 
@@ -295,11 +411,86 @@ export class PipelinesComponent {
     return this.statusLabels[status] || status;
   }
 
+  canManageRegistry(): boolean {
+    return this.access.can('pipeline.manageRegistry');
+  }
+
   refresh(): void {
     this.data.refreshOperationalSnapshot();
     this.allPipelines = this.data.pipelines();
     this.allAlerts = this.data.pipelineAlerts();
     this.applyFilters();
+  }
+
+  openManualForm(): void {
+    this.editingPipelineId.set(null);
+    this.draft = this.emptyDraft();
+    this.registryPanel.set('manual');
+  }
+
+  openJsonImport(): void {
+    this.editingPipelineId.set(null);
+    this.jsonImportText = '';
+    this.jsonImportError = '';
+    this.registryPanel.set('json');
+  }
+
+  closeRegistryPanel(): void {
+    this.registryPanel.set('closed');
+    this.editingPipelineId.set(null);
+    this.jsonImportError = '';
+  }
+
+  editPipeline(pipeline: Pipeline): void {
+    if (!this.canManageRegistry()) return;
+    this.editingPipelineId.set(pipeline.id);
+    this.draft = this.toDraft(pipeline);
+    this.registryPanel.set('manual');
+  }
+
+  deletePipeline(pipeline: Pipeline): void {
+    if (!this.canManageRegistry()) return;
+    this.data.deletePipelineRegistryEntry(pipeline.id);
+    this.allPipelines = this.data.pipelines();
+    this.applyFilters();
+    if (this.expandedPipelineId() === pipeline.id) this.expandedPipelineId.set(null);
+  }
+
+  saveDraft(): void {
+    if (!this.canManageRegistry() || !this.draft.name.trim()) return;
+    const id = this.editingPipelineId();
+    if (id) {
+      this.data.updatePipelineRegistryEntry(id, this.normalizedDraft(this.draft));
+    } else {
+      this.data.addPipelineRegistryEntry(this.normalizedDraft(this.draft));
+    }
+    this.allPipelines = this.data.pipelines();
+    this.applyFilters();
+    this.closeRegistryPanel();
+  }
+
+  importFromJson(): void {
+    if (!this.canManageRegistry()) return;
+    try {
+      const parsed = JSON.parse(this.jsonImportText);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      const drafts = items.map(item => this.normalizedDraft({
+        ...this.emptyDraft(),
+        ...item,
+        sources: Array.isArray(item.sources) ? item.sources : this.splitCsv(item.sources ?? ''),
+        tags: Array.isArray(item.tags) ? item.tags : this.splitCsv(item.tags ?? ''),
+      }));
+      this.data.importPipelineRegistryEntries(drafts);
+      this.allPipelines = this.data.pipelines();
+      this.applyFilters();
+      this.closeRegistryPanel();
+    } catch {
+      this.jsonImportError = 'JSON inválido ou fora do formato esperado.';
+    }
+  }
+
+  splitCsv(value: string): string[] {
+    return String(value || '').split(',').map(item => item.trim()).filter(Boolean);
   }
 
   togglePipeline(id: string): void {
@@ -345,5 +536,78 @@ export class PipelinesComponent {
     if (this.access.can('executive.viewGlobal')) return this.allPipelines;
     const squadLabels = new Set(this.access.activeSquadIds().map(id => this.org.labelForUnit(id)));
     return this.allPipelines.filter(pipeline => squadLabels.has(pipeline.team));
+  }
+
+  private emptyDraft(): PipelineRegistryDraft {
+    return {
+      name: '',
+      sigla: 'ab1',
+      description: '',
+      ingestionKind: 'glue_job',
+      status: 'pending',
+      schedule: 'Manual',
+      owner: 'Squad A',
+      team: 'Squad A',
+      sources: [],
+      target: '',
+      targetLayer: 'sor',
+      targetGoldenSource: false,
+      tags: ['manual'],
+      sla: '',
+      avgDuration: 0,
+    };
+  }
+
+  private toDraft(pipeline: Pipeline): PipelineRegistryDraft {
+    return {
+      id: pipeline.id,
+      name: pipeline.name,
+      sigla: pipeline.sigla,
+      description: pipeline.description,
+      ingestionKind: pipeline.ingestionKind ?? this.kindFromType(pipeline.type),
+      status: pipeline.status,
+      schedule: pipeline.schedule,
+      owner: pipeline.owner,
+      team: pipeline.team,
+      sources: [...pipeline.sources],
+      target: pipeline.target,
+      targetLayer: pipeline.targetLayer,
+      targetGoldenSource: !!pipeline.targetGoldenSource,
+      tags: [...pipeline.tags],
+      sla: pipeline.sla,
+      avgDuration: pipeline.avgDuration,
+    };
+  }
+
+  private normalizedDraft(draft: PipelineRegistryDraft): PipelineRegistryDraft {
+    return {
+      ...draft,
+      name: draft.name.trim(),
+      sigla: draft.sigla || 'n/a',
+      description: draft.description || 'Fluxo cadastrado manualmente na plataforma.',
+      ingestionKind: this.normalizeKind(draft.ingestionKind),
+      schedule: draft.schedule || 'Manual',
+      owner: draft.owner || draft.team || 'Sem owner',
+      team: draft.team || 'Sem squad',
+      sources: draft.sources?.length ? draft.sources : ['legado.nao_mapeado'],
+      target: draft.target || 'legado.nao_mapeado',
+      tags: draft.tags?.length ? draft.tags : ['manual'],
+      avgDuration: Number(draft.avgDuration) || 0,
+      targetGoldenSource: !!draft.targetGoldenSource,
+    };
+  }
+
+  private normalizeKind(value: IngestionFlowKind): IngestionFlowKind {
+    return value === 'glue_job' || value === 'munin_sql' || value === 'phoenix' || value === 'cdp' || value === 'other' ? value : 'other';
+  }
+
+  private kindFromType(type: Pipeline['type']): IngestionFlowKind {
+    return ({
+      GlueJob: 'glue_job',
+      Munin: 'munin_sql',
+      Phoenix: 'phoenix',
+      CDP: 'cdp',
+      Outros: 'other',
+    } as const)[type];
   }
 }

@@ -7,7 +7,7 @@ import {
 import { AccessService } from '../../../core/access/access.service';
 import { OrgService } from '../../../core/org/org.service';
 import { LupProject, LupStatus } from '../../../core/org/org.model';
-import { ProjectPipelineJourney, ProjectPipelineStore } from '../project-pipeline.store';
+import { ProjectJourney, ProjectJourneyStore } from '../project-journey.store';
 import { getJourneyTemplate } from '../pipeline-builder/journey-config';
 
 interface JourneyRow {
@@ -31,10 +31,10 @@ interface JourneyRow {
   template: `
     <ui-page-header
       eyebrow="Persona · Desenvolvedor"
-      title="Minhas jornadas"
-      subtitle="Acompanhe o progresso e retome jornadas em curso.">
+      title="Meus projetos"
+      subtitle="Acompanhe jornadas de projeto em curso e projetos LUP do seu escopo.">
       <div page-actions>
-        <ui-button variant="primary" link="/dev/new-pipeline">+ Nova jornada</ui-button>
+        <ui-button variant="primary" icon="+" link="/dev/journeys/new">Nova jornada</ui-button>
       </div>
     </ui-page-header>
 
@@ -42,7 +42,7 @@ interface JourneyRow {
       <table class="tbl">
         <thead>
           <tr>
-            <th>Pipeline</th><th>Domínio</th><th>Squad</th>
+            <th>Projeto</th><th>Domínio</th><th>Squad</th>
             <th>Etapa atual</th><th>Progresso</th><th>Status</th>
             <th>Atualizado</th><th></th>
           </tr>
@@ -64,7 +64,7 @@ interface JourneyRow {
               </ng-container>
               <ng-template #updatedAt>{{ r.updatedAt }}</ng-template>
             </td>
-            <td><ui-button size="sm" variant="secondary" link="/dev/new-pipeline" [disabled]="r.status === 'deleted'">Abrir</ui-button></td>
+            <td><ui-button size="sm" variant="secondary" link="/dev/journeys/new" [disabled]="r.status === 'deleted'">Abrir</ui-button></td>
           </tr>
         </tbody>
       </table>
@@ -91,7 +91,7 @@ interface JourneyRow {
 export class JourneysListComponent {
   private readonly access = inject(AccessService);
   private readonly org = inject(OrgService);
-  private readonly projectPipelines = inject(ProjectPipelineStore);
+  private readonly projectJourneys = inject(ProjectJourneyStore);
 
   rows = computed<JourneyRow[]>(() => {
     const context = this.access.context();
@@ -99,8 +99,8 @@ export class JourneysListComponent {
     const orgRows = this.org
       .projectsForScopes(context.activeScope ? [context.activeScope] : context.scopes, this.access.can('executive.viewGlobal'))
       .map(project => this.toRow(project));
-    const projectPipelineRows = this.projectPipelines.journeys().map(journey => this.toProjectPipelineRow(journey));
-    return [...projectPipelineRows, ...orgRows];
+    const projectJourneyRows = this.projectJourneys.journeys().map(journey => this.toProjectJourneyRow(journey));
+    return [...projectJourneyRows, ...orgRows];
   });
 
   toneFor(s: JourneyRow['status']) {
@@ -123,14 +123,14 @@ export class JourneysListComponent {
     };
   }
 
-  private toProjectPipelineRow(journey: ProjectPipelineJourney): JourneyRow {
+  private toProjectJourneyRow(journey: ProjectJourney): JourneyRow {
     const template = getJourneyTemplate(journey.templateId);
     return {
       id: journey.id,
       name: `${journey.name} · ${template.shortTitle}`,
       domain: template.shortTitle,
       squad: journey.createdBy,
-      currentStage: journey.status === 'deleted' ? 'Pipeline deletada' : journey.currentStage,
+      currentStage: journey.status === 'deleted' ? 'Jornada deletada' : journey.currentStage,
       progress: journey.status === 'deleted' ? 0 : journey.progress,
       status: journey.status === 'deleted' ? 'deleted' : 'active',
       updatedAt: this.formatDate(journey.updatedAt),
@@ -145,6 +145,7 @@ export class JourneysListComponent {
       in_progress: 'active',
       waiting_approval: 'review',
       in_production: 'done',
+      completed: 'done',
       blocked: 'blocked',
     } as const)[status];
   }
@@ -155,6 +156,7 @@ export class JourneysListComponent {
       in_progress: 'Deploy Dev/Hml',
       waiting_approval: 'Infra de sandbox',
       in_production: 'Produção',
+      completed: 'Concluído',
       blocked: 'Documentação',
     } as const)[status];
   }
