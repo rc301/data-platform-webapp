@@ -1,11 +1,14 @@
-import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   UiPageHeaderComponent, UiCardComponent, UiBadgeComponent, UiButtonComponent,
   UiFarolComponent, UiStatComponent, FarolStatus,
 } from '../../../shared/ui';
-import { MOCK_JOBS, JobRow } from './jobs-board-data';
+import { JobRow } from '../../../core/models';
+import { AccessService } from '../../../core/access/access.service';
+import { OrgService } from '../../../core/org/org.service';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
 
 type FilterStatus = 'all' | FarolStatus;
 
@@ -171,7 +174,10 @@ type FilterStatus = 'all' | FarolStatus;
   `],
 })
 export class JobsBoardComponent {
-  private readonly jobs = signal<JobRow[]>(MOCK_JOBS);
+  private readonly data = inject(PlatformDataService);
+  private readonly access = inject(AccessService);
+  private readonly org = inject(OrgService);
+  private readonly jobs = signal<JobRow[]>(this.accessibleJobs());
   protected readonly searchSig = signal('');
   protected readonly squadSig = signal<string>('all');
   private readonly filterSig = signal<FilterStatus>('all');
@@ -211,7 +217,10 @@ export class JobsBoardComponent {
 
   setFilter(s: FilterStatus): void { this.filterSig.set(s); }
 
-  refresh(): void { this.jobs.set([...MOCK_JOBS]); }
+  refresh(): void {
+    this.data.refreshOperationalSnapshot();
+    this.jobs.set([...this.accessibleJobs()]);
+  }
 
   formatTime(iso: string): string {
     return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -219,5 +228,11 @@ export class JobsBoardComponent {
 
   statusLabel(s?: 'success' | 'failed' | 'running'): string {
     return s === 'success' ? 'OK' : s === 'failed' ? 'FALHOU' : s === 'running' ? 'EM EXECUÇÃO' : '—';
+  }
+
+  private accessibleJobs(): JobRow[] {
+    if (this.access.can('executive.viewGlobal')) return this.data.jobs();
+    const squadLabels = new Set(this.access.activeSquadIds().map(id => this.org.labelForUnit(id)));
+    return this.data.jobs().filter(job => squadLabels.has(job.squad));
   }
 }

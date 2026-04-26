@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
-import { MOCK_STEP_FUNCTIONS } from '../../../core/mocks/infrastructure.mock';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
 
 @Component({
   selector: 'app-step-functions',
@@ -62,6 +62,8 @@ import { MOCK_STEP_FUNCTIONS } from '../../../core/mocks/infrastructure.mock';
   `],
 })
 export class StepFunctionsComponent {
-  stepFunctions = MOCK_STEP_FUNCTIONS;
+  private readonly data = inject(PlatformDataService);
+
+  stepFunctions = this.data.stepFunctions();
   columns = ['status', 'name', 'lastExecution', 'owner', 'actions'];
 }

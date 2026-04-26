@@ -1,19 +1,5 @@
-import { FarolStatus } from '../../../shared/ui';
+import { JobRow } from '../models/ops.model';
 
-export interface JobRow {
-  id: string;
-  name: string;
-  squad: string;
-  type: 'GlueJob' | 'StepFunction' | 'CDP' | 'Phoenix' | 'Munin' | 'Outros';
-  expectedStartLocal: string;   /** HH:mm */
-  slaDeadlineLocal: string;     /** HH:mm */
-  lastRunAt?: string;            /** ISO ou null se não rodou hoje */
-  lastRunStatus?: 'success' | 'failed' | 'running';
-  status: FarolStatus;           /** já calculado pela camada de domínio (mock) */
-  notes?: string;
-}
-
-/** Dataset mock — em produção viria de um service que consulta orquestrador. */
 export const MOCK_JOBS: JobRow[] = [
   { id: 'j-1', name: 'ingestion_orders', squad: 'Squad A', type: 'GlueJob',
     expectedStartLocal: '06:00', slaDeadlineLocal: '06:30',
@@ -24,38 +10,38 @@ export const MOCK_JOBS: JobRow[] = [
   { id: 'j-3', name: 'export_financial_reporting', squad: 'Squad C', type: 'GlueJob',
     expectedStartLocal: '04:00', slaDeadlineLocal: '05:00',
     lastRunStatus: 'failed', status: 'red',
-    notes: 'Falhou às 04:08 — timeout no destino RDS.' },
+    notes: 'Falhou as 04:08 - timeout no destino RDS.' },
   { id: 'j-4', name: 'orchestration_daily_full', squad: 'Squad A', type: 'Munin',
     expectedStartLocal: '03:00', slaDeadlineLocal: '07:00',
     lastRunAt: '2026-04-25T03:00:00-03:00', lastRunStatus: 'running', status: 'yellow',
-    notes: 'Em execução desde 03:00 — atrasada 45 min vs. média histórica.' },
+    notes: 'Em execucao desde 03:00 - atrasada 45 min vs. media historica.' },
   { id: 'j-5', name: 'ingestion_clickstream', squad: 'Squad A', type: 'GlueJob',
     expectedStartLocal: '00:05', slaDeadlineLocal: '00:15',
     lastRunAt: '2026-04-25T11:55:00-03:00', lastRunStatus: 'success', status: 'green' },
   { id: 'j-6', name: 'ingestion_crm_contacts', squad: 'Squad B', type: 'Phoenix',
     expectedStartLocal: '11:00', slaDeadlineLocal: '12:00',
     lastRunStatus: undefined, status: 'yellow',
-    notes: 'Janela esperada começa às 11:00 — 22 min de atraso.' },
+    notes: 'Janela esperada comeca as 11:00 - 22 min de atraso.' },
   { id: 'j-7', name: 'harmonize_product_catalog', squad: 'Squad B', type: 'CDP',
     expectedStartLocal: '05:00', slaDeadlineLocal: '06:30',
     lastRunStatus: undefined, status: 'red',
-    notes: 'Não executou hoje. SLA estourado às 06:30.' },
+    notes: 'Nao executou hoje. SLA estourado as 06:30.' },
   { id: 'j-8', name: 'ingestion_iot_sensors', squad: 'Squad C', type: 'GlueJob',
     expectedStartLocal: '00:01', slaDeadlineLocal: '00:05',
     lastRunAt: '2026-04-25T11:59:00-03:00', lastRunStatus: 'success', status: 'green' },
   { id: 'j-9', name: 'sync_erp_master_data', squad: 'Squad C', type: 'Outros',
     expectedStartLocal: '14:00', slaDeadlineLocal: '15:00',
     lastRunStatus: undefined, status: 'gray',
-    notes: 'Janela esperada às 14:00 — ainda dentro do prazo.' },
+    notes: 'Janela esperada as 14:00 - ainda dentro do prazo.' },
   { id: 'j-10', name: 'kpi_marketing_daily', squad: 'Squad B', type: 'StepFunction',
     expectedStartLocal: '07:00', slaDeadlineLocal: '08:00',
     lastRunAt: '2026-04-25T07:12:00-03:00', lastRunStatus: 'success', status: 'green' },
   { id: 'j-11', name: 'risk_exposure_daily', squad: 'Squad C', type: 'GlueJob',
     expectedStartLocal: '06:30', slaDeadlineLocal: '07:30',
     lastRunStatus: undefined, status: 'gray',
-    notes: 'Aguardando dependência upstream (orchestration_daily_full).' },
+    notes: 'Aguardando dependencia upstream (orchestration_daily_full).' },
   { id: 'j-12', name: 'finance_curated_to_rds', squad: 'Squad C', type: 'GlueJob',
     expectedStartLocal: '05:30', slaDeadlineLocal: '06:30',
     lastRunStatus: 'failed', status: 'red',
-    notes: 'Falhou às 05:48 — credencial expirada.' },
+    notes: 'Falhou as 05:48 - credencial expirada.' },
 ];

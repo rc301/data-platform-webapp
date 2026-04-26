@@ -5,3 +5,4 @@ export * from './pipeline.model';
 export * from './catalog.model';
 export * from './monitoring.model';
 export * from './lineage.model';
+export * from './ops.model';

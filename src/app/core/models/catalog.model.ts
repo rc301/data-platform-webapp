@@ -1,8 +1,13 @@
+export type DataLayer = 'sor' | 'sot' | 'spec';
+
 export interface CatalogAsset {
   id: string;
   name: string;
   qualifiedName: string;
   type: 'table' | 'view' | 'dashboard' | 'column' | 'schema' | 'database' | 'pipeline';
+  sigla: string;
+  dataLayer?: DataLayer;
+  goldenSource?: boolean;
   description: string;
   owner: string;
   domain: string;

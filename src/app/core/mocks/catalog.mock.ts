@@ -3,6 +3,7 @@ import { CatalogAsset, CatalogDomain, CatalogGlossaryTerm } from '../models';
 export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   {
     id: 'asset-1', name: 'customer_360', qualifiedName: 'datalake.gold.customer_360', type: 'table',
+    sigla: 'eg4', dataLayer: 'spec', goldenSource: true,
     description: 'Visão unificada do cliente combinando dados de CRM, pedidos e comportamento',
     owner: 'Analytics Engineering', domain: 'Customer', classification: ['PII', 'Confidential'],
     tags: ['golden-record', 'certified'], glossaryTerms: ['Customer', 'Customer Lifetime Value'],
@@ -34,6 +35,7 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-2', name: 'orders', qualifiedName: 'datalake.bronze.orders', type: 'table',
+    sigla: 'ab1', dataLayer: 'sor', goldenSource: false,
     description: 'Dados brutos de pedidos ingeridos do banco transacional',
     owner: 'Data Engineering', domain: 'Sales', classification: ['Internal'],
     tags: ['raw', 'high-volume'], glossaryTerms: ['Order', 'Revenue'],
@@ -42,6 +44,7 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-3', name: 'financial_transactions', qualifiedName: 'datalake.gold.financial_transactions', type: 'table',
+    sigla: 'as7', dataLayer: 'spec', goldenSource: true,
     description: 'Transações financeiras curadas com metadados enriquecidos',
     owner: 'Finance Data', domain: 'Finance', classification: ['Restricted', 'Confidential'],
     tags: ['finance', 'sla-critical'], glossaryTerms: ['Transaction', 'Revenue'],
@@ -50,6 +53,7 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-4', name: 'clickstream', qualifiedName: 'datalake.bronze.clickstream', type: 'table',
+    sigla: 'ab1', dataLayer: 'sor', goldenSource: false,
     description: 'Eventos de clickstream brutos de aplicações web e mobile',
     owner: 'Data Engineering', domain: 'Digital', classification: ['Internal'],
     tags: ['streaming', 'high-volume', 'raw'], glossaryTerms: ['Event', 'Session'],
@@ -58,6 +62,7 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-5', name: 'products', qualifiedName: 'datalake.silver.products', type: 'table',
+    sigla: 'as7', dataLayer: 'sot', goldenSource: true,
     description: 'Catálogo de produtos curado com atributos enriquecidos',
     owner: 'Product Data', domain: 'Product', classification: ['Internal'],
     tags: ['product', 'master-data'], glossaryTerms: ['Product', 'SKU'],
@@ -66,6 +71,7 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-6', name: 'iot_sensor_readings', qualifiedName: 'datalake.bronze.iot_sensor_readings', type: 'table',
+    sigla: 'as7', dataLayer: 'sor', goldenSource: false,
     description: 'Dados de telemetria de sensores IoT',
     owner: 'IoT Team', domain: 'Engineering', classification: ['Internal'],
     tags: ['iot', 'streaming'], glossaryTerms: ['Sensor', 'Telemetry'],

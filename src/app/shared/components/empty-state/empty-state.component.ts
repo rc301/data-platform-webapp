@@ -17,9 +17,9 @@ import { MatIconModule } from '@angular/material/icon';
   `,
   styles: [`
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; text-align: center; }
-    mat-icon { font-size: 64px; width: 64px; height: 64px; color: #bdbdbd; margin-bottom: 16px; }
-    h3 { margin: 0; font-size: 18px; font-weight: 600; color: #424242; }
-    p { margin: 8px 0 0; font-size: 14px; color: #757575; max-width: 400px; }
+    mat-icon { font-size: 64px; width: 64px; height: 64px; color: var(--text-disabled); margin-bottom: 16px; }
+    h3 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text-primary); }
+    p { margin: 8px 0 0; font-size: 14px; color: var(--text-secondary); max-width: 400px; }
   `],
 })
 export class EmptyStateComponent {

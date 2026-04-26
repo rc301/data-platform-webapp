@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -11,7 +11,23 @@ import {
   JourneyStep,
   JourneyStepStatus,
 } from '../../../shared/ui';
-import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from './journey-config';
+import { DataQualityTableFormComponent } from '../../../shared/components/data-quality-table-form/data-quality-table-form.component';
+import { DataQualityCustomRule, DataQualityTableRegistration, DataQualityTableRegistrationDraft } from '../../../core/models';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
+import { ProjectPipelineJourney, ProjectPipelineStore } from '../project-pipeline.store';
+import {
+  DEFAULT_TEMPLATE_ID,
+  JOURNEY_TEMPLATES,
+  JourneyStageId,
+  JourneyTemplateId,
+  JourneyStatusMap,
+  SAMPLE_PREVIEWS,
+  createInitialStatuses,
+  firstOpenStageId,
+  getJourneyTemplate,
+  getStagesForTemplate,
+  STAGE_BY_ID,
+} from './journey-config';
 
 /**
  * Container (smart) — orquestra a jornada de criação de pipeline.
@@ -24,20 +40,81 @@ import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from '.
   imports: [
     CommonModule, FormsModule, RouterModule,
     UiPageHeaderComponent, UiCardComponent, UiBadgeComponent, UiButtonComponent, UiJourneyStepperComponent,
+    DataQualityTableFormComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-page-header
       eyebrow="Persona · Desenvolvedor"
-      title="Nova jornada de pipeline"
-      subtitle="Cada etapa é executada por um agente via MCP. O desenvolvedor revisa e aprova antes de avançar.">
+      [title]="createdPipeline() ? 'Pipeline de projeto' : 'Nova pipeline de projeto'"
+      [subtitle]="createdPipeline() ? 'Template travado para garantir rastreabilidade da jornada criada.' : 'Escolha o tipo de pipeline antes de criar a jornada do projeto.'">
       <div page-actions>
         <ui-button variant="ghost" link="/dev/journeys">Minhas jornadas</ui-button>
-        <ui-button variant="secondary">Salvar rascunho</ui-button>
+        <ui-button variant="danger" *ngIf="createdPipeline() && !isDeleted()" (clicked)="deletePipeline()">Apagar pipeline</ui-button>
+        <ui-button variant="secondary" *ngIf="createdPipeline() && !isDeleted()">Salvar rascunho</ui-button>
       </div>
     </ui-page-header>
 
-    <div class="builder">
+    <ng-container *ngIf="!createdPipeline(); else createdExperience">
+      <section class="template-switcher" aria-label="Templates de jornada">
+        <button
+          type="button"
+          class="template-option"
+          *ngFor="let template of templateOptions"
+          [class.template-option--selected]="template.id === selectedTemplateId()"
+          (click)="selectTemplate(template.id)">
+          <span class="template-option__badge">{{ template.badge }}</span>
+          <span class="template-option__body">
+            <strong>{{ template.title }}</strong>
+            <span>{{ template.description }}</span>
+          </span>
+          <span class="template-option__meta">
+            <span>{{ template.stageIds.length }} etapas</span>
+            <span>{{ template.recommendedFor }}</span>
+          </span>
+        </button>
+      </section>
+
+      <ui-card eyebrow="Criação" title="Criar pipeline de projeto" subtitle="Depois de criada, a pipeline mantém o template escolhido. Para trocar de template, apague esta pipeline e crie outra.">
+        <div class="creation-summary">
+          <div>
+            <span>Template selecionado</span>
+            <strong>{{ currentTemplate().title }}</strong>
+          </div>
+          <ui-badge tone="brand">{{ currentTemplate().badge }}</ui-badge>
+        </div>
+        <div card-footer class="footer-row">
+          <span class="footer-row__gate">O template não poderá ser alterado após a criação.</span>
+          <ui-button variant="primary" (clicked)="createProjectPipeline()">Criar Pipeline de Projeto</ui-button>
+        </div>
+      </ui-card>
+    </ng-container>
+
+    <ng-template #createdExperience>
+      <ui-card *ngIf="isDeleted(); else builderExperience" eyebrow="Pipeline deletada" [title]="createdPipeline()?.name || 'Pipeline de projeto'">
+        <div class="deleted-state">
+          <ui-badge tone="danger">Deletada</ui-badge>
+          <p>
+            Esta pipeline foi apagada por {{ createdPipeline()?.deletedBy }} em
+            {{ formatDateTime(createdPipeline()?.deletedAt) }}.
+          </p>
+          <p>O registro permanece visível para auditoria, mas a jornada não pode ser continuada.</p>
+        </div>
+        <div card-footer class="footer-row">
+          <span class="footer-row__gate">Crie uma nova pipeline para escolher outro template.</span>
+          <ui-button variant="primary" (clicked)="resetForNewPipeline()">Nova pipeline</ui-button>
+        </div>
+      </ui-card>
+    </ng-template>
+
+    <ng-template #builderExperience>
+      <section class="locked-template" aria-label="Template travado">
+        <span>Template criado</span>
+        <strong>{{ currentTemplate().title }}</strong>
+        <ui-badge tone="brand">{{ currentTemplate().badge }}</ui-badge>
+      </section>
+
+      <div class="builder">
       <!-- ========== Coluna de etapas ========== -->
       <aside class="builder__rail">
         <div class="rail__head">
@@ -56,7 +133,7 @@ import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from '.
       <!-- ========== Painel da etapa atual ========== -->
       <section class="builder__panel">
         <ui-card
-          [eyebrow]="'Etapa ' + current().index + ' de ' + totalCount()"
+          [eyebrow]="currentTemplate().shortTitle + ' · Etapa ' + currentIndex() + ' de ' + totalCount()"
           [title]="current().title"
           [subtitle]="current().description">
           <div card-actions>
@@ -113,10 +190,28 @@ import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from '.
               </ul>
             </div>
 
-            <div class="agent-block">
-              <h4 class="section-title">Saída do agente (preview)</h4>
-              <pre class="agent-output">{{ samplePreview() }}</pre>
-            </div>
+            <ng-container *ngIf="current().id === 'data-quality'; else agentPreview">
+              <div class="agent-block">
+                <app-data-quality-table-form
+                  [value]="qualityTableDraft"
+                  title="Cadastro de qualidade da pipeline"
+                  description="A metadata vem preenchida após consulta da tabela pela role do motor. Complete chave primária, validações genéricas e regras customizadas."
+                  submitLabel="Cadastrar tabela"
+                  (metadataRequested)="loadQualityMetadata()"
+                  (saved)="saveQualityTable($event)">
+                </app-data-quality-table-form>
+                <p *ngIf="qualityTableSaved()">
+                  Tabela cadastrada no mock de Qualidade. Ela já fica disponível para scan do motor.
+                </p>
+              </div>
+            </ng-container>
+
+            <ng-template #agentPreview>
+              <div class="agent-block">
+                <h4 class="section-title">Saída do agente (preview)</h4>
+                <pre class="agent-output">{{ samplePreview() }}</pre>
+              </div>
+            </ng-template>
           </ng-container>
 
           <div card-footer class="footer-row">
@@ -134,6 +229,7 @@ import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from '.
         <!-- Resumo lateral -->
         <ui-card eyebrow="Resumo da jornada" title="Contexto do projeto">
           <div class="summary-grid">
+            <div><span class="summary-grid__k">Template</span><span class="summary-grid__v">{{ currentTemplate().shortTitle }}</span></div>
             <div><span class="summary-grid__k">Produto</span><span class="summary-grid__v">{{ form.productName || '—' }}</span></div>
             <div><span class="summary-grid__k">Domínio</span><span class="summary-grid__v">{{ form.domain || '—' }}</span></div>
             <div><span class="summary-grid__k">Squad</span><span class="summary-grid__v">{{ form.squad || '—' }}</span></div>
@@ -142,10 +238,81 @@ import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from '.
           </div>
         </ui-card>
       </section>
-    </div>
+      </div>
+    </ng-template>
   `,
   styles: [`
     :host { display: block; }
+    .template-switcher {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .template-option {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px 14px;
+      align-items: start;
+      padding: 16px;
+      text-align: left;
+      font: inherit;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+    .template-option:hover,
+    .template-option--selected {
+      background: var(--bg-elevated);
+      border-color: var(--brand-400);
+    }
+    .template-option__badge {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: var(--bg-overlay);
+      border: 1px solid var(--border-subtle);
+      color: var(--brand-300);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .template-option__body {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+    .template-option__body strong { color: var(--text-primary); font-size: 15px; line-height: 1.3; }
+    .template-option__body span { color: var(--text-secondary); font-size: 13px; line-height: 1.45; }
+    .template-option__meta {
+      grid-column: 2;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .template-option__meta span:first-child { color: var(--success-500); font-weight: 700; }
+    .creation-summary,
+    .locked-template {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-app);
+    }
+    .creation-summary div { display: flex; flex-direction: column; gap: 3px; }
+    .creation-summary span,
+    .locked-template span { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .creation-summary strong,
+    .locked-template strong { color: var(--text-primary); font-size: 14px; }
+    .locked-template { margin-bottom: 20px; justify-content: flex-start; }
+    .deleted-state { display: flex; flex-direction: column; gap: 8px; }
+    .deleted-state p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+
     .builder { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: flex-start; }
 
     .builder__rail {
@@ -209,31 +376,51 @@ import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from '.
       .builder__rail { position: static; }
       .form-grid, .summary-grid { grid-template-columns: 1fr; }
     }
+
+    @media (max-width: 620px) {
+      .template-switcher { grid-template-columns: 1fr; }
+      .template-option { grid-template-columns: 1fr; }
+      .template-option__meta { grid-column: 1; }
+    }
   `],
 })
 export class PipelineBuilderComponent {
-  readonly stages = JOURNEY_STAGES;
+  private readonly data = inject(PlatformDataService);
+  private readonly projectPipelines = inject(ProjectPipelineStore);
+
+  readonly templateOptions = JOURNEY_TEMPLATES;
+  readonly selectedTemplateId = signal<JourneyTemplateId>(DEFAULT_TEMPLATE_ID);
+  readonly createdPipeline = signal<ProjectPipelineJourney | null>(null);
+  readonly isDeleted = computed(() => this.createdPipeline()?.status === 'deleted');
+  readonly currentTemplate = computed(() => getJourneyTemplate(this.selectedTemplateId()));
+  readonly stages = computed(() => getStagesForTemplate(this.selectedTemplateId()));
 
   /** Status mutável da jornada (mock — em produção viria de um service/store). */
-  private readonly statuses = signal<Record<StageId, JourneyStepStatus>>({ ...SAMPLE_JOURNEY_STATUSES });
-  private readonly currentIdSig = signal<StageId>('sandbox-infra');
+  private readonly statuses = signal<JourneyStatusMap>(
+    createInitialStatuses(DEFAULT_TEMPLATE_ID, firstOpenStageId(DEFAULT_TEMPLATE_ID)),
+  );
+  private readonly currentIdSig = signal<JourneyStageId>(firstOpenStageId(DEFAULT_TEMPLATE_ID));
 
   readonly currentId = this.currentIdSig.asReadonly();
   readonly current = computed(() => STAGE_BY_ID[this.currentIdSig()]);
-  readonly currentStatus = computed(() => this.statuses()[this.currentIdSig()]);
-  readonly totalCount = computed(() => this.stages.length);
-  readonly approvedCount = computed(() => Object.values(this.statuses()).filter(s => s === 'approved').length);
-  readonly progressPct = computed(() => Math.round((this.approvedCount() / this.totalCount()) * 100));
+  readonly currentIndex = computed(() => this.indexForStage(this.currentIdSig()) + 1);
+  readonly currentStatus = computed(() => this.statuses()[this.currentIdSig()] ?? 'pending');
+  readonly totalCount = computed(() => this.stages().length);
+  readonly approvedCount = computed(() => this.stages().filter(stage => this.statuses()[stage.id] === 'approved').length);
+  readonly progressPct = computed(() => {
+    const total = this.totalCount();
+    return total === 0 ? 0 : Math.round((this.approvedCount() / total) * 100);
+  });
 
   readonly stepperItems = computed<JourneyStep[]>(() =>
-    this.stages.map(s => ({
+    this.stages().map((s, index) => ({
       id: s.id,
-      index: s.index,
+      index: index + 1,
       title: s.title,
       shortTitle: s.title,
       description: s.description,
       badge: s.badge,
-      status: this.statuses()[s.id],
+      status: this.statuses()[s.id] ?? 'pending',
     }))
   );
 
@@ -247,23 +434,57 @@ export class PipelineBuilderComponent {
     target: 'gold.customer_360',
   };
 
-  goToStage(id: string): void {
-    this.currentIdSig.set(id as StageId);
+  qualityTableDraft: Partial<DataQualityTableRegistrationDraft> = this.createQualityTableDraft('gold.customer_360');
+  qualityTableSaved = signal(false);
+
+  createProjectPipeline(): void {
+    const pipeline = this.projectPipelines.create(this.selectedTemplateId());
+    this.createdPipeline.set(pipeline);
   }
 
-  isFirst = computed(() => this.current().index === 1);
-  isLast = computed(() => this.current().index === this.totalCount());
+  deletePipeline(): void {
+    const pipeline = this.createdPipeline();
+    if (!pipeline) return;
+    this.projectPipelines.markDeleted(pipeline.id);
+    this.createdPipeline.set(this.projectPipelines.journeys().find(journey => journey.id === pipeline.id) ?? null);
+  }
+
+  resetForNewPipeline(): void {
+    this.createdPipeline.set(null);
+    this.selectTemplate(DEFAULT_TEMPLATE_ID);
+  }
+
+  selectTemplate(id: JourneyTemplateId): void {
+    if (this.createdPipeline()) return;
+    if (id === this.selectedTemplateId()) return;
+
+    const firstStageId = firstOpenStageId(id);
+    this.selectedTemplateId.set(id);
+    this.currentIdSig.set(firstStageId);
+    this.statuses.set(createInitialStatuses(id, firstStageId));
+    this.applyTemplateDefaults(id);
+  }
+
+  goToStage(id: string): void {
+    const stageId = id as JourneyStageId;
+    if (this.stages().some(stage => stage.id === stageId)) {
+      this.currentIdSig.set(stageId);
+    }
+  }
+
+  isFirst = computed(() => this.currentIndex() <= 1);
+  isLast = computed(() => this.currentIndex() >= this.totalCount());
 
   prev(): void {
-    const idx = this.current().index;
-    if (idx > 1) this.currentIdSig.set(this.stages[idx - 2].id);
+    const idx = this.indexForStage(this.currentIdSig());
+    if (idx > 0) this.currentIdSig.set(this.stages()[idx - 1].id);
   }
 
   approveAndAdvance(): void {
     const id = this.currentIdSig();
     this.statuses.update(s => ({ ...s, [id]: 'approved' }));
     if (!this.isLast()) {
-      const next = this.stages[this.current().index];
+      const next = this.stages()[this.indexForStage(id) + 1];
       this.currentIdSig.set(next.id);
       this.statuses.update(s => ({ ...s, [next.id]: 'awaiting_approval' }));
     }
@@ -274,8 +495,23 @@ export class PipelineBuilderComponent {
     this.statuses.update(s => ({ ...s, [id]: 'failed' }));
   }
 
+  loadQualityMetadata(): void {
+    this.qualityTableDraft = this.createQualityTableDraft(this.form.target, true);
+  }
+
+  saveQualityTable(draft: DataQualityTableRegistrationDraft): void {
+    this.qualityTableDraft = draft;
+    this.qualityTableSaved.set(true);
+    this.data.addDataQualityTableRegistration(this.toQualityTableRegistration(draft));
+  }
+
   canApprove(): boolean {
     return this.currentStatus() !== 'approved';
+  }
+
+  formatDateTime(value?: string): string {
+    if (!value) return '-';
+    return new Date(value).toLocaleString('pt-BR');
   }
 
   badgeTone(status: JourneyStepStatus): 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'info' {
@@ -305,19 +541,93 @@ export class PipelineBuilderComponent {
   /** Stub de saída do agente — em produção viria do MCP server. */
   samplePreview = computed(() => {
     const id = this.currentIdSig();
-    const previews: Record<StageId, string> = {
-      'rfc': '',
-      'lup': '✓ LUP-2741 reservada\n✓ Centro de custo: 4421-DATA-PLATFORM\n✓ Owner: Squad B',
-      'repo': '✓ Repositório criado: org/dp-customer-360\n✓ Branch protection: main, develop\n✓ CODEOWNERS atribuído à @squad-b\n✓ Environments: dev, hml, prod',
-      'sandbox-infra': 'Plan AWS Sandbox:\n  + aws_s3_bucket.bronze (dp-cust360-bronze-sbx)\n  + aws_s3_bucket.silver (dp-cust360-silver-sbx)\n  + aws_s3_bucket.gold   (dp-cust360-gold-sbx)\n  + aws_glue_catalog_database.cust360\n  + aws_glue_job.bronze_to_silver\n  + aws_glue_job.silver_to_gold\n  + aws_sfn_state_machine.cust360_daily\n  + aws_iam_role.dp_cust360_glue\n\n7 to add, 0 to change, 0 to destroy.',
-      'terraform-import': 'terraform import aws_s3_bucket.bronze dp-cust360-bronze-sbx ✓\nterraform import aws_glue_job.bronze_to_silver cust360_b2s ✓\nterraform import aws_sfn_state_machine.cust360_daily ✓\n\nPR #142 aberto: "scaffold: terraform import from sandbox"',
-      'unit-tests': '✓ tests/unit/test_bronze_to_silver.py (12 cases)\n✓ tests/unit/test_silver_to_gold.py (8 cases)\n✓ tests/contract/test_gold_schema.py (4 cases)\nCoverage mínimo configurado: 80%',
-      'deploy-dev-hml': '[GitHub Actions]\n✓ deploy-dev: success (4m 12s)\n⏳ deploy-hml: aguardando aprovação manual',
-      'deploy-prod': '[main]\n✓ Último merge: feat: add gold.customer_360 (há 12 min)\n⏳ GMUD-9821 aberta automaticamente · janela 2026-04-26 23:00 UTC-3\n   Workflow deploy-prod: pendente',
-      'orchestrator': '✓ DAG cust360_daily registrado\n  cron: 0 6 * * *  (06:00 UTC)\n  upstream: orders_silver, clickstream_silver\n  SLA: 07:30 UTC-3',
-      'data-quality': '✓ 12 regras propostas\n  • not_null em customer_id (CRITICAL)\n  • unique em customer_id (CRITICAL)\n  • freshness < 24h (HIGH)\n  • row_count change ±20% (MEDIUM)',
-      'documentation': '✓ Doc gerada: portal/docs/products/customer_360\n✓ Vinculado ao Catálogo: gold.customer_360\n✓ Owners: Squad B · Stewards: @data-gov',
-    };
-    return previews[id];
+    return SAMPLE_PREVIEWS[id];
   });
+
+  private indexForStage(stageId: JourneyStageId): number {
+    return this.stages().findIndex(stage => stage.id === stageId);
+  }
+
+  private applyTemplateDefaults(templateId: JourneyTemplateId): void {
+    if (templateId === 'sql-only') {
+      this.form = {
+        ...this.form,
+        objective: 'Construir mart analitico com transformacoes SQL versionadas e validações automatizadas.',
+        sources: 'raw.crm_customers, raw.orders',
+        target: 'mart.customer_360',
+      };
+      this.qualityTableDraft = this.createQualityTableDraft('mart.customer_360');
+      this.qualityTableSaved.set(false);
+      return;
+    }
+
+    this.form = {
+      ...this.form,
+      objective: 'Construir visão consolidada de cliente para uso de Marketing e CS.',
+      sources: 'silver.customer_base, silver.orders, bronze.clickstream',
+      target: 'gold.customer_360',
+    };
+    this.qualityTableDraft = this.createQualityTableDraft('gold.customer_360');
+    this.qualityTableSaved.set(false);
+  }
+
+  private createQualityTableDraft(qualifiedName: string, withMetadata = false): Partial<DataQualityTableRegistrationDraft> {
+    const [database = 'spec', tableName = qualifiedName] = qualifiedName.split('.').length > 1
+      ? qualifiedName.split('.')
+      : ['spec', qualifiedName];
+
+    return {
+      database,
+      tableName,
+      qualifiedName: `${database}.${tableName}`,
+      owner: this.form?.squad ?? 'Squad B',
+      engineRole: 'role_data_quality_engine_prod',
+      rowCount: withMetadata ? 2500000 : undefined,
+      sizeGb: withMetadata ? 42.7 : undefined,
+      columns: withMetadata ? [
+        { name: 'customer_id', type: 'STRING', nullable: false, description: 'Chave funcional do cliente' },
+        { name: 'email', type: 'STRING', nullable: true, description: 'E-mail principal' },
+        { name: 'total_orders', type: 'INT', nullable: false },
+        { name: 'ltv', type: 'DECIMAL(18,2)', nullable: false },
+        { name: 'updated_at', type: 'TIMESTAMP', nullable: false },
+      ] : [],
+      primaryKeyColumns: withMetadata ? ['customer_id'] : [],
+      qualitativeValidations: withMetadata ? 'Segmento e identificação devem estar coerentes com cadastro mestre e domínio funcional aprovado.' : '',
+      quantitativeValidations: withMetadata ? 'Freshness máxima D-1 até 07h30. Variação diária de volume acima de 20% deve alertar.' : '',
+      customRulesText: withMetadata ? 'email | Percentual de nulos não pode ultrapassar 5% | 95 | high\ncustomer_id | Não pode haver duplicidade | 100 | critical' : '',
+    };
+  }
+
+  private toQualityTableRegistration(draft: DataQualityTableRegistrationDraft): DataQualityTableRegistration {
+    const now = new Date().toISOString();
+    return {
+      id: `dq-project-table-${Date.now()}`,
+      database: draft.database,
+      tableName: draft.tableName,
+      qualifiedName: draft.qualifiedName || `${draft.database}.${draft.tableName}`,
+      owner: draft.owner,
+      engineRole: draft.engineRole,
+      rowCount: draft.rowCount,
+      sizeGb: draft.sizeGb,
+      columns: draft.columns,
+      primaryKeyColumns: draft.primaryKeyColumns,
+      qualitativeValidations: draft.qualitativeValidations,
+      quantitativeValidations: draft.quantitativeValidations,
+      customRules: this.parseCustomRules(draft.customRulesText),
+      status: draft.columns.length ? 'ready_to_scan' : 'waiting_access',
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  private parseCustomRules(text: string): DataQualityCustomRule[] {
+    return text.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+      const [field = '', expression = '', threshold = '0', severity = 'medium'] = line.split('|').map(part => part.trim());
+      return { field, expression, threshold: Number(threshold) || 0, severity: this.normalizeSeverity(severity) };
+    });
+  }
+
+  private normalizeSeverity(value: string): DataQualityCustomRule['severity'] {
+    return value === 'low' || value === 'medium' || value === 'high' || value === 'critical' ? value : 'medium';
+  }
 }

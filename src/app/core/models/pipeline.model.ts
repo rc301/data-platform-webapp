@@ -1,6 +1,9 @@
+import { DataLayer } from './catalog.model';
+
 export interface Pipeline {
   id: string;
   name: string;
+  sigla: string;
   description: string;
   type: 'GlueJob' | 'Munin' | 'Phoenix' | 'CDP' | 'Outros';
   status: 'pending' | 'running' | 'completed' | 'failed' | 'delayed' | 'offline';
@@ -10,6 +13,8 @@ export interface Pipeline {
   team: string;
   sources: string[];
   target: string;
+  targetLayer?: DataLayer;
+  targetGoldenSource?: boolean;
   tags: string[];
   stepFunctionArn?: string;
   glueJobNames?: string[];

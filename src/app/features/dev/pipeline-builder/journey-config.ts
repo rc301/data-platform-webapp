@@ -1,161 +1,208 @@
 /**
- * Configuração da jornada do desenvolvedor.
- * É só dado — desacoplado da camada de UI. Pode futuramente vir de API/CMS.
+ * Configuracao da jornada do desenvolvedor.
+ *
+ * A etapa e uma capacidade reutilizavel. O template de jornada decide a ordem,
+ * quais etapas entram e qual tecnologia sera usada em cada pipeline.
+ * Hoje e mock local; futuramente pode vir de uma API/CMS sem alterar a UI.
  */
 
 import { JourneyStepStatus } from '../../../shared/ui';
 
-export type StageId =
+export type JourneyStageId =
   | 'rfc'
   | 'lup'
   | 'repo'
-  | 'sandbox-infra'
+  | 'glue-sandbox-infra'
   | 'terraform-import'
-  | 'unit-tests'
+  | 'pyspark-unit-tests'
+  | 'sql-workspace'
+  | 'sql-assets'
+  | 'sql-validation-tests'
   | 'deploy-dev-hml'
   | 'deploy-prod'
   | 'orchestrator'
   | 'data-quality'
   | 'documentation';
 
+export type StageId = JourneyStageId;
+export type JourneyTemplateId = 'glue-pyspark' | 'sql-only';
+export type JourneyStatusMap = Partial<Record<JourneyStageId, JourneyStepStatus>>;
+
 export interface StageDefinition {
-  id: StageId;
-  index: number;
+  id: JourneyStageId;
   title: string;
   badge: string;
   description: string;
-  /** Lista de "ações automatizadas" que serão executadas pelo agente via MCP. */
+  /** Lista de "acoes automatizadas" que serao executadas pelo agente via MCP. */
   automatedActions: string[];
-  /** O que o desenvolvedor revisa/aprova antes de avançar. */
+  /** O que o desenvolvedor revisa/aprova antes de avancar. */
   approvalGate: string;
 }
 
-export const JOURNEY_STAGES: StageDefinition[] = [
-  {
+export interface JourneyTemplate {
+  id: JourneyTemplateId;
+  title: string;
+  shortTitle: string;
+  badge: string;
+  description: string;
+  recommendedFor: string;
+  stageIds: readonly JourneyStageId[];
+}
+
+export const STAGE_CATALOG: Record<JourneyStageId, StageDefinition> = {
+  'rfc': {
     id: 'rfc',
-    index: 1,
     title: 'Requisitos da demanda',
     badge: 'RFC',
-    description: 'Formalize o problema, escopo, fontes, destinos, SLAs e critérios de aceite. Vincule a uma demanda existente ou crie uma nova RFC.',
+    description: 'Formalize problema, escopo, fontes, destinos, SLAs e criterios de aceite. Vincule a uma demanda existente ou crie uma nova RFC.',
     automatedActions: [
-      'Pré-preencher RFC com base no template corporativo',
-      'Sugerir tags e domínio com base no nome do produto',
-      'Validar campos mínimos exigidos pela governança',
+      'Pre-preencher RFC com base no template corporativo',
+      'Sugerir tags e dominio com base no nome do produto',
+      'Validar campos minimos exigidos pela governanca',
     ],
-    approvalGate: 'Revisar conteúdo da RFC e aprovar para abertura.',
+    approvalGate: 'Revisar conteudo da RFC e aprovar para abertura.',
   },
-  {
+  'lup': {
     id: 'lup',
-    index: 2,
-    title: 'Código de projeto (LUP)',
+    title: 'Codigo de projeto (LUP)',
     badge: 'LUP',
-    description: 'Cria o registro do projeto na Lista Única de Projetos com hierarquia, owner e centro de custo.',
+    description: 'Cria o registro do projeto na Lista Unica de Projetos com hierarquia, owner e centro de custo.',
     automatedActions: [
-      'Reservar próximo código LUP disponível',
+      'Reservar proximo codigo LUP disponivel',
       'Vincular RFC e produto de dados',
       'Atribuir centro de custo conforme squad',
     ],
-    approvalGate: 'Confirmar dados do projeto antes de submeter à LUP.',
+    approvalGate: 'Confirmar dados do projeto antes de submeter a LUP.',
   },
-  {
+  'repo': {
     id: 'repo',
-    index: 3,
-    title: 'Repositório GitHub corporativo',
+    title: 'Repositorio GitHub corporativo',
     badge: 'GitHub',
-    description: 'Cria o repositório a partir do template oficial de dados (AWS Glue + Terraform), com proteções de branch e CODEOWNERS.',
+    description: 'Cria o repositorio a partir do template tecnico definido pela jornada, com protecoes de branch, ambientes e CODEOWNERS.',
     automatedActions: [
-      'Provisionar repositório org/data-platform-templates → org/<lup>',
+      'Provisionar repositorio a partir do template selecionado',
       'Configurar branch protection em main e develop',
       'Atribuir squad ao CODEOWNERS',
       'Habilitar ambientes Dev/Hml/Prod no Actions',
     ],
-    approvalGate: 'Aprovar configurações antes do provisionamento.',
+    approvalGate: 'Aprovar template tecnico e configuracoes antes do provisionamento.',
   },
-  {
-    id: 'sandbox-infra',
-    index: 4,
-    title: 'Infra de sandbox',
-    badge: 'AWS Sandbox',
-    description: 'Provisiona buckets S3, Glue Jobs, IAM roles e Step Functions na conta sandbox para desenvolvimento e testes do ETL.',
+  'glue-sandbox-infra': {
+    id: 'glue-sandbox-infra',
+    title: 'Infra de sandbox Glue',
+    badge: 'AWS Glue',
+    description: 'Provisiona buckets S3, Glue Jobs, IAM roles e Step Functions na conta sandbox para desenvolvimento e testes do ETL PySpark.',
     automatedActions: [
       'Criar buckets bronze/silver/gold com naming corporativo',
-      'Criar Glue Jobs e Database',
-      'Provisionar Step Function com a topologia padrão',
-      'Atribuir IAM roles mínimas necessárias',
+      'Criar Glue Jobs e Glue Database',
+      'Provisionar Step Function com a topologia padrao',
+      'Atribuir IAM roles minimas necessarias',
     ],
-    approvalGate: 'Revisar inventário de recursos AWS antes do apply.',
+    approvalGate: 'Revisar inventario de recursos AWS antes do apply.',
   },
-  {
+  'terraform-import': {
     id: 'terraform-import',
-    index: 5,
-    title: 'Conversão para Terraform',
+    title: 'Conversao para Terraform',
     badge: 'Terraform',
-    description: 'Importa os recursos da sandbox como código Terraform versionado no repositório.',
+    description: 'Importa recursos criados na sandbox como codigo Terraform versionado no repositorio.',
     automatedActions: [
       'Executar terraform import para cada recurso provisionado',
-      'Gerar módulos por camada (bronze/silver/gold)',
-      'Abrir PR de scaffold no repositório do projeto',
+      'Gerar modulos por camada (bronze/silver/gold)',
+      'Abrir PR de scaffold no repositorio do projeto',
     ],
     approvalGate: 'Revisar e aprovar PR de Terraform gerado pelo agente.',
   },
-  {
-    id: 'unit-tests',
-    index: 6,
-    title: 'Testes unitários',
+  'pyspark-unit-tests': {
+    id: 'pyspark-unit-tests',
+    title: 'Testes PySpark',
     badge: 'Pytest',
-    description: 'Esqueleto de testes unitários para transformações, contratos de schema e validações de qualidade.',
+    description: 'Gera testes unitarios para transformacoes PySpark, contratos de schema e validacoes de qualidade.',
     automatedActions: [
       'Gerar testes para cada job Glue identificado',
-      'Criar fixtures de dados sintéticos',
-      'Configurar coverage mínimo no pre-commit',
+      'Criar fixtures de dados sinteticos',
+      'Configurar coverage minimo no pre-commit',
     ],
-    approvalGate: 'Aprovar cobertura proposta e padrões de teste.',
+    approvalGate: 'Aprovar cobertura proposta e padroes de teste.',
   },
-  {
+  'sql-workspace': {
+    id: 'sql-workspace',
+    title: 'Workspace SQL',
+    badge: 'SQL',
+    description: 'Prepara ambiente, conexoes, variaveis e permissoes para uma ferramenta que executa apenas SQL.',
+    automatedActions: [
+      'Criar workspace/projeto na ferramenta SQL',
+      'Vincular conexoes autorizadas para leitura e escrita',
+      'Configurar variaveis por ambiente',
+      'Aplicar permissoes minimas para squad e esteira',
+    ],
+    approvalGate: 'Validar ambiente, conexoes e escopo de acesso antes de ativar.',
+  },
+  'sql-assets': {
+    id: 'sql-assets',
+    title: 'Artefatos SQL',
+    badge: 'Models',
+    description: 'Gera estrutura de scripts, modelos SQL, convencoes de nomenclatura e manifesto de dependencias.',
+    automatedActions: [
+      'Criar estrutura padrao de pastas para scripts SQL',
+      'Gerar modelos iniciais a partir de fontes e destino',
+      'Mapear dependencias entre queries',
+      'Registrar owners e tags tecnicas no manifesto',
+    ],
+    approvalGate: 'Revisar modelos SQL e dependencias antes do primeiro commit.',
+  },
+  'sql-validation-tests': {
+    id: 'sql-validation-tests',
+    title: 'Validacoes SQL',
+    badge: 'Tests',
+    description: 'Cria testes de contrato e queries de validacao executaveis pela propria ferramenta SQL.',
+    automatedActions: [
+      'Gerar testes de not null, unique e accepted values',
+      'Criar queries de reconciliacao entre origem e destino',
+      'Configurar thresholds para falha ou alerta',
+    ],
+    approvalGate: 'Aprovar cobertura de validacoes SQL e thresholds.',
+  },
+  'deploy-dev-hml': {
     id: 'deploy-dev-hml',
-    index: 7,
-    title: 'Deploy Dev / Homologação',
+    title: 'Deploy Dev / Homologacao',
     badge: 'CI/CD',
-    description: 'Esteira GitHub Actions promove código para Dev e Homologação após PR aprovado.',
+    description: 'Esteira promove artefatos para Dev e Homologacao apos PR aprovado.',
     automatedActions: [
       'Executar workflow de Dev no merge em develop',
-      'Promover para Hml mediante aprovação no Actions',
+      'Promover para Hml mediante aprovacao no Actions',
       'Publicar artefatos versionados',
     ],
-    approvalGate: 'Aprovar promoção Dev → Hml na esteira.',
+    approvalGate: 'Aprovar promocao Dev -> Hml na esteira.',
   },
-  {
+  'deploy-prod': {
     id: 'deploy-prod',
-    index: 8,
-    title: 'Deploy Produção (GMUD)',
+    title: 'Deploy Producao (GMUD)',
     badge: 'Prod',
-    description: 'GMUD é gerada automaticamente pela esteira ao subir para main. Esta tela apenas exibe o status do código em main.',
+    description: 'GMUD e gerada automaticamente pela esteira ao subir para main. Esta tela exibe o status do codigo em main.',
     automatedActions: [
       'Detectar merge em main',
       'Abrir GMUD automaticamente com janela proposta',
-      'Acompanhar execução do workflow de Prod',
+      'Acompanhar execucao do workflow de Prod',
     ],
-    approvalGate: 'Confirmar janela de GMUD e acompanhar a execução.',
+    approvalGate: 'Confirmar janela de GMUD e acompanhar a execucao.',
   },
-  {
+  'orchestrator': {
     id: 'orchestrator',
-    index: 9,
     title: 'Cadastro no orquestrador',
-    badge: 'Orchestrator',
-    description: 'Registra a pipeline no orquestrador corporativo com cron, dependências e janelas de SLA.',
+    badge: 'Orch',
+    description: 'Registra a pipeline no orquestrador corporativo com cron, dependencias e janelas de SLA.',
     automatedActions: [
       'Criar DAG/objeto correspondente ao pipeline',
-      'Configurar dependências upstream/downstream',
+      'Configurar dependencias upstream/downstream',
       'Aplicar janela de SLA da RFC',
     ],
-    approvalGate: 'Validar cron e dependências antes de ativar.',
+    approvalGate: 'Validar cron e dependencias antes de ativar.',
   },
-  {
+  'data-quality': {
     id: 'data-quality',
-    index: 10,
     title: 'Cadastro de Data Quality',
     badge: 'DQ',
-    description: 'Registra regras de qualidade na ferramenta corporativa, com thresholds e severidade.',
+    description: 'Registra regras de qualidade na ferramenta corporativa, com thresholds, severidade e roteamento.',
     automatedActions: [
       'Sugerir regras com base no schema dos targets',
       'Configurar thresholds por severidade',
@@ -163,35 +210,132 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     ],
     approvalGate: 'Aprovar regras propostas e severidades.',
   },
-  {
+  'documentation': {
     id: 'documentation',
-    index: 11,
-    title: 'Documentação do ETL',
+    title: 'Documentacao do processo',
     badge: 'Docs',
-    description: 'Gera a documentação do processo ETL (visão de negócio, técnico, contrato de dados) e publica no portal.',
+    description: 'Gera documentacao de negocio, tecnica e contrato de dados, publicando no portal corporativo.',
     automatedActions: [
-      'Gerar documentação a partir de código + RFC',
-      'Publicar no portal corporativo de documentação',
-      'Vincular ao catálogo de dados',
+      'Gerar documentacao a partir de codigo, RFC e manifestos',
+      'Publicar no portal corporativo de documentacao',
+      'Vincular ao catalogo de dados',
     ],
-    approvalGate: 'Revisar e aprovar a publicação final.',
+    approvalGate: 'Revisar e aprovar a publicacao final.',
+  },
+};
+
+export const JOURNEY_TEMPLATES: readonly JourneyTemplate[] = [
+  {
+    id: 'glue-pyspark',
+    title: 'Glue com PySpark',
+    shortTitle: 'Glue PySpark',
+    badge: 'ETL',
+    description: 'Jornada para pipelines com AWS Glue, PySpark, Terraform e esteira de deploy.',
+    recommendedFor: 'Transformacoes distribuídas, jobs Glue e infraestrutura AWS versionada.',
+    stageIds: [
+      'rfc',
+      'lup',
+      'repo',
+      'glue-sandbox-infra',
+      'terraform-import',
+      'pyspark-unit-tests',
+      'deploy-dev-hml',
+      'deploy-prod',
+      'orchestrator',
+      'data-quality',
+      'documentation',
+    ],
+  },
+  {
+    id: 'sql-only',
+    title: 'Ferramenta SQL only',
+    shortTitle: 'SQL only',
+    badge: 'SQL',
+    description: 'Jornada enxuta para pipelines em uma ferramenta que executa apenas SQL.',
+    recommendedFor: 'Views, marts, validacoes e transformacoes sem codigo PySpark ou infraestrutura Glue.',
+    stageIds: [
+      'rfc',
+      'lup',
+      'repo',
+      'sql-workspace',
+      'sql-assets',
+      'sql-validation-tests',
+      'deploy-dev-hml',
+      'deploy-prod',
+      'orchestrator',
+      'data-quality',
+      'documentation',
+    ],
   },
 ];
 
-export const STAGE_BY_ID: Record<StageId, StageDefinition> =
-  JOURNEY_STAGES.reduce((acc, s) => ({ ...acc, [s.id]: s }), {} as Record<StageId, StageDefinition>);
+export const DEFAULT_TEMPLATE_ID: JourneyTemplateId = 'glue-pyspark';
 
-/** Status pré-calculados de uma jornada de exemplo (mock). */
-export const SAMPLE_JOURNEY_STATUSES: Record<StageId, JourneyStepStatus> = {
-  'rfc': 'approved',
-  'lup': 'approved',
-  'repo': 'approved',
-  'sandbox-infra': 'awaiting_approval',
-  'terraform-import': 'pending',
-  'unit-tests': 'pending',
-  'deploy-dev-hml': 'pending',
-  'deploy-prod': 'pending',
-  'orchestrator': 'pending',
-  'data-quality': 'pending',
-  'documentation': 'pending',
+export const TEMPLATE_BY_ID: Record<JourneyTemplateId, JourneyTemplate> =
+  JOURNEY_TEMPLATES.reduce(
+    (acc, template) => ({ ...acc, [template.id]: template }),
+    {} as Record<JourneyTemplateId, JourneyTemplate>,
+  );
+
+export const STAGE_BY_ID = STAGE_CATALOG;
+
+export function getJourneyTemplate(templateId: JourneyTemplateId): JourneyTemplate {
+  return TEMPLATE_BY_ID[templateId];
+}
+
+export function getStagesForTemplate(templateId: JourneyTemplateId): StageDefinition[] {
+  return getJourneyTemplate(templateId).stageIds.map(stageId => STAGE_CATALOG[stageId]);
+}
+
+/**
+ * Stage que abre como "ativa" em uma jornada recém-criada.
+ * Por contrato, uma pipeline nova começa zerada — nenhuma etapa concluída,
+ * apenas a primeira aguardando ação do usuário.
+ */
+export function firstOpenStageId(templateId: JourneyTemplateId): JourneyStageId {
+  return getJourneyTemplate(templateId).stageIds[0];
+}
+
+export function createInitialStatuses(
+  templateId: JourneyTemplateId,
+  currentStageId: JourneyStageId = firstOpenStageId(templateId),
+): JourneyStatusMap {
+  const statuses: JourneyStatusMap = {};
+  const stages = getJourneyTemplate(templateId).stageIds;
+  const currentIndex = stages.indexOf(currentStageId);
+
+  stages.forEach((stageId, index) => {
+    if (index < currentIndex) {
+      statuses[stageId] = 'approved';
+      return;
+    }
+    statuses[stageId] = stageId === currentStageId ? 'awaiting_approval' : 'pending';
+  });
+
+  return statuses;
+}
+
+/** Sequencia default mantida para telas legadas que ainda precisam de preview simples. */
+export const JOURNEY_STAGES: StageDefinition[] = getStagesForTemplate(DEFAULT_TEMPLATE_ID);
+
+/** Status pre-calculados de uma jornada de exemplo (mock). */
+export const SAMPLE_JOURNEY_STATUSES: JourneyStatusMap =
+  createInitialStatuses(DEFAULT_TEMPLATE_ID, 'glue-sandbox-infra');
+
+/** Stub de saida do agente. Em producao, essa saida vira evento/log do MCP server. */
+export const SAMPLE_PREVIEWS: Record<JourneyStageId, string> = {
+  'rfc': '',
+  'lup': '✓ LUP-2741 reservada\n✓ Centro de custo: 4421-DATA-PLATFORM\n✓ Owner: Squad B',
+  'repo': '✓ Repositorio criado: org/dp-customer-360\n✓ Branch protection: main, develop\n✓ CODEOWNERS atribuido a @squad-b\n✓ Environments: dev, hml, prod',
+  'glue-sandbox-infra': 'Plan AWS Sandbox:\n  + aws_s3_bucket.bronze (dp-cust360-bronze-sbx)\n  + aws_s3_bucket.silver (dp-cust360-silver-sbx)\n  + aws_s3_bucket.gold   (dp-cust360-gold-sbx)\n  + aws_glue_catalog_database.cust360\n  + aws_glue_job.bronze_to_silver\n  + aws_glue_job.silver_to_gold\n  + aws_sfn_state_machine.cust360_daily\n  + aws_iam_role.dp_cust360_glue\n\n7 to add, 0 to change, 0 to destroy.',
+  'terraform-import': 'terraform import aws_s3_bucket.bronze dp-cust360-bronze-sbx ✓\nterraform import aws_glue_job.bronze_to_silver cust360_b2s ✓\nterraform import aws_sfn_state_machine.cust360_daily ✓\n\nPR #142 aberto: "scaffold: terraform import from sandbox"',
+  'pyspark-unit-tests': '✓ tests/unit/test_bronze_to_silver.py (12 cases)\n✓ tests/unit/test_silver_to_gold.py (8 cases)\n✓ tests/contract/test_gold_schema.py (4 cases)\nCoverage minimo configurado: 80%',
+  'sql-workspace': 'Workspace SQL:\n  ✓ Projeto dp_customer_360 criado\n  ✓ Conexao source_analytics atribuida\n  ✓ Conexao mart_gold atribuida\n  ✓ Variaveis DEV/HML/PRD registradas\n  ✓ Service account da esteira autorizada',
+  'sql-assets': 'Scaffold SQL:\n  + models/staging/stg_customers.sql\n  + models/staging/stg_orders.sql\n  + models/marts/customer_360.sql\n  + manifest.yml\n\nDependencias mapeadas: stg_customers, stg_orders -> customer_360',
+  'sql-validation-tests': 'Validacoes SQL:\n  ✓ customer_id not null\n  ✓ customer_id unique\n  ✓ accepted_values customer_status\n  ✓ reconciliacao row_count origem x destino\n  Threshold de alerta: variacao acima de 15%',
+  'deploy-dev-hml': '[GitHub Actions]\n✓ deploy-dev: success (4m 12s)\n⏳ deploy-hml: aguardando aprovacao manual',
+  'deploy-prod': '[main]\n✓ Ultimo merge: feat: add gold.customer_360 (ha 12 min)\n⏳ GMUD-9821 aberta automaticamente · janela 2026-04-26 23:00 UTC-3\n   Workflow deploy-prod: pendente',
+  'orchestrator': '✓ DAG cust360_daily registrado\n  cron: 0 6 * * *  (06:00 UTC)\n  upstream: orders_silver, clickstream_silver\n  SLA: 07:30 UTC-3',
+  'data-quality': '✓ 12 regras propostas\n  • not_null em customer_id (CRITICAL)\n  • unique em customer_id (CRITICAL)\n  • freshness < 24h (HIGH)\n  • row_count change +/-20% (MEDIUM)',
+  'documentation': '✓ Doc gerada: portal/docs/products/customer_360\n✓ Vinculado ao Catalogo: gold.customer_360\n✓ Owners: Squad B · Stewards: @data-gov',
 };

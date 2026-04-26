@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,7 +6,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MetricCardComponent } from '../../../shared/components/metric-card/metric-card.component';
-import { MOCK_COST_METRICS } from '../../../core/mocks/dashboard.mock';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
 
 @Component({
   selector: 'app-costs',
@@ -121,7 +121,9 @@ import { MOCK_COST_METRICS } from '../../../core/mocks/dashboard.mock';
   `],
 })
 export class CostsComponent {
-  costs = MOCK_COST_METRICS;
+  private readonly data = inject(PlatformDataService);
+
+  costs = this.data.costMetrics();
   columns = ['service', 'current', 'previous', 'trend', 'budget', 'usage', 'forecast'];
 
   get totalCurrent(): number { return this.costs.reduce((s, c) => s + c.currentMonth, 0); }

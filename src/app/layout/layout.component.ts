@@ -6,6 +6,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../core/services/auth.service';
 import { PersonaService, PersonaId } from '../core/services/persona.service';
+import { AccessService } from '../core/access/access.service';
+import { Capability } from '../core/access/access.types';
 
 interface NavItem {
   label: string;
@@ -15,6 +17,7 @@ interface NavItem {
   primary?: boolean;
   /** Quando true, só ativa quando a URL é exatamente igual (não prefix). */
   exact?: boolean;
+  requiredCapabilities?: Capability[];
 }
 
 interface NavGroup {
@@ -99,6 +102,21 @@ interface NavGroup {
             <span class="topbar__sep">/</span>
             <span class="topbar__title">Console</span>
           </div>
+
+          <button *ngIf="access.activeScopes().length > 0"
+                  class="scope-chip"
+                  [matMenuTriggerFor]="scopeMenu"
+                  matTooltip="Escopo de acesso ativo">
+            <span class="scope-chip__label">{{ access.context()?.activeScope?.label || 'Escopo global' }}</span>
+            <span class="scope-chip__caret" *ngIf="access.activeScopes().length > 1">▾</span>
+          </button>
+          <mat-menu #scopeMenu="matMenu" xPosition="after">
+            <button *ngFor="let scope of access.activeScopes()"
+                    mat-menu-item
+                    (click)="access.setActiveScope(scope.id)">
+              {{ scope.label }}
+            </button>
+          </mat-menu>
 
           <div class="topbar__search">
             <span class="topbar__search-icon">⌕</span>
@@ -278,6 +296,21 @@ interface NavGroup {
     .topbar__sep { color: var(--text-muted); }
     .topbar__title { color: var(--text-primary); font-weight: 600; }
 
+    .scope-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-height: 32px; max-width: 280px;
+      padding: 0 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font: inherit; font-size: 12px; font-weight: 600;
+      cursor: pointer;
+    }
+    .scope-chip:hover { color: var(--text-primary); border-color: var(--border-default); background: var(--bg-elevated); }
+    .scope-chip__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .scope-chip__caret { color: var(--text-muted); font-size: 10px; }
+
     .topbar__search {
       flex: 1; max-width: 480px;
       display: flex; align-items: center; gap: 8px;
@@ -359,6 +392,7 @@ interface NavGroup {
 export class LayoutComponent {
   auth = inject(AuthService);
   persona = inject(PersonaService);
+  access = inject(AccessService);
   private router = inject(Router);
 
   collapsed = signal(false);
@@ -402,41 +436,54 @@ export class LayoutComponent {
 
   navGroups = computed<NavGroup[]>(() => {
     const id = this.persona.active().id;
-    if (id === 'developer')  return this.devNav;
-    if (id === 'sustaining') return this.opsNav;
-    return this.mgrNav;
+    const groups = id === 'developer' ? this.devNav : id === 'sustaining' ? this.opsNav : this.mgrNav;
+    const allowedGroups = groups
+      .map(group => ({ ...group, items: group.items.filter(item => this.canSee(item)) }))
+      .filter(group => group.items.length > 0);
+
+    if (this.access.hasAny(['admin.manageAccess', 'admin.manageOrg', 'admin.viewAudit'])) {
+      allowedGroups.push({
+        title: 'Admin',
+        items: [{ label: 'Acessos & Auditoria', icon: 'shield', route: '/admin', requiredCapabilities: ['admin.manageAccess'] }],
+      });
+    }
+    return allowedGroups;
   });
+
+  private canSee(item: NavItem): boolean {
+    return !item.requiredCapabilities?.length || item.requiredCapabilities.some(capability => this.access.can(capability));
+  }
 
   /* ===== Persona: Desenvolvedor ===== */
   private devNav: NavGroup[] = [
     {
       title: 'Início',
       items: [
-        { label: 'Visão do Desenvolvedor', icon: 'home', route: '/dev', exact: true },
-        { label: 'Nova Pipeline', icon: 'build', route: '/dev/new-pipeline', primary: true },
+        { label: 'Visão do Desenvolvedor', icon: 'home', route: '/dev', exact: true, requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Nova Pipeline', icon: 'build', route: '/dev/new-pipeline', primary: true, requiredCapabilities: ['pipeline.create'] },
       ],
     },
     {
       title: 'Meu trabalho',
       items: [
-        { label: 'Minhas Jornadas', icon: 'list', route: '/dev/journeys' },
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines' },
+        { label: 'Minhas Jornadas', icon: 'list', route: '/dev/journeys', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
       ],
     },
     {
       title: 'Conhecimento de dados',
       items: [
-        { label: 'Catálogo', icon: 'catalog', route: '/catalog' },
-        { label: 'Linhagem', icon: 'lineage', route: '/lineage' },
-        { label: 'Qualidade', icon: 'quality', route: '/data-quality' },
+        { label: 'Catálogo', icon: 'catalog', route: '/catalog', requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Linhagem', icon: 'lineage', route: '/lineage', requiredCapabilities: ['lineage.view'] },
+        { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
       ],
     },
     {
       title: 'Plataforma',
       items: [
-        { label: 'Glue Jobs', icon: 'infra', route: '/infrastructure/glue-jobs' },
-        { label: 'Step Functions', icon: 'infra', route: '/infrastructure/step-functions' },
-        { label: 'S3 Buckets', icon: 'infra', route: '/infrastructure/s3' },
+        { label: 'Glue Jobs', icon: 'infra', route: '/infrastructure/glue-jobs', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Step Functions', icon: 'infra', route: '/infrastructure/step-functions', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'S3 Buckets', icon: 'infra', route: '/infrastructure/s3', requiredCapabilities: ['ops.viewBoard'] },
       ],
     },
   ];
@@ -446,24 +493,24 @@ export class LayoutComponent {
     {
       title: 'Operação',
       items: [
-        { label: 'Painel de Faróis', icon: 'shield', route: '/ops', exact: true },
-        { label: 'Alertas', icon: 'bell', route: '/monitoring/alerts', badge: 3 },
+        { label: 'Painel de Faróis', icon: 'shield', route: '/ops', exact: true, requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Alertas', icon: 'bell', route: '/monitoring/alerts', badge: 3, requiredCapabilities: ['ops.viewBoard'] },
       ],
     },
     {
       title: 'Investigação',
       items: [
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines' },
-        { label: 'Linhagem', icon: 'lineage', route: '/lineage' },
-        { label: 'Qualidade', icon: 'quality', route: '/data-quality' },
+        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
+        { label: 'Linhagem', icon: 'lineage', route: '/lineage', requiredCapabilities: ['lineage.view'] },
+        { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
       ],
     },
     {
       title: 'Infra',
       items: [
-        { label: 'Glue Jobs', icon: 'infra', route: '/infrastructure/glue-jobs' },
-        { label: 'Step Functions', icon: 'infra', route: '/infrastructure/step-functions' },
-        { label: 'S3 Buckets', icon: 'infra', route: '/infrastructure/s3' },
+        { label: 'Glue Jobs', icon: 'infra', route: '/infrastructure/glue-jobs', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Step Functions', icon: 'infra', route: '/infrastructure/step-functions', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'S3 Buckets', icon: 'infra', route: '/infrastructure/s3', requiredCapabilities: ['ops.viewBoard'] },
       ],
     },
   ];
@@ -473,16 +520,16 @@ export class LayoutComponent {
     {
       title: 'Visão executiva',
       items: [
-        { label: 'KPIs da Plataforma', icon: 'kpi', route: '/executive', exact: true },
+        { label: 'KPIs da Plataforma', icon: 'kpi', route: '/executive', exact: true, requiredCapabilities: ['executive.viewOwnScope'] },
       ],
     },
     {
       title: 'Análises',
       items: [
-        { label: 'Custos', icon: 'cost', route: '/monitoring/costs' },
-        { label: 'Capacidade & SLAs', icon: 'capacity', route: '/executive/capacity' },
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines' },
-        { label: 'Catálogo', icon: 'catalog', route: '/catalog' },
+        { label: 'Custos', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
+        { label: 'Capacidade & SLAs', icon: 'capacity', route: '/executive/capacity', requiredCapabilities: ['executive.viewOwnScope'] },
+        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
+        { label: 'Catálogo', icon: 'catalog', route: '/catalog', requiredCapabilities: ['catalog.viewBasic'] },
       ],
     },
   ];

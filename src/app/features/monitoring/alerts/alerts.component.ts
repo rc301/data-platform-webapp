@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -11,8 +11,8 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
-import { MOCK_RECENT_ALERTS } from '../../../core/mocks/dashboard.mock';
 import { MonitoringAlert } from '../../../core/models';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
 
 @Component({
   selector: 'app-alerts',
@@ -153,7 +153,9 @@ import { MonitoringAlert } from '../../../core/models';
   `],
 })
 export class AlertsComponent {
-  allAlerts = MOCK_RECENT_ALERTS;
+  private readonly data = inject(PlatformDataService);
+
+  allAlerts = this.data.monitoringAlerts();
   severityFilter = 'all';
   statusFilter = 'all';
   categoryFilter = 'all';

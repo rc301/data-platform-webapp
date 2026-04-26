@@ -13,6 +13,44 @@ export interface DataQualityRule {
   tags: string[];
 }
 
+export interface DataQualityTableRegistration {
+  id: string;
+  database: string;
+  tableName: string;
+  qualifiedName: string;
+  owner: string;
+  engineRole: string;
+  rowCount?: number;
+  sizeGb?: number;
+  columns: DataQualityTableColumn[];
+  primaryKeyColumns: string[];
+  qualitativeValidations: string;
+  quantitativeValidations: string;
+  customRules: DataQualityCustomRule[];
+  status: 'draft' | 'registered' | 'waiting_access' | 'ready_to_scan';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DataQualityTableColumn {
+  name: string;
+  type: string;
+  nullable: boolean;
+  description?: string;
+}
+
+export interface DataQualityCustomRule {
+  field: string;
+  expression: string;
+  threshold: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export type DataQualityTableRegistrationDraft =
+  Omit<DataQualityTableRegistration, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'customRules'> & {
+    customRulesText: string;
+  };
+
 export interface DataQualityReport {
   id: string;
   dataset: string;

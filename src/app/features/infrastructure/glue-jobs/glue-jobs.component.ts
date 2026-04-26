@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -10,7 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
 import { DurationPipe } from '../../../shared/pipes/duration.pipe';
-import { MOCK_GLUE_JOBS } from '../../../core/mocks/infrastructure.mock';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
 
 @Component({
   selector: 'app-glue-jobs',
@@ -77,7 +77,9 @@ import { MOCK_GLUE_JOBS } from '../../../core/mocks/infrastructure.mock';
   `],
 })
 export class GlueJobsComponent {
-  jobs = MOCK_GLUE_JOBS;
+  private readonly data = inject(PlatformDataService);
+
+  jobs = this.data.glueJobs();
   columns = ['state', 'name', 'database', 'workerType', 'avgDuration', 'lastRun', 'schedule', 'actions'];
 
   readonly stateLabels: Record<string, string> = {

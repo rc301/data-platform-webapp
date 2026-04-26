@@ -32,17 +32,17 @@ import { MatIconModule } from '@angular/material/icon';
   styles: [`
     .metric-card { cursor: default; transition: transform 0.2s, box-shadow 0.2s; }
     .metric-card.clickable { cursor: pointer; }
-    .metric-card.clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .metric-card.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
     .metric-content { display: flex; align-items: center; gap: 16px; padding: 16px; }
     .metric-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
     .metric-icon mat-icon { font-size: 24px; width: 24px; height: 24px; }
     .metric-info { display: flex; flex-direction: column; gap: 2px; }
-    .metric-label { font-size: 13px; color: #666; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-    .metric-value { font-size: 28px; font-weight: 700; color: #1a1a1a; line-height: 1.2; }
+    .metric-label { font-size: 13px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-value { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
     .metric-trend { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; }
     .trend-icon { font-size: 18px; width: 18px; height: 18px; }
-    .trend-up { color: #2e7d32; }
-    .trend-down { color: #c62828; }
+    .trend-up { color: var(--success-500); }
+    .trend-down { color: var(--danger-500); }
   `],
 })
 export class MetricCardComponent {
@@ -55,8 +55,8 @@ export class MetricCardComponent {
   @Input() changePercent = 0;
   @Input() showTrend = true;
   @Input() clickable = false;
-  @Input() iconBg = '#e3f2fd';
-  @Input() iconColor = '#1565c0';
+  @Input() iconBg = 'var(--info-bg)';
+  @Input() iconColor = 'var(--info-500)';
 
   get formattedValue(): string {
     if (this.value >= 1000000) return (this.value / 1000000).toFixed(1) + 'M';
