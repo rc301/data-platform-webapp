@@ -32,7 +32,7 @@ import { JOURNEY_STAGES, StageId, SAMPLE_JOURNEY_STATUSES, STAGE_BY_ID } from '.
       title="Nova jornada de pipeline"
       subtitle="Cada etapa é executada por um agente via MCP. O desenvolvedor revisa e aprova antes de avançar.">
       <div page-actions>
-        <ui-button variant="ghost" routerLink="/dev/journeys">Minhas jornadas</ui-button>
+        <ui-button variant="ghost" link="/dev/journeys">Minhas jornadas</ui-button>
         <ui-button variant="secondary">Salvar rascunho</ui-button>
       </div>
     </ui-page-header>

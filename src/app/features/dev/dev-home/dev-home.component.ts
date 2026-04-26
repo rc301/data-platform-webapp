@@ -24,7 +24,7 @@ import { JOURNEY_STAGES } from '../pipeline-builder/journey-config';
       title="Construir, revisar e publicar pipelines"
       subtitle="Inicie uma nova jornada guiada por agentes ou continue uma jornada em andamento.">
       <div page-actions>
-        <ui-button variant="primary" icon="+" routerLink="/dev/new-pipeline">Nova Pipeline</ui-button>
+        <ui-button variant="primary" icon="+" link="/dev/new-pipeline">Nova Pipeline</ui-button>
       </div>
     </ui-page-header>
 
@@ -38,7 +38,7 @@ import { JOURNEY_STAGES } from '../pipeline-builder/journey-config';
     <div class="grid">
       <ui-card eyebrow="Início rápido" title="Jornada de criação de pipeline" subtitle="Etapas guiadas com aprovação humana entre cada uma.">
         <div card-actions>
-          <ui-button variant="primary" routerLink="/dev/new-pipeline">Iniciar nova jornada →</ui-button>
+          <ui-button variant="primary" link="/dev/new-pipeline">Iniciar nova jornada →</ui-button>
         </div>
         <div class="stages-grid">
           <div class="stage-pill" *ngFor="let s of stages">
@@ -59,7 +59,7 @@ import { JOURNEY_STAGES } from '../pipeline-builder/journey-config';
             <div class="journey-row__bar"><div [style.width.%]="j.progress"></div></div>
             <span class="journey-row__pct">{{ j.progress }}%</span>
           </div>
-          <ui-button variant="secondary" size="sm" routerLink="/dev/new-pipeline">Continuar</ui-button>
+          <ui-button variant="secondary" size="sm" link="/dev/new-pipeline">Continuar</ui-button>
         </div>
       </ui-card>
     </div>

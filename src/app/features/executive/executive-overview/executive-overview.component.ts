@@ -30,7 +30,7 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
       subtitle="Indicadores executivos consolidados — abril/2026.">
       <div page-actions>
         <ui-button variant="ghost">Exportar PDF</ui-button>
-        <ui-button variant="secondary" routerLink="/executive/capacity">Capacidade & SLAs →</ui-button>
+        <ui-button variant="secondary" link="/executive/capacity">Capacidade & SLAs →</ui-button>
       </div>
     </ui-page-header>
 
@@ -48,7 +48,7 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
       <!-- Custos por domínio -->
       <ui-card eyebrow="Custos" title="Distribuição mensal por domínio" subtitle="Soma S3 + Glue + Step Functions + RDS rateado.">
         <div card-actions>
-          <ui-button variant="ghost" size="sm" routerLink="/monitoring/costs">Detalhar →</ui-button>
+          <ui-button variant="ghost" size="sm" link="/monitoring/costs">Detalhar →</ui-button>
         </div>
         <div class="cost-list">
           <div class="cost-row" *ngFor="let d of costsByDomain">

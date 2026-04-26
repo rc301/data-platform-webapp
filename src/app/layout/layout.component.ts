@@ -13,6 +13,8 @@ interface NavItem {
   icon?: string;
   badge?: number | string;
   primary?: boolean;
+  /** Quando true, só ativa quando a URL é exatamente igual (não prefix). */
+  exact?: boolean;
 }
 
 interface NavGroup {
@@ -69,6 +71,7 @@ interface NavGroup {
               <a *ngFor="let item of group.items"
                  [routerLink]="item.route"
                  routerLinkActive="nav__item--active"
+                 [routerLinkActiveOptions]="{ exact: !!item.exact }"
                  class="nav__item"
                  [class.nav__item--primary]="item.primary"
                  [matTooltip]="collapsed() ? item.label : ''"
@@ -401,7 +404,7 @@ export class LayoutComponent {
     {
       title: 'Início',
       items: [
-        { label: 'Visão do Desenvolvedor', icon: 'home', route: '/dev' },
+        { label: 'Visão do Desenvolvedor', icon: 'home', route: '/dev', exact: true },
         { label: 'Nova Pipeline', icon: 'build', route: '/dev/new-pipeline', primary: true },
       ],
     },
@@ -435,7 +438,7 @@ export class LayoutComponent {
     {
       title: 'Operação',
       items: [
-        { label: 'Painel de Faróis', icon: 'shield', route: '/ops' },
+        { label: 'Painel de Faróis', icon: 'shield', route: '/ops', exact: true },
         { label: 'Alertas', icon: 'bell', route: '/monitoring/alerts', badge: 3 },
       ],
     },
@@ -462,7 +465,7 @@ export class LayoutComponent {
     {
       title: 'Visão executiva',
       items: [
-        { label: 'KPIs da Plataforma', icon: 'kpi', route: '/executive' },
+        { label: 'KPIs da Plataforma', icon: 'kpi', route: '/executive', exact: true },
       ],
     },
     {

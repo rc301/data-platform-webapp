@@ -27,7 +27,7 @@ interface JourneyRow {
       title="Minhas jornadas"
       subtitle="Acompanhe o progresso e retome jornadas em curso.">
       <div page-actions>
-        <ui-button variant="primary" routerLink="/dev/new-pipeline">+ Nova jornada</ui-button>
+        <ui-button variant="primary" link="/dev/new-pipeline">+ Nova jornada</ui-button>
       </div>
     </ui-page-header>
 
@@ -52,7 +52,7 @@ interface JourneyRow {
             </td>
             <td><ui-badge [tone]="toneFor(r.status)">{{ labelFor(r.status) }}</ui-badge></td>
             <td class="tbl__muted">{{ r.updatedAt }}</td>
-            <td><ui-button size="sm" variant="secondary" routerLink="/dev/new-pipeline">Abrir</ui-button></td>
+            <td><ui-button size="sm" variant="secondary" link="/dev/new-pipeline">Abrir</ui-button></td>
           </tr>
         </tbody>
       </table>
