@@ -15,6 +15,7 @@ import { DataQualityTableFormComponent } from '../../../shared/components/data-q
 import { DataQualityCustomRule, DataQualityTableRegistration, DataQualityTableRegistrationDraft } from '../../../core/models';
 import { PlatformDataService } from '../../../core/services/platform-data.service';
 import { ProjectPipelineJourney, ProjectPipelineStore } from '../project-pipeline.store';
+import { StageRegistry, StageContext, RfcStageStore } from '../../journey-stages';
 import {
   DEFAULT_TEMPLATE_ID,
   JOURNEY_TEMPLATES,
@@ -140,47 +141,15 @@ import {
             <ui-badge [tone]="badgeTone(currentStatus())">{{ statusLabel(currentStatus()) }}</ui-badge>
           </div>
 
-          <!-- Form de RFC: só na primeira etapa -->
-          <ng-container *ngIf="current().id === 'rfc'">
-            <h4 class="section-title" style="margin-top:0">Formulário RFC</h4>
-            <div class="form-grid">
-              <label class="field">
-                <span class="field__label">Nome do produto de dados</span>
-                <input class="field__input" [(ngModel)]="form.productName" placeholder="ex: customer_360" />
-              </label>
-              <label class="field">
-                <span class="field__label">Domínio</span>
-                <select class="field__input" [(ngModel)]="form.domain">
-                  <option>Comercial</option><option>Financeiro</option>
-                  <option>Operações</option><option>Marketing</option><option>Risco</option>
-                </select>
-              </label>
-              <label class="field field--full">
-                <span class="field__label">Objetivo de negócio</span>
-                <textarea class="field__input" rows="3" [(ngModel)]="form.objective"
-                          placeholder="Descreva o problema que esta pipeline resolve."></textarea>
-              </label>
-              <label class="field">
-                <span class="field__label">Squad responsável</span>
-                <input class="field__input" [(ngModel)]="form.squad" placeholder="ex: Squad A" />
-              </label>
-              <label class="field">
-                <span class="field__label">SLA</span>
-                <input class="field__input" [(ngModel)]="form.sla" placeholder="ex: D-1 até 07h00" />
-              </label>
-              <label class="field field--full">
-                <span class="field__label">Fontes de dados</span>
-                <input class="field__input" [(ngModel)]="form.sources" placeholder="ex: rds.orders_db.orders, kinesis.clickstream" />
-              </label>
-              <label class="field field--full">
-                <span class="field__label">Destino</span>
-                <input class="field__input" [(ngModel)]="form.target" placeholder="ex: gold.customer_360" />
-              </label>
-            </div>
+          <!-- Plugin de etapa, quando registrado no StageRegistry -->
+          <ng-container *ngIf="currentRuntime() as runtime; else legacyRenderer">
+            <ng-container *ngIf="runtime.render as cmp">
+              <ng-container *ngComponentOutlet="cmp; inputs: stageInputs()"></ng-container>
+            </ng-container>
           </ng-container>
 
-          <!-- Painel padrão: ações automatizadas + aprovação -->
-          <ng-container *ngIf="current().id !== 'rfc'">
+          <!-- Renderização inline para etapas ainda não migradas como plugin -->
+          <ng-template #legacyRenderer>
             <div class="agent-block">
               <h4 class="section-title" style="margin-top:0">Ações que o agente executará via MCP</h4>
               <ul class="agent-list">
@@ -212,7 +181,7 @@ import {
                 <pre class="agent-output">{{ samplePreview() }}</pre>
               </div>
             </ng-template>
-          </ng-container>
+          </ng-template>
 
           <div card-footer class="footer-row">
             <span class="footer-row__gate">{{ current().approvalGate }}</span>
@@ -226,15 +195,15 @@ import {
           </div>
         </ui-card>
 
-        <!-- Resumo lateral -->
+        <!-- Resumo lateral — lido das stores das etapas (hoje só RFC) -->
         <ui-card eyebrow="Resumo da jornada" title="Contexto do projeto">
           <div class="summary-grid">
             <div><span class="summary-grid__k">Template</span><span class="summary-grid__v">{{ currentTemplate().shortTitle }}</span></div>
-            <div><span class="summary-grid__k">Produto</span><span class="summary-grid__v">{{ form.productName || '—' }}</span></div>
-            <div><span class="summary-grid__k">Domínio</span><span class="summary-grid__v">{{ form.domain || '—' }}</span></div>
-            <div><span class="summary-grid__k">Squad</span><span class="summary-grid__v">{{ form.squad || '—' }}</span></div>
-            <div><span class="summary-grid__k">SLA</span><span class="summary-grid__v">{{ form.sla || '—' }}</span></div>
-            <div class="summary-grid__row"><span class="summary-grid__k">Destino</span><span class="summary-grid__v">{{ form.target || '—' }}</span></div>
+            <div><span class="summary-grid__k">Produto</span><span class="summary-grid__v">{{ rfcDraft().productName || '—' }}</span></div>
+            <div><span class="summary-grid__k">Domínio</span><span class="summary-grid__v">{{ rfcDraft().domain || '—' }}</span></div>
+            <div><span class="summary-grid__k">Squad</span><span class="summary-grid__v">{{ rfcDraft().squad || '—' }}</span></div>
+            <div><span class="summary-grid__k">SLA</span><span class="summary-grid__v">{{ rfcDraft().sla || '—' }}</span></div>
+            <div class="summary-grid__row"><span class="summary-grid__k">Destino</span><span class="summary-grid__v">{{ rfcDraft().target || '—' }}</span></div>
           </div>
         </ui-card>
       </section>
@@ -387,6 +356,8 @@ import {
 export class PipelineBuilderComponent {
   private readonly data = inject(PlatformDataService);
   private readonly projectPipelines = inject(ProjectPipelineStore);
+  private readonly stageRegistry = inject(StageRegistry);
+  private readonly rfcStore = inject(RfcStageStore);
 
   readonly templateOptions = JOURNEY_TEMPLATES;
   readonly selectedTemplateId = signal<JourneyTemplateId>(DEFAULT_TEMPLATE_ID);
@@ -394,6 +365,21 @@ export class PipelineBuilderComponent {
   readonly isDeleted = computed(() => this.createdPipeline()?.status === 'deleted');
   readonly currentTemplate = computed(() => getJourneyTemplate(this.selectedTemplateId()));
   readonly stages = computed(() => getStagesForTemplate(this.selectedTemplateId()));
+  readonly rfcDraft = this.rfcStore.draft;
+
+  /** Runtime do plugin da etapa atual, se registrado. */
+  readonly currentRuntime = computed(() => this.stageRegistry.get(this.currentIdSig()));
+
+  /** Inputs projetados via ngComponentOutlet — assinatura StageRenderProps. */
+  readonly stageInputs = computed<Record<string, unknown>>(() => {
+    const ctx: StageContext = {
+      journeyId: this.createdPipeline()?.id ?? 'draft',
+      stageId: this.currentIdSig(),
+      project: { ...this.rfcDraft() },
+      previousOutputs: {},
+    };
+    return { context: ctx };
+  });
 
   /** Status mutável da jornada (mock — em produção viria de um service/store). */
   private readonly statuses = signal<JourneyStatusMap>(
@@ -423,16 +409,6 @@ export class PipelineBuilderComponent {
       status: this.statuses()[s.id] ?? 'pending',
     }))
   );
-
-  form = {
-    productName: 'customer_360',
-    domain: 'Comercial',
-    objective: 'Construir visão consolidada de cliente para uso de Marketing e CS.',
-    squad: 'Squad B',
-    sla: 'D-1 até 07h30 UTC-3',
-    sources: 'silver.customer_base, silver.orders, bronze.clickstream',
-    target: 'gold.customer_360',
-  };
 
   qualityTableDraft: Partial<DataQualityTableRegistrationDraft> = this.createQualityTableDraft('gold.customer_360');
   qualityTableSaved = signal(false);
@@ -496,7 +472,7 @@ export class PipelineBuilderComponent {
   }
 
   loadQualityMetadata(): void {
-    this.qualityTableDraft = this.createQualityTableDraft(this.form.target, true);
+    this.qualityTableDraft = this.createQualityTableDraft(this.rfcDraft().target, true);
   }
 
   saveQualityTable(draft: DataQualityTableRegistrationDraft): void {
@@ -550,23 +526,21 @@ export class PipelineBuilderComponent {
 
   private applyTemplateDefaults(templateId: JourneyTemplateId): void {
     if (templateId === 'sql-only') {
-      this.form = {
-        ...this.form,
+      this.rfcStore.update({
         objective: 'Construir mart analitico com transformacoes SQL versionadas e validações automatizadas.',
         sources: 'raw.crm_customers, raw.orders',
         target: 'mart.customer_360',
-      };
+      });
       this.qualityTableDraft = this.createQualityTableDraft('mart.customer_360');
       this.qualityTableSaved.set(false);
       return;
     }
 
-    this.form = {
-      ...this.form,
+    this.rfcStore.update({
       objective: 'Construir visão consolidada de cliente para uso de Marketing e CS.',
       sources: 'silver.customer_base, silver.orders, bronze.clickstream',
       target: 'gold.customer_360',
-    };
+    });
     this.qualityTableDraft = this.createQualityTableDraft('gold.customer_360');
     this.qualityTableSaved.set(false);
   }
@@ -580,7 +554,7 @@ export class PipelineBuilderComponent {
       database,
       tableName,
       qualifiedName: `${database}.${tableName}`,
-      owner: this.form?.squad ?? 'Squad B',
+      owner: this.rfcStore?.draft()?.squad ?? 'Squad B',
       engineRole: 'role_data_quality_engine_prod',
       rowCount: withMetadata ? 2500000 : undefined,
       sizeGb: withMetadata ? 42.7 : undefined,
