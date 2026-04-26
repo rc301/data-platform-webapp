@@ -34,7 +34,7 @@ export type StatTrend = 'up' | 'down' | 'flat';
       display: flex; flex-direction: column; gap: 6px;
       padding: var(--space-5);
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid transparent;
       border-radius: var(--radius-lg);
       min-height: 110px;
       position: relative;

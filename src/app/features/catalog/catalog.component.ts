@@ -29,8 +29,11 @@ type GoldenFilter = 'all' | 'yes' | 'no';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="Catálogo de Dados" subtitle="Descubra ativos em lista, com filtros de governança para tabelas" icon="menu_book">
-      <a mat-stroked-button color="primary" matTooltip="Abrir Atlan Catalog">
+      <a mat-stroked-button color="primary" href="https://atlan.example/" target="_blank" rel="noopener" matTooltip="Abrir Atlan Catalog em nova aba">
         <mat-icon>open_in_new</mat-icon> Abrir Atlan
+      </a>
+      <a mat-stroked-button color="primary" href="https://mapa-de-dados.example/" target="_blank" rel="noopener" matTooltip="Abrir Mapa de Dados em nova aba">
+        <mat-icon>map</mat-icon> Mapa de Dados
       </a>
     </app-page-header>
 
@@ -223,49 +226,57 @@ type GoldenFilter = 'all' | 'yes' | 'no';
     </mat-tab-group>
   `,
   styles: [`
-    .summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-bottom: 22px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; background: var(--border-subtle); }
-    .summary-item { display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; background: var(--bg-surface); }
-    .summary-item strong { color: var(--text-primary); font-size: 24px; line-height: 1; }
+    /*
+      Tipografia do catálogo otimizada para densidade — uma tela que precisa
+      mostrar muitos ativos por viewport. Mantém hierarquia entre nome (forte)
+      e metadata (secundário) sem ruído de tamanhos.
+    */
+    .summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-bottom: 18px; border-radius: var(--radius-lg); overflow: hidden; background: var(--border-subtle); }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; background: var(--bg-surface); }
+    .summary-item strong { color: var(--text-primary); font-size: 18px; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+    .summary-item span { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
     .tab-content { padding-top: 16px; }
 
-    .filters-panel { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; padding: 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface); }
+    .filters-panel { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; padding: 12px; border-radius: var(--radius-lg); background: var(--bg-surface); }
     .filter-field { width: 158px; margin-bottom: -20px; }
     .search-field { flex: 1 1 300px; min-width: 280px; }
     .clear-button { margin-left: auto; }
 
-    .list-shell { border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-surface); }
-    .list-toolbar { display: flex; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); }
-    .list-toolbar span { color: var(--text-secondary); font-size: 12px; }
-    .asset-grid { display: grid; grid-template-columns: minmax(280px, 2fr) 90px 70px 74px 82px 110px 130px 120px; gap: 12px; align-items: center; padding: 12px 16px; }
-    .asset-grid--head, .domain-grid--head { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; background: var(--bg-app); border-bottom: 1px solid var(--border-subtle); }
+    .list-shell { border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-surface); }
+    .list-toolbar { display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); }
+    .list-toolbar strong { font-size: 12px; color: var(--text-primary); font-weight: 600; }
+    .list-toolbar span { color: var(--text-muted); font-size: 11px; }
+    .asset-grid { display: grid; grid-template-columns: minmax(280px, 2fr) 90px 70px 74px 82px 110px 130px 120px; gap: 12px; align-items: center; padding: 10px 16px; font-size: 12px; }
+    .asset-grid--head, .domain-grid--head { color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--bg-app); border-bottom: 1px solid var(--border-subtle); padding-top: 9px; padding-bottom: 9px; }
     .asset-row { border-bottom: 1px solid var(--border-subtle); cursor: pointer; }
     .asset-row:last-child { border-bottom: 0; }
     .asset-row--selected { background: var(--bg-elevated); }
     .asset-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .asset-main mat-icon { color: var(--brand-300); }
-    .asset-main div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .asset-main strong { color: var(--text-primary); font-size: 14px; }
-    code { max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); font-size: 12px; }
-    .sigla, .type-pill { display: inline-flex; width: fit-content; align-items: center; border-radius: 6px; padding: 3px 7px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
-    .sigla { color: var(--brand-300); background: var(--bg-overlay); border: 1px solid var(--border-subtle); }
-    .type-pill { color: var(--text-secondary); background: var(--bg-app); border: 1px solid var(--border-subtle); }
-    .golden-cell { color: var(--text-secondary); }
-    .golden-cell--yes { color: var(--success-500); font-weight: 800; }
+    .asset-main mat-icon { color: var(--brand-300); font-size: 18px; width: 18px; height: 18px; }
+    .asset-main div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .asset-main strong { color: var(--text-primary); font-size: 13px; font-weight: 600; }
+    .asset-main span { color: var(--text-muted); font-size: 11px; }
+    code { max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 1px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); font-size: 11px; }
+    .sigla, .type-pill { display: inline-flex; width: fit-content; align-items: center; border-radius: 5px; padding: 2px 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .sigla { color: var(--brand-300); background: var(--bg-overlay); }
+    .type-pill { color: var(--text-secondary); background: var(--bg-app); }
+    .golden-cell { color: var(--text-secondary); font-size: 12px; }
+    .golden-cell--yes { color: var(--success-500); font-weight: 700; }
     .asset-detail { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px 54px; }
-    .asset-detail p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.45; }
-    .detail-meta, .lineage-strip { display: flex; flex-wrap: wrap; gap: 16px; color: var(--text-secondary); font-size: 12px; }
+    .asset-detail p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+    .detail-meta, .lineage-strip { display: flex; flex-wrap: wrap; gap: 14px; color: var(--text-secondary); font-size: 11px; }
     .detail-meta span { display: inline-flex; align-items: center; gap: 4px; }
     .classification-chip { --mdc-chip-elevated-container-color: var(--warning-bg); }
 
-    .domain-grid { display: grid; grid-template-columns: minmax(220px, 1.4fr) 180px 90px 2fr; gap: 14px; align-items: center; padding: 12px 16px; }
+    .domain-grid { display: grid; grid-template-columns: minmax(220px, 1.4fr) 180px 90px 2fr; gap: 14px; align-items: center; padding: 10px 16px; font-size: 12px; }
     .domain-row { border-bottom: 1px solid var(--border-subtle); }
     .domain-row:last-child { border-bottom: 0; }
-    .domain-row div { display: flex; flex-direction: column; gap: 2px; }
-    .domain-row strong { color: var(--text-primary); font-size: 14px; }
-    .domain-row span { color: var(--text-secondary); font-size: 13px; }
+    .domain-row div { display: flex; flex-direction: column; gap: 1px; }
+    .domain-row strong { color: var(--text-primary); font-size: 13px; font-weight: 600; }
+    .domain-row span { color: var(--text-muted); font-size: 11px; }
 
-    .glossary-table { width: 100%; }
-    th.mat-mdc-header-cell { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .glossary-table { width: 100%; font-size: 12px; }
+    th.mat-mdc-header-cell { color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 
     @media (max-width: 1150px) {
       .asset-grid { grid-template-columns: minmax(260px, 1fr) 78px 64px 76px 44px; }

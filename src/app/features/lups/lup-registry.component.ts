@@ -161,7 +161,6 @@ export class LupRegistryComponent {
   typeFilter: 'all' | LupType = 'all';
   statusFilter: 'all' | LupStatus = 'all';
   linkedProjectText = '';
-  draft: LupProjectDraft = this.emptyDraft();
   formOpen = signal(false);
   editingId = signal<string | null>(null);
 
@@ -172,6 +171,23 @@ export class LupRegistryComponent {
     const squads = this.org.squads().filter(squad => ids.has(squad.id));
     return squads.length ? squads : this.org.squads();
   });
+
+  // Inicializado com valores estáticos seguros para não depender de signals
+  // ainda não construídos. emptyDraft() é chamado em openForm()/selectTemplate().
+  draft: LupProjectDraft = {
+    code: '',
+    type: 'ED',
+    name: '',
+    description: '',
+    squadId: '',
+    owner: '',
+    status: 'draft',
+    health: 'gray',
+    progress: 0,
+    pipelineCount: 0,
+    monthlyCost: 0,
+    linkedProjectIds: [],
+  };
 
   readonly scopedProjects = computed(() => {
     const context = this.access.context();

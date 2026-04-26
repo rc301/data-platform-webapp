@@ -151,16 +151,19 @@ a:hover { color: var(--brand-200); text-decoration: underline; }
 /* ============================================================
    MATERIAL OVERRIDES — alinhar com tokens
    ============================================================ */
+/*
+  Cards primários (página) — sem borda padrão. A separação do fundo da app
+  (--bg-app) já dá contraste suficiente para perceber o bloco. Em hover
+  uma borda muito sutil aparece como affordance. Sub-blocos internos
+  (form fields, inputs) preservam borda própria nas regras específicas.
+*/
 .mat-mdc-card {
   background: var(--bg-surface) !important;
   color: var(--text-primary) !important;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-1) !important;
+  box-shadow: none !important;
   transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
-}
-.mat-mdc-card:hover {
-  border-color: var(--border-default);
 }
 
 .mat-mdc-card-title { color: var(--text-primary) !important; font-weight: 600 !important; letter-spacing: -0.01em; }
