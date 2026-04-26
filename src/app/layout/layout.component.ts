@@ -1,6 +1,6 @@
 import { Component, signal, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -359,11 +359,19 @@ interface NavGroup {
 export class LayoutComponent {
   auth = inject(AuthService);
   persona = inject(PersonaService);
+  private router = inject(Router);
 
   collapsed = signal(false);
 
   toggleCollapse(): void { this.collapsed.update(v => !v); }
-  switchPersona(id: PersonaId): void { this.persona.setActive(id); }
+
+  switchPersona(id: PersonaId): void {
+    this.persona.setActive(id);
+    // Navega para a home da persona — evita o usuário ficar olhando a página
+    // anterior pensando que a troca não surtiu efeito.
+    const home = this.persona.all.find(p => p.id === id)?.homeRoute;
+    if (home) this.router.navigateByUrl(home);
+  }
 
   personaInitial = computed(() => this.persona.active().shortLabel.charAt(0));
   userInitials = computed(() => {
