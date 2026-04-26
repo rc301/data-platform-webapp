@@ -73,7 +73,7 @@ export const LUP_PROJECTS: LupProject[] = [
     description: 'Reprocessamento e nova ingestao da camada bronze de pedidos.',
     squadId: 'squad-a',
     owner: 'Squad A',
-    status: 'in_production',
+    status: 'completed',
     health: 'green',
     progress: 100,
     pipelineCount: 5,

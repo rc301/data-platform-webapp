@@ -3,7 +3,7 @@ import { FarolStatus } from '../../shared/ui';
 
 export type OrgBranch = 'technology' | 'business';
 export type LupType = 'ED' | 'EA';
-export type LupStatus = 'draft' | 'in_progress' | 'waiting_approval' | 'in_production' | 'blocked';
+export type LupStatus = 'draft' | 'in_progress' | 'waiting_approval' | 'in_production' | 'completed' | 'blocked';
 
 export interface OrgUnit {
   id: string;
@@ -29,3 +29,8 @@ export interface LupProject {
   updatedAt: string;
   linkedProjectIds: string[];
 }
+
+export type LupProjectDraft = Omit<LupProject, 'id' | 'updatedAt'> & {
+  id?: string;
+  updatedAt?: string;
+};

@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
   UiPageHeaderComponent,
   UiCardComponent,
@@ -14,7 +14,9 @@ import {
 import { DataQualityTableFormComponent } from '../../../shared/components/data-quality-table-form/data-quality-table-form.component';
 import { DataQualityCustomRule, DataQualityTableRegistration, DataQualityTableRegistrationDraft } from '../../../core/models';
 import { PlatformDataService } from '../../../core/services/platform-data.service';
-import { ProjectPipelineJourney, ProjectPipelineStore } from '../project-pipeline.store';
+import { AuditService } from '../../../core/audit/audit.service';
+import { DemandService } from '../../../core/demands/demand.service';
+import { ProjectJourney, ProjectJourneyStore } from '../project-journey.store';
 import { StageRegistry, StageContext, RfcStageStore } from '../../journey-stages';
 import {
   DEFAULT_TEMPLATE_ID,
@@ -31,7 +33,7 @@ import {
 } from './journey-config';
 
 /**
- * Container (smart) — orquestra a jornada de criação de pipeline.
+ * Container (smart) — orquestra a jornada de projeto.
  * Usa apenas UI primitives desacoplados em <ui-*>. A camada de apresentação
  * pode ser substituída por componentes de design system trocando os imports.
  */
@@ -47,16 +49,16 @@ import {
   template: `
     <ui-page-header
       eyebrow="Persona · Desenvolvedor"
-      [title]="createdPipeline() ? 'Pipeline de projeto' : 'Nova pipeline de projeto'"
-      [subtitle]="createdPipeline() ? 'Template travado para garantir rastreabilidade da jornada criada.' : 'Escolha o tipo de pipeline antes de criar a jornada do projeto.'">
+      [title]="createdJourney() ? 'Jornada de projeto' : 'Nova jornada de projeto'"
+      [subtitle]="createdJourney() ? 'Template travado para garantir rastreabilidade da jornada criada.' : 'Escolha o tipo de jornada antes de criar o projeto.'">
       <div page-actions>
-        <ui-button variant="ghost" link="/dev/journeys">Minhas jornadas</ui-button>
-        <ui-button variant="danger" *ngIf="createdPipeline() && !isDeleted()" (clicked)="deletePipeline()">Apagar pipeline</ui-button>
-        <ui-button variant="secondary" *ngIf="createdPipeline() && !isDeleted()">Salvar rascunho</ui-button>
+        <ui-button variant="ghost" link="/dev/journeys">Meus projetos</ui-button>
+        <ui-button variant="danger" *ngIf="createdJourney() && !isDeleted()" (clicked)="deleteJourney()">Apagar jornada</ui-button>
+        <ui-button variant="secondary" *ngIf="createdJourney() && !isDeleted()">Salvar</ui-button>
       </div>
     </ui-page-header>
 
-    <ng-container *ngIf="!createdPipeline(); else createdExperience">
+    <ng-container *ngIf="!createdJourney(); else createdExperience">
       <section class="template-switcher" aria-label="Templates de jornada">
         <button
           type="button"
@@ -76,7 +78,7 @@ import {
         </button>
       </section>
 
-      <ui-card eyebrow="Criação" title="Criar pipeline de projeto" subtitle="Depois de criada, a pipeline mantém o template escolhido. Para trocar de template, apague esta pipeline e crie outra.">
+      <ui-card eyebrow="Criação" title="Criar jornada de projeto" subtitle="Depois de criada, a jornada mantém o template escolhido. Para trocar de template, apague esta jornada e crie outra.">
         <div class="creation-summary">
           <div>
             <span>Template selecionado</span>
@@ -86,24 +88,24 @@ import {
         </div>
         <div card-footer class="footer-row">
           <span class="footer-row__gate">O template não poderá ser alterado após a criação.</span>
-          <ui-button variant="primary" (clicked)="createProjectPipeline()">Criar Pipeline de Projeto</ui-button>
+          <ui-button variant="primary" (clicked)="createProjectJourney()">Criar Jornada de Projeto</ui-button>
         </div>
       </ui-card>
     </ng-container>
 
     <ng-template #createdExperience>
-      <ui-card *ngIf="isDeleted(); else builderExperience" eyebrow="Pipeline deletada" [title]="createdPipeline()?.name || 'Pipeline de projeto'">
+      <ui-card *ngIf="isDeleted(); else builderExperience" eyebrow="Jornada deletada" [title]="createdJourney()?.name || 'Jornada de projeto'">
         <div class="deleted-state">
           <ui-badge tone="danger">Deletada</ui-badge>
           <p>
-            Esta pipeline foi apagada por {{ createdPipeline()?.deletedBy }} em
-            {{ formatDateTime(createdPipeline()?.deletedAt) }}.
+            Esta jornada foi apagada por {{ createdJourney()?.deletedBy }} em
+            {{ formatDateTime(createdJourney()?.deletedAt) }}.
           </p>
           <p>O registro permanece visível para auditoria, mas a jornada não pode ser continuada.</p>
         </div>
         <div card-footer class="footer-row">
-          <span class="footer-row__gate">Crie uma nova pipeline para escolher outro template.</span>
-          <ui-button variant="primary" (clicked)="resetForNewPipeline()">Nova pipeline</ui-button>
+          <span class="footer-row__gate">Crie uma nova jornada para escolher outro template.</span>
+          <ui-button variant="primary" (clicked)="resetForNewJourney()">Nova jornada</ui-button>
         </div>
       </ui-card>
     </ng-template>
@@ -113,6 +115,7 @@ import {
         <span>Template criado</span>
         <strong>{{ currentTemplate().title }}</strong>
         <ui-badge tone="brand">{{ currentTemplate().badge }}</ui-badge>
+        <code *ngIf="createdJourney() as journey">{{ journey.id }}</code>
       </section>
 
       <div class="builder">
@@ -163,7 +166,7 @@ import {
               <div class="agent-block">
                 <app-data-quality-table-form
                   [value]="qualityTableDraft"
-                  title="Cadastro de qualidade da pipeline"
+                  title="Cadastro de qualidade da jornada"
                   description="A metadata vem preenchida após consulta da tabela pela role do motor. Complete chave primária, validações genéricas e regras customizadas."
                   submitLabel="Cadastrar tabela"
                   (metadataRequested)="loadQualityMetadata()"
@@ -197,12 +200,32 @@ import {
 
         <!-- Resumo lateral — lido das stores das etapas (hoje só RFC) -->
         <ui-card eyebrow="Resumo da jornada" title="Contexto do projeto">
+          <div class="import-demand">
+            <label>
+              <span>Demanda importada</span>
+              <select [(ngModel)]="selectedDemandId">
+                <option value="">Selecionar demanda existente</option>
+                <option *ngFor="let demand of availableDemands()" [value]="demand.id">{{ demand.code }} · {{ demand.title }}</option>
+              </select>
+            </label>
+            <ui-button variant="secondary" size="sm" [disabled]="!selectedDemandId" (clicked)="importSelectedDemand()">Importar</ui-button>
+          </div>
+          <div class="import-demand">
+            <label>
+              <span>LUPs vinculadas</span>
+              <input [ngModel]="lupCodesText" (ngModelChange)="lupCodesText = $event" placeholder="ED2741, EA1180">
+            </label>
+            <ui-button variant="secondary" size="sm" (clicked)="saveLupCodes()">Vincular</ui-button>
+          </div>
           <div class="summary-grid">
+            <div><span class="summary-grid__k">Jornada</span><span class="summary-grid__v">{{ createdJourney()?.id || '—' }}</span></div>
+            <div><span class="summary-grid__k">Demanda</span><span class="summary-grid__v">{{ createdJourney()?.importedDemandCode || '—' }}</span></div>
             <div><span class="summary-grid__k">Template</span><span class="summary-grid__v">{{ currentTemplate().shortTitle }}</span></div>
             <div><span class="summary-grid__k">Produto</span><span class="summary-grid__v">{{ rfcDraft().productName || '—' }}</span></div>
             <div><span class="summary-grid__k">Domínio</span><span class="summary-grid__v">{{ rfcDraft().domain || '—' }}</span></div>
             <div><span class="summary-grid__k">Squad</span><span class="summary-grid__v">{{ rfcDraft().squad || '—' }}</span></div>
             <div><span class="summary-grid__k">SLA</span><span class="summary-grid__v">{{ rfcDraft().sla || '—' }}</span></div>
+            <div><span class="summary-grid__k">LUPs</span><span class="summary-grid__v">{{ createdJourney()?.lupCodes?.join(', ') || '—' }}</span></div>
             <div class="summary-grid__row"><span class="summary-grid__k">Destino</span><span class="summary-grid__v">{{ rfcDraft().target || '—' }}</span></div>
           </div>
         </ui-card>
@@ -278,6 +301,7 @@ import {
     .locked-template span { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
     .creation-summary strong,
     .locked-template strong { color: var(--text-primary); font-size: 14px; }
+    .locked-template code { margin-left: auto; padding: 3px 7px; border-radius: 4px; background: var(--bg-app); color: var(--text-muted); font-size: 11px; }
     .locked-template { margin-bottom: 20px; justify-content: flex-start; }
     .deleted-state { display: flex; flex-direction: column; gap: 8px; }
     .deleted-state p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
@@ -335,6 +359,10 @@ import {
     .footer-row__actions { display: flex; gap: 8px; }
 
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+    .import-demand { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-bottom: 16px; padding: 12px; border-radius: var(--radius-md); background: var(--bg-app); }
+    .import-demand label { display: flex; flex-direction: column; gap: 6px; }
+    .import-demand span { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .import-demand select, .import-demand input { min-width: 0; padding: 9px 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-surface); color: var(--text-primary); font: inherit; font-size: 13px; }
     .summary-grid__row { grid-column: 1 / -1; }
     .summary-grid > div { display: flex; flex-direction: column; gap: 2px; }
     .summary-grid__k { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -353,16 +381,19 @@ import {
     }
   `],
 })
-export class PipelineBuilderComponent {
+export class PipelineBuilderComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
   private readonly data = inject(PlatformDataService);
-  private readonly projectPipelines = inject(ProjectPipelineStore);
+  private readonly audit = inject(AuditService);
+  private readonly demands = inject(DemandService);
+  private readonly projectJourneys = inject(ProjectJourneyStore);
   private readonly stageRegistry = inject(StageRegistry);
   private readonly rfcStore = inject(RfcStageStore);
 
   readonly templateOptions = JOURNEY_TEMPLATES;
   readonly selectedTemplateId = signal<JourneyTemplateId>(DEFAULT_TEMPLATE_ID);
-  readonly createdPipeline = signal<ProjectPipelineJourney | null>(null);
-  readonly isDeleted = computed(() => this.createdPipeline()?.status === 'deleted');
+  readonly createdJourney = signal<ProjectJourney | null>(null);
+  readonly isDeleted = computed(() => this.createdJourney()?.status === 'deleted');
   readonly currentTemplate = computed(() => getJourneyTemplate(this.selectedTemplateId()));
   readonly stages = computed(() => getStagesForTemplate(this.selectedTemplateId()));
   readonly rfcDraft = this.rfcStore.draft;
@@ -373,7 +404,7 @@ export class PipelineBuilderComponent {
   /** Inputs projetados via ngComponentOutlet — assinatura StageRenderProps. */
   readonly stageInputs = computed<Record<string, unknown>>(() => {
     const ctx: StageContext = {
-      journeyId: this.createdPipeline()?.id ?? 'draft',
+      journeyId: this.createdJourney()?.id ?? 'draft',
       stageId: this.currentIdSig(),
       project: { ...this.rfcDraft() },
       previousOutputs: {},
@@ -412,32 +443,45 @@ export class PipelineBuilderComponent {
 
   qualityTableDraft: Partial<DataQualityTableRegistrationDraft> = this.createQualityTableDraft('gold.customer_360');
   qualityTableSaved = signal(false);
+  selectedDemandId = '';
+  lupCodesText = '';
+  readonly availableDemands = computed(() => this.demands.demands().filter(demand => demand.status !== 'inactive'));
 
-  createProjectPipeline(): void {
-    const pipeline = this.projectPipelines.create(this.selectedTemplateId());
-    this.createdPipeline.set(pipeline);
+  ngOnInit(): void {
+    const templateId = this.templateIdFromQuery();
+    if (templateId) {
+      this.resetJourneyState(templateId);
+      this.applyTemplateDefaults(templateId);
+    }
+    if (this.route.snapshot.queryParamMap.get('autoCreate') === 'true') {
+      this.createProjectJourney();
+    }
   }
 
-  deletePipeline(): void {
-    const pipeline = this.createdPipeline();
-    if (!pipeline) return;
-    this.projectPipelines.markDeleted(pipeline.id);
-    this.createdPipeline.set(this.projectPipelines.journeys().find(journey => journey.id === pipeline.id) ?? null);
+  createProjectJourney(): void {
+    this.resetJourneyState(this.selectedTemplateId());
+    const journey = this.projectJourneys.create(this.selectedTemplateId());
+    this.createdJourney.set(journey);
   }
 
-  resetForNewPipeline(): void {
-    this.createdPipeline.set(null);
-    this.selectTemplate(DEFAULT_TEMPLATE_ID);
+  deleteJourney(): void {
+    const journey = this.createdJourney();
+    if (!journey) return;
+    this.projectJourneys.markDeleted(journey.id);
+    this.createdJourney.set(this.projectJourneys.journeys().find(item => item.id === journey.id) ?? null);
+  }
+
+  resetForNewJourney(): void {
+    this.createdJourney.set(null);
+    this.resetJourneyState(DEFAULT_TEMPLATE_ID);
+    this.applyTemplateDefaults(DEFAULT_TEMPLATE_ID);
   }
 
   selectTemplate(id: JourneyTemplateId): void {
-    if (this.createdPipeline()) return;
+    if (this.createdJourney()) return;
     if (id === this.selectedTemplateId()) return;
 
-    const firstStageId = firstOpenStageId(id);
-    this.selectedTemplateId.set(id);
-    this.currentIdSig.set(firstStageId);
-    this.statuses.set(createInitialStatuses(id, firstStageId));
+    this.resetJourneyState(id);
     this.applyTemplateDefaults(id);
   }
 
@@ -481,6 +525,38 @@ export class PipelineBuilderComponent {
     this.data.addDataQualityTableRegistration(this.toQualityTableRegistration(draft));
   }
 
+  importSelectedDemand(): void {
+    const journey = this.createdJourney();
+    const demand = this.demands.demands().find(item => item.id === this.selectedDemandId);
+    if (!journey || !demand) return;
+
+    this.projectJourneys.importDemand(journey.id, demand.id, demand.code);
+    this.createdJourney.set(this.projectJourneys.journeys().find(item => item.id === journey.id) ?? journey);
+    this.rfcStore.update({
+      productName: demand.title,
+      objective: demand.description,
+      domain: demand.domain,
+      squad: demand.requester,
+      sources: demand.sources.join(', '),
+      target: demand.expectedTarget,
+      sla: demand.sla,
+    });
+    this.qualityTableDraft = this.createQualityTableDraft(demand.expectedTarget);
+    this.audit.record('journey.demand.imported', {
+      resourceType: 'journey',
+      resourceId: journey.id,
+      metadata: { demandId: demand.id, demandCode: demand.code },
+    });
+  }
+
+  saveLupCodes(): void {
+    const journey = this.createdJourney();
+    if (!journey) return;
+    const codes = this.lupCodesText.split(',').map(code => code.trim().toUpperCase()).filter(Boolean);
+    this.projectJourneys.setLupCodes(journey.id, codes);
+    this.createdJourney.set(this.projectJourneys.journeys().find(item => item.id === journey.id) ?? journey);
+  }
+
   canApprove(): boolean {
     return this.currentStatus() !== 'approved';
   }
@@ -522,6 +598,19 @@ export class PipelineBuilderComponent {
 
   private indexForStage(stageId: JourneyStageId): number {
     return this.stages().findIndex(stage => stage.id === stageId);
+  }
+
+  private resetJourneyState(templateId: JourneyTemplateId): void {
+    const firstStageId = firstOpenStageId(templateId);
+    this.selectedTemplateId.set(templateId);
+    this.currentIdSig.set(firstStageId);
+    this.statuses.set(createInitialStatuses(templateId, firstStageId));
+    this.qualityTableSaved.set(false);
+  }
+
+  private templateIdFromQuery(): JourneyTemplateId | null {
+    const value = this.route.snapshot.queryParamMap.get('template');
+    return value === 'glue-pyspark' || value === 'sql-only' ? value : null;
   }
 
   private applyTemplateDefaults(templateId: JourneyTemplateId): void {

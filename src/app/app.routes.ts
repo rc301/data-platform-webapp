@@ -42,6 +42,35 @@ export const routes: Routes = [
         loadChildren: () => import('./features/pipelines/pipelines.routes').then(m => m.PIPELINES_ROUTES),
       },
       {
+        path: 'rfcs',
+        redirectTo: 'demands',
+        pathMatch: 'full',
+      },
+      {
+        path: 'demands',
+        canMatch: [capabilityGuard],
+        data: { capability: 'dev.viewProjects' },
+        loadComponent: () => import('./features/rfc/rfc-list.component').then(m => m.RfcListComponent),
+      },
+      {
+        path: 'projects',
+        canMatch: [capabilityGuard],
+        data: { capability: 'dev.viewProjects' },
+        loadComponent: () => import('./features/projects/projects-history.component').then(m => m.ProjectsHistoryComponent),
+      },
+      {
+        path: 'lups',
+        canMatch: [capabilityGuard],
+        data: { capability: 'dev.viewProjects' },
+        loadComponent: () => import('./features/lups/lup-registry.component').then(m => m.LupRegistryComponent),
+      },
+      {
+        path: 'term-abbreviations',
+        canMatch: [capabilityGuard],
+        data: { capability: 'catalog.viewBasic' },
+        loadComponent: () => import('./features/terms/term-abbreviation.component').then(m => m.TermAbbreviationComponent),
+      },
+      {
         path: 'data-quality',
         canMatch: [capabilityGuard],
         data: { capability: 'dataQuality.view' },
@@ -58,6 +87,12 @@ export const routes: Routes = [
         canMatch: [capabilityGuard],
         data: { capability: 'ops.viewBoard' },
         loadChildren: () => import('./features/infrastructure/infrastructure.routes').then(m => m.INFRASTRUCTURE_ROUTES),
+      },
+      {
+        path: 'orchestrator',
+        canMatch: [capabilityGuard],
+        data: { capability: 'ops.viewBoard' },
+        loadComponent: () => import('./features/orchestrator/orchestrator.component').then(m => m.OrchestratorComponent),
       },
       {
         path: 'monitoring',

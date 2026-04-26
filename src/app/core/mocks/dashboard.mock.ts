@@ -1,4 +1,4 @@
-import { MonitoringMetric, HealthCheck, CostMetric, MonitoringAlert } from '../models';
+import { MonitoringMetric, HealthCheck, CostMetric, MonitoringAlert, PipelineRunCost } from '../models';
 
 export const MOCK_METRICS: MonitoringMetric[] = [
   { name: 'Pipelines Ativos', value: 47, unit: '', trend: 'up', changePercent: 12, timestamp: '2026-03-15T10:00:00Z' },
@@ -29,6 +29,58 @@ export const MOCK_COST_METRICS: CostMetric[] = [
   { service: 'Lambda', currentMonth: 850, previousMonth: 780, trend: 9.0, budget: 1000, forecast: 890 },
   { service: 'CloudWatch', currentMonth: 450, previousMonth: 420, trend: 7.1, budget: 600, forecast: 470 },
   { service: 'Data Transfer', currentMonth: 2100, previousMonth: 1950, trend: 7.7, budget: 2500, forecast: 2200 },
+];
+
+export const MOCK_PIPELINE_RUN_COSTS: PipelineRunCost[] = [
+  {
+    id: 'prc-1',
+    pipelineId: 'pipeline-1',
+    pipelineName: 'ingestion_orders',
+    runId: 'run-1a',
+    engine: 'GlueJob',
+    startedAt: '2026-03-15T09:30:00Z',
+    durationMinutes: 12,
+    recordsProcessed: 0,
+    costUsd: 4.82,
+    costBreakdown: { computeUsd: 4.10, orchestrationUsd: 0.24, logsUsd: 0.48 },
+    hasDiscriminatedCost: true,
+  },
+  {
+    id: 'prc-2',
+    pipelineId: 'pipeline-2',
+    pipelineName: 'transform_customer_360',
+    runId: 'run-2a',
+    engine: 'CDP',
+    startedAt: '2026-03-15T06:00:00Z',
+    durationMinutes: 85,
+    recordsProcessed: 2500000,
+    costUsd: 18.64,
+    costBreakdown: { computeUsd: 16.20, orchestrationUsd: 0.74, logsUsd: 1.70 },
+    hasDiscriminatedCost: true,
+  },
+  {
+    id: 'prc-3',
+    pipelineId: 'pipeline-5',
+    pipelineName: 'orchestration_daily_full',
+    runId: 'run-5a',
+    engine: 'Munin',
+    startedAt: '2026-03-15T03:00:00Z',
+    durationMinutes: 195,
+    recordsProcessed: 15000000,
+    hasDiscriminatedCost: false,
+    note: 'Munin legado sem tagueamento de custo por execução.',
+  },
+  {
+    id: 'prc-4',
+    pipelineId: 'pipeline-manual-sample',
+    pipelineName: 'legacy_manual_reference',
+    runId: 'manual-ref',
+    engine: 'Outros',
+    startedAt: '2026-03-15T01:00:00Z',
+    durationMinutes: 0,
+    hasDiscriminatedCost: false,
+    note: 'Referência criada manualmente na plataforma; custo não discriminado.',
+  },
 ];
 
 export const MOCK_RECENT_ALERTS: MonitoringAlert[] = [

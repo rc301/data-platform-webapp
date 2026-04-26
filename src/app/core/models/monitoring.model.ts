@@ -30,6 +30,25 @@ export interface CostMetric {
   forecast: number;
 }
 
+export interface PipelineRunCost {
+  id: string;
+  pipelineId: string;
+  pipelineName: string;
+  runId: string;
+  engine: 'GlueJob' | 'Munin' | 'Phoenix' | 'CDP' | 'Outros';
+  startedAt: string;
+  durationMinutes: number;
+  recordsProcessed?: number;
+  costUsd?: number;
+  costBreakdown?: {
+    computeUsd?: number;
+    orchestrationUsd?: number;
+    logsUsd?: number;
+  };
+  hasDiscriminatedCost: boolean;
+  note?: string;
+}
+
 export interface HealthCheck {
   service: string;
   status: 'healthy' | 'degraded' | 'down';
