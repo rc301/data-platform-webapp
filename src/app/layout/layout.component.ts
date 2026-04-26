@@ -327,45 +327,81 @@ export class LayoutComponent {
     return n.split(' ').slice(0, 2).map(s => s.charAt(0)).join('').toUpperCase() || 'U';
   });
 
-  /** Glifo unicode usado nos itens — substituível por ícones do design system futuro. */
+  /**
+   * Glifo unicode usado nos itens. É substituível por ícones do design system
+   * futuro: cada item declara um nome semântico (`shield`, `subjects`, …) e
+   * o resolver mapeia para o glifo. Trocar pelo ícone real = trocar o map.
+   */
   iconGlyph(name: string): string {
     return ({
-      home: '⌂',
-      build: '✦',
-      list: '≡',
-      catalog: '✦',
-      lineage: '⇄',
-      quality: '✓',
-      infra: '◫',
-      git: '◴',
-      shield: '◐',
-      bell: '◔',
-      pipeline: '⛓',
-      cost: '$',
-      capacity: '▦',
-      kpi: '◧',
-      docs: '✎',
+      home:        '⌂',
+      build:       '✦',  // CTA de criação
+      list:        '≡',
+      catalog:     '✦',
+      lineage:     '⇄',
+      quality:     '✓',
+      pipeline:    '⛓',
+      orch:        '◫',  // orquestrador
+      shield:      '◐',  // saúde / ops
+      bell:        '◔',
+      cost:        '$',
+      capacity:    '▦',
+      kpi:         '◧',
+      demand:      '✎',  // RFC / demandas
+      lup:         '◧',  // projeto LUP
+      glossary:    '✦',  // padrões de nomes
+      access:      '⚿',  // governança — políticas
+      orgtree:     '⌬',  // hierarquia
+      subjects:    '#',  // assuntos & domínios
+      stages:      '◇',  // catálogo de etapas
+      audit:       '◷',  // trilha de auditoria
     } as Record<string, string>)[name] ?? '•';
   }
 
+  /**
+   * Estrutura final de IA da sidebar (revisão de UX/IA validada):
+   *   • Início                    — atalho da persona
+   *   • Gestão de Projetos        — Demandas, LUPs, Histórico, Nova jornada
+   *   • Dados                     — Catálogo, Linhagem, Qualidade
+   *   • Plataforma                — Pipelines, Orquestrador, Saúde&Faróis, Custos
+   *   • Utilidades                — Padrões de Nomes
+   *   • Governança (admin)        — placeholder (sub-rotas vêm na Onda 4)
+   *
+   * `requiredCapabilities` é OR — se o usuário tem QUALQUER uma das
+   * capabilities listadas, o item aparece.
+   */
   navGroups = computed<NavGroup[]>(() => {
+    const ctx = this.access.context();
+    const isPublicOnly = !!ctx && ctx.roles.length === 1 && ctx.roles[0] === 'public-viewer';
+    if (isPublicOnly) return this.filterGroups(this.publicNav);
+
     const id = this.persona.active().id;
-    const groups = id === 'developer' ? this.devNav : id === 'sustaining' ? this.opsNav : this.mgrNav;
-    const allowedGroups = groups
-      .map(group => ({ ...group, items: group.items.filter(item => this.canSee(item)) }))
-      .filter(group => group.items.length > 0);
+    const baseGroups = id === 'developer' ? this.devNav : id === 'sustaining' ? this.opsNav : this.mgrNav;
+    const allowedGroups = this.filterGroups(baseGroups);
 
     if (this.access.hasAny(['admin.manageAccess', 'admin.manageOrg', 'admin.viewAudit'])) {
+      // Onda 4 quebra este item em sub-rotas (Políticas, Estrutura, Assuntos,
+      // Etapas, Auditoria). Aqui mantemos um único ponto de entrada para
+      // não acoplar à existência de rotas que ainda não foram criadas.
       allowedGroups.push({
-        title: 'Admin',
-        items: [{ label: 'Acessos & Auditoria', icon: 'shield', route: '/admin', requiredCapabilities: ['admin.manageAccess'] }],
+        title: 'Governança',
+        items: [
+          { label: 'Acessos & Auditoria', icon: 'audit', route: '/admin', requiredCapabilities: ['admin.manageAccess', 'admin.manageOrg', 'admin.viewAudit'] },
+        ],
       });
     }
     return allowedGroups;
   });
 
+  private filterGroups(groups: NavGroup[]): NavGroup[] {
+    return groups
+      .map(group => ({ ...group, items: group.items.filter(item => this.canSee(item)) }))
+      .filter(group => group.items.length > 0);
+  }
+
   private canSee(item: NavItem): boolean {
-    return !item.requiredCapabilities?.length || item.requiredCapabilities.some(capability => this.access.can(capability));
+    return !item.requiredCapabilities?.length
+      || item.requiredCapabilities.some(capability => this.access.can(capability));
   }
 
   /* ===== Persona: Desenvolvedor ===== */
@@ -374,38 +410,38 @@ export class LayoutComponent {
       title: 'Início',
       items: [
         { label: 'Visão do Desenvolvedor', icon: 'home', route: '/dev', exact: true, requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Nova Jornada', icon: 'build', route: '/dev/journeys/new', primary: true, requiredCapabilities: ['pipeline.create'] },
       ],
     },
     {
-      title: 'Meu trabalho',
+      title: 'Gestão de Projetos',
       items: [
-        { label: 'Meus Projetos', icon: 'list', route: '/dev/journeys', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Nova jornada',          icon: 'build',  route: '/dev/journeys/new', primary: true, requiredCapabilities: ['pipeline.create'] },
+        { label: 'Demandas',              icon: 'demand', route: '/demands',                          requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'LUPs',                  icon: 'lup',    route: '/lups',                             requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Histórico de projetos', icon: 'list',   route: '/projects',                         requiredCapabilities: ['dev.viewProjects'] },
       ],
     },
     {
-      title: 'Conhecimento de dados',
+      title: 'Dados',
       items: [
-        { label: 'Central de Demandas', icon: 'docs', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Cadastro de LUPs', icon: 'docs', route: '/lups', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Histórico de Projetos', icon: 'list', route: '/projects', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Catálogo', icon: 'catalog', route: '/catalog', requiredCapabilities: ['catalog.viewBasic'] },
-        { label: 'Linhagem', icon: 'lineage', route: '/lineage', requiredCapabilities: ['lineage.view'] },
+        { label: 'Catálogo', icon: 'catalog', route: '/catalog',      requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Linhagem', icon: 'lineage', route: '/lineage',      requiredCapabilities: ['lineage.view'] },
         { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
       ],
     },
     {
-      title: 'Operação da Plataforma',
+      title: 'Plataforma',
       items: [
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
-        { label: 'Orquestrador', icon: 'infra', route: '/orchestrator', requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Custos de Execução', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
+        { label: 'Pipelines',          icon: 'pipeline', route: '/pipelines',         requiredCapabilities: ['pipeline.view'] },
+        { label: 'Orquestrador',       icon: 'orch',     route: '/orchestrator',      requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Saúde & Faróis',     icon: 'shield',   route: '/ops',               requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Custos',             icon: 'cost',     route: '/monitoring/costs',  requiredCapabilities: ['pipeline.viewCosts'] },
       ],
     },
     {
       title: 'Utilidades',
       items: [
-        { label: 'Padrões de Nomes', icon: 'catalog', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Padrões de Nomes', icon: 'glossary', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
       ],
     },
   ];
@@ -413,33 +449,40 @@ export class LayoutComponent {
   /* ===== Persona: Sustentação (Bombeiro) ===== */
   private opsNav: NavGroup[] = [
     {
-      title: 'Operação',
+      title: 'Início',
       items: [
-        { label: 'Painel de Faróis', icon: 'shield', route: '/ops', exact: true, requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Alertas', icon: 'bell', route: '/monitoring/alerts', badge: 3, requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Saúde & Faróis', icon: 'shield', route: '/ops',                exact: true, requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Alertas',        icon: 'bell',   route: '/monitoring/alerts',  badge: 3,    requiredCapabilities: ['ops.viewBoard'] },
       ],
     },
     {
-      title: 'Investigação',
+      title: 'Gestão de Projetos',
       items: [
-        { label: 'Central de Demandas', icon: 'docs', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Cadastro de LUPs', icon: 'docs', route: '/lups', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
-        { label: 'Linhagem', icon: 'lineage', route: '/lineage', requiredCapabilities: ['lineage.view'] },
+        // Sustentação consulta (read-only) durante incidentes — sem CTA "Nova jornada".
+        { label: 'Demandas',  icon: 'demand', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'LUPs',      icon: 'lup',    route: '/lups',    requiredCapabilities: ['dev.viewProjects'] },
+      ],
+    },
+    {
+      title: 'Dados',
+      items: [
+        { label: 'Catálogo', icon: 'catalog', route: '/catalog',      requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Linhagem', icon: 'lineage', route: '/lineage',      requiredCapabilities: ['lineage.view'] },
         { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
       ],
     },
     {
-      title: 'Operação da Plataforma',
+      title: 'Plataforma',
       items: [
-        { label: 'Orquestrador', icon: 'infra', route: '/orchestrator', requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Custos de Execução', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
+        { label: 'Pipelines',    icon: 'pipeline', route: '/pipelines',        requiredCapabilities: ['pipeline.view'] },
+        { label: 'Orquestrador', icon: 'orch',     route: '/orchestrator',     requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Custos',       icon: 'cost',     route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
       ],
     },
     {
       title: 'Utilidades',
       items: [
-        { label: 'Padrões de Nomes', icon: 'catalog', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Padrões de Nomes', icon: 'glossary', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
       ],
     },
   ];
@@ -447,38 +490,48 @@ export class LayoutComponent {
   /* ===== Persona: Gestão ===== */
   private mgrNav: NavGroup[] = [
     {
-      title: 'Visão executiva',
+      title: 'Início',
       items: [
-        { label: 'KPIs da Plataforma', icon: 'kpi', route: '/executive', exact: true, requiredCapabilities: ['executive.viewOwnScope'] },
+        { label: 'KPIs da Plataforma', icon: 'kpi',      route: '/executive',          exact: true, requiredCapabilities: ['executive.viewOwnScope'] },
+        { label: 'Capacidade & SLAs',  icon: 'capacity', route: '/executive/capacity',              requiredCapabilities: ['executive.viewOwnScope'] },
       ],
     },
     {
-      title: 'Análises',
+      title: 'Gestão de Projetos',
       items: [
-        { label: 'Capacidade & SLAs', icon: 'capacity', route: '/executive/capacity', requiredCapabilities: ['executive.viewOwnScope'] },
+        { label: 'Demandas',              icon: 'demand', route: '/demands',  requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'LUPs',                  icon: 'lup',    route: '/lups',     requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Histórico de projetos', icon: 'list',   route: '/projects', requiredCapabilities: ['dev.viewProjects'] },
+      ],
+    },
+    {
+      title: 'Dados',
+      items: [
         { label: 'Catálogo', icon: 'catalog', route: '/catalog', requiredCapabilities: ['catalog.viewBasic'] },
       ],
     },
     {
-      title: 'Governança',
+      title: 'Plataforma',
       items: [
-        { label: 'Central de Demandas', icon: 'docs', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Cadastro de LUPs', icon: 'docs', route: '/lups', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Histórico de Projetos', icon: 'list', route: '/projects', requiredCapabilities: ['dev.viewProjects'] },
-      ],
-    },
-    {
-      title: 'Operação da Plataforma',
-      items: [
-        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines', requiredCapabilities: ['pipeline.view'] },
-        { label: 'Orquestrador', icon: 'infra', route: '/orchestrator', requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Custos de Execução', icon: 'cost', route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
+        { label: 'Pipelines', icon: 'pipeline', route: '/pipelines',        requiredCapabilities: ['pipeline.view'] },
+        { label: 'Custos',    icon: 'cost',     route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
       ],
     },
     {
       title: 'Utilidades',
       items: [
-        { label: 'Padrões de Nomes', icon: 'catalog', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Padrões de Nomes', icon: 'glossary', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
+      ],
+    },
+  ];
+
+  /* ===== Persona: Visitante interno (PublicViewer) ===== */
+  private publicNav: NavGroup[] = [
+    {
+      title: 'Acesso público',
+      items: [
+        { label: 'Catálogo', icon: 'catalog', route: '/catalog', exact: true, requiredCapabilities: ['catalog.viewBasic'] },
+        // 'Demandas' será incluído na Onda 3 quando o /demands abrir para PublicViewer.
       ],
     },
   ];
