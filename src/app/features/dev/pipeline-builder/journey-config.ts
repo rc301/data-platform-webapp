@@ -287,8 +287,13 @@ export function getStagesForTemplate(templateId: JourneyTemplateId): StageDefini
   return getJourneyTemplate(templateId).stageIds.map(stageId => STAGE_CATALOG[stageId]);
 }
 
+/**
+ * Stage que abre como "ativa" em uma jornada recém-criada.
+ * Por contrato, uma pipeline nova começa zerada — nenhuma etapa concluída,
+ * apenas a primeira aguardando ação do usuário.
+ */
 export function firstOpenStageId(templateId: JourneyTemplateId): JourneyStageId {
-  return getJourneyTemplate(templateId).stageIds[3] ?? getJourneyTemplate(templateId).stageIds[0];
+  return getJourneyTemplate(templateId).stageIds[0];
 }
 
 export function createInitialStatuses(

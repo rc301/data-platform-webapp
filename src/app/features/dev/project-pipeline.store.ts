@@ -1,6 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
-import { JourneyTemplateId } from './pipeline-builder/journey-config';
+import {
+  JourneyTemplateId,
+  STAGE_BY_ID,
+  getJourneyTemplate,
+} from './pipeline-builder/journey-config';
 
 export type ProjectPipelineStatus = 'draft' | 'active' | 'deleted';
 
@@ -29,6 +33,9 @@ export class ProjectPipelineStore {
   create(templateId: JourneyTemplateId): ProjectPipelineJourney {
     const now = new Date().toISOString();
     const user = this.auth.user();
+    // Toda pipeline nasce zerada — nenhuma etapa concluída.
+    // O primeiro stage do template é o ponto de entrada do usuário.
+    const firstStageId = getJourneyTemplate(templateId).stageIds[0];
     const journey: ProjectPipelineJourney = {
       id: `project-pipeline-${Date.now()}`,
       name: templateId === 'glue-pyspark' ? 'customer_360' : 'customer_360_sql',
@@ -37,8 +44,8 @@ export class ProjectPipelineStore {
       createdAt: now,
       createdBy: user?.name ?? 'Usuário mock',
       updatedAt: now,
-      currentStage: 'Infra inicial',
-      progress: 27,
+      currentStage: STAGE_BY_ID[firstStageId].title,
+      progress: 0,
     };
     this.journeysSig.update(journeys => [journey, ...journeys]);
     return journey;
