@@ -97,47 +97,14 @@ interface NavGroup {
       <!-- ========== MAIN ========== -->
       <div class="shell__main">
         <header class="topbar">
-          <div class="topbar__crumb">
-            <span class="topbar__persona-label">{{ persona.active().shortLabel }}</span>
-            <span class="topbar__sep">/</span>
-            <span class="topbar__title">Console</span>
-          </div>
-
-          <button *ngIf="access.activeScopes().length > 0"
-                  class="scope-chip"
-                  [matMenuTriggerFor]="scopeMenu"
-                  matTooltip="Escopo de acesso ativo">
-            <span class="scope-chip__label">{{ access.context()?.activeScope?.label || 'Escopo global' }}</span>
-            <span class="scope-chip__caret" *ngIf="access.activeScopes().length > 1">▾</span>
-          </button>
-          <mat-menu #scopeMenu="matMenu" xPosition="after">
-            <button *ngFor="let scope of access.activeScopes()"
-                    mat-menu-item
-                    (click)="access.setActiveScope(scope.id)">
-              {{ scope.label }}
-            </button>
-          </mat-menu>
-
-          <div class="topbar__search">
-            <span class="topbar__search-icon">⌕</span>
-            <input class="topbar__search-input" placeholder="Buscar pipelines, jobs, datasets…" />
-            <kbd class="topbar__kbd">⌘K</kbd>
-          </div>
+          <!--
+            Topbar deliberadamente enxuta: a navegação principal vive na sidebar
+            e o título de cada página é responsabilidade do <ui-page-header>.
+            Slot 'topbar-help' reservado para um futuro link de Documentação/Ajuda.
+          -->
+          <div class="topbar__help-slot"></div>
 
           <div class="topbar__actions">
-            <button class="icon-btn" [matMenuTriggerFor]="notifMenu" matTooltip="Notificações">
-              <span>◔</span>
-              <span class="icon-btn__dot"></span>
-            </button>
-            <mat-menu #notifMenu="matMenu" xPosition="before">
-              <div class="menu-section">
-                <div class="menu-section__title">Notificações</div>
-                <button mat-menu-item><span class="dot dot--danger"></span> Pipeline ingestion_orders falhou</button>
-                <button mat-menu-item><span class="dot dot--warning"></span> Qualidade abaixo do limite</button>
-                <button mat-menu-item><span class="dot dot--info"></span> Conexões RDS próximas do limite</button>
-              </div>
-            </mat-menu>
-
             <button class="user-chip" [matMenuTriggerFor]="userMenu">
               <span class="user-chip__avatar">{{ userInitials() }}</span>
               <span class="user-chip__meta">
@@ -284,67 +251,25 @@ interface NavGroup {
     /* ---------- Topbar ---------- */
     .shell__main { display: flex; flex-direction: column; min-width: 0; }
     .topbar {
-      display: flex; align-items: center; gap: 16px;
-      height: 60px; padding: 0 24px;
+      display: flex; align-items: center;
+      height: 56px; padding: 0 24px;
       background: rgba(10,14,20,0.85);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-subtle);
       position: sticky; top: 0; z-index: 5;
     }
-    .topbar__crumb { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-    .topbar__persona-label { color: var(--brand-300); font-weight: 600; }
-    .topbar__sep { color: var(--text-muted); }
-    .topbar__title { color: var(--text-primary); font-weight: 600; }
-
-    .scope-chip {
-      display: inline-flex; align-items: center; gap: 8px;
-      min-height: 32px; max-width: 280px;
-      padding: 0 10px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      color: var(--text-secondary);
-      font: inherit; font-size: 12px; font-weight: 600;
-      cursor: pointer;
-    }
-    .scope-chip:hover { color: var(--text-primary); border-color: var(--border-default); background: var(--bg-elevated); }
-    .scope-chip__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .scope-chip__caret { color: var(--text-muted); font-size: 10px; }
-
-    .topbar__search {
-      flex: 1; max-width: 480px;
-      display: flex; align-items: center; gap: 8px;
-      padding: 0 12px; height: 36px;
-      background: var(--bg-surface); border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-    }
-    .topbar__search-icon { color: var(--text-muted); }
-    .topbar__search-input {
-      flex: 1; background: transparent; border: 0; outline: 0;
-      color: var(--text-primary); font: inherit; font-size: 13px;
-    }
-    .topbar__search-input::placeholder { color: var(--text-muted); }
-    .topbar__kbd {
-      font-family: var(--font-mono); font-size: 10px;
-      padding: 2px 6px; background: var(--bg-elevated);
-      border: 1px solid var(--border-default); border-radius: 4px;
-      color: var(--text-muted);
-    }
+    .topbar__help-slot { flex: 1; }
 
     .topbar__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+    /* .icon-btn--collapse continua usado na sidebar */
     .icon-btn {
-      width: 36px; height: 36px; border-radius: var(--radius-md);
-      background: var(--bg-surface); border: 1px solid var(--border-subtle);
+      width: 32px; height: 32px; border-radius: var(--radius-md);
+      background: transparent; border: 0;
       color: var(--text-secondary); cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
-      position: relative;
     }
-    .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--border-default); }
-    .icon-btn__dot {
-      position: absolute; top: 8px; right: 8px;
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--danger-500); border: 2px solid var(--bg-app);
-    }
+    .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 
     .user-chip {
       display: flex; align-items: center; gap: 10px;
@@ -369,22 +294,11 @@ interface NavGroup {
     .content { padding: 28px 32px; max-width: 1480px; width: 100%; margin: 0 auto; }
 
     /* ---------- Menu items ---------- */
-    .menu-section { padding: 8px 0; }
-    .menu-section__title {
-      padding: 6px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.10em;
-      color: var(--text-muted); font-weight: 700;
-    }
-    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
-    .dot--danger { background: var(--danger-500); }
-    .dot--warning { background: var(--warning-500); }
-    .dot--info { background: var(--info-500); }
-
     .persona-option { padding: 10px 16px !important; line-height: 1.3 !important; height: auto !important; }
     .persona-option__title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
     .persona-option__desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; max-width: 280px; white-space: normal; }
 
     @media (max-width: 900px) {
-      .topbar__search { display: none; }
       .user-chip__meta { display: none; }
     }
   `],

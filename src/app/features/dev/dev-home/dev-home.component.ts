@@ -82,7 +82,12 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
               <span class="stage-pill__title">{{ s.title }}</span>
               <ui-badge tone="brand">{{ s.badge }}</ui-badge>
             </div>
-            <span class="stage-flow__arrow" *ngIf="!last" aria-hidden="true">↓</span>
+            <!--
+              Conector entre etapas: linha vertical 1px que herda do trilho.
+              Discreto por design — sequência fica óbvia sem competir com o
+              conteúdo. (aria-hidden: leitores de tela inferem do <ol>.)
+            -->
+            <span class="stage-flow__connector" *ngIf="!last" aria-hidden="true"></span>
           </ng-container>
         </div>
       </ui-card>
@@ -171,17 +176,16 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
       font-weight: 700;
     }
 
-    .stage-flow { display: flex; flex-direction: column; gap: 8px; }
-    .stage-flow__head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+    .stage-flow { display: flex; flex-direction: column; gap: 0; }
+    .stage-flow__head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .stage-flow__head strong { color: var(--text-primary); font-size: 14px; }
     .stage-flow__head span { color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
-    .stage-flow__arrow {
+    .stage-flow__connector {
       align-self: flex-start;
-      margin-left: 22px;
-      color: var(--text-muted);
-      font-size: 14px;
-      line-height: 1;
-      opacity: .55;
+      width: 1px;
+      height: 12px;
+      margin-left: 23px;     /* alinha com o centro do .stage-pill__num (12 + 11) */
+      background: var(--border-default);
     }
     .stage-pill {
       display: flex; align-items: center; gap: 10px;

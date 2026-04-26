@@ -28,17 +28,21 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     :host { display: block; }
+    /*
+      Sem borda padrão: o contraste com --bg-app já delimita o card.
+      Em estado interativo, uma borda sutil aparece no hover como affordance.
+    */
     .ui-card {
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid transparent;
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-1);
+      box-shadow: none;
       overflow: hidden;
       transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
     }
-    .ui-card--flat { background: transparent; box-shadow: none; }
+    .ui-card--flat { background: transparent; }
     .ui-card--interactive { cursor: pointer; }
-    .ui-card--interactive:hover { border-color: var(--border-strong); box-shadow: var(--shadow-2); transform: translateY(-1px); }
+    .ui-card--interactive:hover { border-color: var(--border-default); box-shadow: var(--shadow-2); transform: translateY(-1px); }
 
     .ui-card__header {
       display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
