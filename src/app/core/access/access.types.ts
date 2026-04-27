@@ -36,6 +36,7 @@ export type Capability =
   | 'ops.viewBoard'
   | 'admin.manageAccess'
   | 'admin.manageOrg'
+  | 'admin.manageStages'
   | 'admin.viewAudit';
 
 export interface AccessScope {

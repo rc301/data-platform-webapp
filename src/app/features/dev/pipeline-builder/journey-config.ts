@@ -279,6 +279,9 @@ export const TEMPLATE_BY_ID: Record<JourneyTemplateId, JourneyTemplate> =
 
 export const STAGE_BY_ID = STAGE_CATALOG;
 
+/** Lista plana dos IDs preservando a ordem do catálogo — útil para iteração na UI. */
+export const JOURNEY_STAGE_IDS_BY_CATALOG: readonly JourneyStageId[] = Object.keys(STAGE_CATALOG) as JourneyStageId[];
+
 export function getJourneyTemplate(templateId: JourneyTemplateId): JourneyTemplate {
   return TEMPLATE_BY_ID[templateId];
 }

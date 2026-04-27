@@ -39,6 +39,12 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./pages/admin-subjects.component').then(m => m.AdminSubjectsComponent),
       },
       {
+        path: 'stages',
+        canMatch: [capabilityGuard],
+        data: { capability: 'admin.manageStages' },
+        loadComponent: () => import('./pages/admin-stages.component').then(m => m.AdminStagesComponent),
+      },
+      {
         path: 'audit',
         canMatch: [capabilityGuard],
         data: { capability: 'admin.viewAudit' },

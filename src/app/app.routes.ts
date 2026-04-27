@@ -109,8 +109,9 @@ export const routes: Routes = [
         path: 'admin',
         canMatch: [capabilityGuard],
         // Qualquer capability administrativa abre a área. Sub-rotas têm seus
-        // próprios guards (admin.manageAccess / admin.manageOrg / admin.viewAudit).
-        data: { capability: ['admin.manageAccess', 'admin.manageOrg', 'admin.viewAudit'] },
+        // próprios guards (admin.manageAccess / admin.manageOrg /
+        // admin.manageStages / admin.viewAudit).
+        data: { capability: ['admin.manageAccess', 'admin.manageOrg', 'admin.manageStages', 'admin.viewAudit'] },
         loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
       },
     ],

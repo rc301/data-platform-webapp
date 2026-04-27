@@ -100,6 +100,7 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<Role, Capability[]> = {
     'ops.viewBoard',
     'admin.manageAccess',
     'admin.manageOrg',
+    'admin.manageStages',
     'admin.viewAudit',
   ],
 };
@@ -145,6 +146,7 @@ export const CAPABILITY_LABELS: Record<Capability, string> = {
   'ops.viewBoard': 'Sustentacao - painel de farois',
   'admin.manageAccess': 'Admin - gerir acessos',
   'admin.manageOrg': 'Admin - gerir hierarquia',
+  'admin.manageStages': 'Admin - gerir catálogo de etapas',
   'admin.viewAudit': 'Admin - consultar auditoria',
 };
 
