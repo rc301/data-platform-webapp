@@ -91,9 +91,7 @@ export const routes: Routes = [
       },
       {
         path: 'orchestrator',
-        canMatch: [capabilityGuard],
-        data: { capability: 'ops.viewBoard' },
-        loadComponent: () => import('./features/orchestrator/orchestrator.component').then(m => m.OrchestratorComponent),
+        loadChildren: () => import('./features/orchestrator/orchestrator.routes').then(m => m.ORCHESTRATOR_ROUTES),
       },
       {
         path: 'monitoring',
