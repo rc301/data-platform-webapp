@@ -12,6 +12,7 @@ export type AuditAction =
   | 'pipeline.registry.imported'
   | 'demand.created'
   | 'demand.updated'
+  | 'demand.cancelled'
   | 'demand.inactivated'
   | 'lup.created'
   | 'lup.updated'

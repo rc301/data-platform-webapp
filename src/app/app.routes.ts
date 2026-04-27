@@ -49,7 +49,8 @@ export const routes: Routes = [
       {
         path: 'demands',
         canMatch: [capabilityGuard],
-        data: { capability: 'dev.viewProjects' },
+        // PublicViewer acessa via demand.viewOwn; demais perfis via dev.viewProjects.
+        data: { capability: ['demand.viewOwn', 'dev.viewProjects'] },
         loadComponent: () => import('./features/rfc/rfc-list.component').then(m => m.RfcListComponent),
       },
       {

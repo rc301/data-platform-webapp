@@ -530,8 +530,8 @@ export class LayoutComponent {
     {
       title: 'Acesso público',
       items: [
-        { label: 'Catálogo', icon: 'catalog', route: '/catalog', exact: true, requiredCapabilities: ['catalog.viewBasic'] },
-        // 'Demandas' será incluído na Onda 3 quando o /demands abrir para PublicViewer.
+        { label: 'Catálogo',         icon: 'catalog', route: '/catalog', exact: true, requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Minhas demandas',  icon: 'demand',  route: '/demands',              requiredCapabilities: ['demand.viewOwn'] },
       ],
     },
   ];
