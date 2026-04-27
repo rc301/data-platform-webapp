@@ -391,7 +391,8 @@ export class LayoutComponent {
         adminItems.push({ label: 'Políticas de Acesso', icon: 'access',  route: '/admin/policies', requiredCapabilities: ['admin.manageAccess'] });
       }
       if (this.access.can('admin.manageOrg')) {
-        adminItems.push({ label: 'Estrutura organizacional', icon: 'orgtree', route: '/admin/org', requiredCapabilities: ['admin.manageOrg'] });
+        adminItems.push({ label: 'Estrutura organizacional', icon: 'orgtree',  route: '/admin/org',      requiredCapabilities: ['admin.manageOrg'] });
+        adminItems.push({ label: 'Assuntos & Domínios',      icon: 'subjects', route: '/admin/subjects', requiredCapabilities: ['admin.manageOrg'] });
       }
       if (this.access.can('admin.viewAudit')) {
         adminItems.push({ label: 'Auditoria', icon: 'audit', route: '/admin/audit', requiredCapabilities: ['admin.viewAudit'] });

@@ -77,7 +77,8 @@ export class AdminShellComponent {
   private readonly tabs: AdminTab[] = [
     { label: 'Visão geral',           description: 'Contexto efetivo, política de auditoria, atalhos.', route: 'overview',  requiredCapabilities: ['admin.manageAccess', 'admin.manageOrg', 'admin.viewAudit'] },
     { label: 'Políticas de Acesso',   description: 'Matriz de papel → capabilities; mapeamento AD.',     route: 'policies',  requiredCapabilities: ['admin.manageAccess'] },
-    { label: 'Estrutura organizacional', description: 'Árvore Squad → Coord → Gerência → Sup → Diretoria.', route: 'org',     requiredCapabilities: ['admin.manageOrg'] },
+    { label: 'Estrutura organizacional', description: 'Árvore Squad → Coord → Gerência → Sup → Diretoria.', route: 'org',       requiredCapabilities: ['admin.manageOrg'] },
+    { label: 'Assuntos & Domínios',   description: 'Classificação corporativa de tabelas (1 tabela = 1 assunto + 1 domínio).', route: 'subjects', requiredCapabilities: ['admin.manageOrg'] },
     { label: 'Auditoria',             description: 'Trilha de eventos com retenção de 5 anos.',           route: 'audit',     requiredCapabilities: ['admin.viewAudit'] },
   ];
 

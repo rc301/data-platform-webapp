@@ -33,6 +33,12 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./pages/admin-org.component').then(m => m.AdminOrgComponent),
       },
       {
+        path: 'subjects',
+        canMatch: [capabilityGuard],
+        data: { capability: 'admin.manageOrg' },
+        loadComponent: () => import('./pages/admin-subjects.component').then(m => m.AdminSubjectsComponent),
+      },
+      {
         path: 'audit',
         canMatch: [capabilityGuard],
         data: { capability: 'admin.viewAudit' },
