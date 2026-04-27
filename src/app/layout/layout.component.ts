@@ -383,12 +383,22 @@ export class LayoutComponent {
       // Onda 4 quebra este item em sub-rotas (Políticas, Estrutura, Assuntos,
       // Etapas, Auditoria). Aqui mantemos um único ponto de entrada para
       // não acoplar à existência de rotas que ainda não foram criadas.
-      allowedGroups.push({
-        title: 'Governança',
-        items: [
-          { label: 'Acessos & Auditoria', icon: 'audit', route: '/admin', requiredCapabilities: ['admin.manageAccess', 'admin.manageOrg', 'admin.viewAudit'] },
-        ],
-      });
+      // Cada sub-rota do admin tem capability dedicada — o item da sidebar
+      // deep-linka para a primeira tela acessível pelo usuário; o
+      // AdminShell esconde tabs sem permissão.
+      const adminItems: NavItem[] = [];
+      if (this.access.can('admin.manageAccess')) {
+        adminItems.push({ label: 'Políticas de Acesso', icon: 'access',  route: '/admin/policies', requiredCapabilities: ['admin.manageAccess'] });
+      }
+      if (this.access.can('admin.manageOrg')) {
+        adminItems.push({ label: 'Estrutura organizacional', icon: 'orgtree', route: '/admin/org', requiredCapabilities: ['admin.manageOrg'] });
+      }
+      if (this.access.can('admin.viewAudit')) {
+        adminItems.push({ label: 'Auditoria', icon: 'audit', route: '/admin/audit', requiredCapabilities: ['admin.viewAudit'] });
+      }
+      if (adminItems.length) {
+        allowedGroups.push({ title: 'Governança', items: adminItems });
+      }
     }
     return allowedGroups;
   });
