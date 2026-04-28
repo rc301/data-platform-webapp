@@ -22,15 +22,18 @@ import { Sensor, SensorDraft } from '../../../core/orchestrator/sensor.model';
         <div card-actions>
           <button class="btn btn--primary" type="button" (click)="startNew()">+ Novo sensor</button>
         </div>
+        <div class="filters">
+          <input class="input" type="search" [(ngModel)]="searchTerm" placeholder="Buscar sensor, origem ou query…">
+        </div>
         <table class="tbl">
           <thead>
-            <tr><th>Sensor</th><th>Origem</th><th>Periodicidade</th><th>Squad</th><th>Estado</th><th></th></tr>
+            <tr><th>Sensor</th><th>Origem</th><th>Query</th><th>Squad</th><th>Estado</th><th></th></tr>
           </thead>
           <tbody>
-            <tr *ngFor="let sensor of sensors.sensors()">
+            <tr *ngFor="let sensor of visibleSensors()">
               <td class="tbl__name">{{ sensor.name }}</td>
               <td><code>{{ sensor.sourceQualifiedName }}</code></td>
-              <td>{{ sensor.intervalMinutes }} min</td>
+              <td><code class="query">{{ sensor.query }}</code></td>
               <td>{{ org.labelForUnit(sensor.ownerSquadId) }}</td>
               <td>
                 <ui-badge [tone]="sensor.enabled ? 'success' : 'neutral'">
@@ -42,8 +45,8 @@ import { Sensor, SensorDraft } from '../../../core/orchestrator/sensor.model';
                 <button class="btn btn--ghost" type="button" (click)="toggle(sensor)">{{ sensor.enabled ? 'Pausar' : 'Ativar' }}</button>
               </td>
             </tr>
-            <tr *ngIf="!sensors.sensors().length">
-              <td colspan="6" class="tbl__empty">Nenhum sensor cadastrado ainda.</td>
+            <tr *ngIf="!visibleSensors().length">
+              <td colspan="6" class="tbl__empty">Nenhum sensor para os filtros atuais.</td>
             </tr>
           </tbody>
         </table>
@@ -55,7 +58,7 @@ import { Sensor, SensorDraft } from '../../../core/orchestrator/sensor.model';
             <label class="field"><span>Nome</span><input class="input" [(ngModel)]="draft.name"></label>
             <label class="field"><span>Origem (qualifiedName)</span><input class="input" [(ngModel)]="draft.sourceQualifiedName" placeholder="ex: rds.orders_db.orders"></label>
             <label class="field field--full"><span>Descrição</span><input class="input" [(ngModel)]="draft.description"></label>
-            <label class="field field--full"><span>Query</span><textarea class="input" rows="3" [(ngModel)]="draft.query" placeholder="SELECT MAX(updated_at) FROM ..."></textarea></label>
+            <label class="field field--full"><span>Query de prontidão</span><textarea class="input" rows="4" [(ngModel)]="draft.query" placeholder="SELECT 1 FROM tabela_origem WHERE ... LIMIT 1"></textarea></label>
             <label class="field"><span>Frequência (min)</span><input class="input" type="number" min="1" [(ngModel)]="draft.intervalMinutes"></label>
             <label class="field"><span>Threshold de freshness (min)</span><input class="input" type="number" min="1" [(ngModel)]="draft.freshnessThresholdMinutes"></label>
             <label class="field">
@@ -91,6 +94,8 @@ import { Sensor, SensorDraft } from '../../../core/orchestrator/sensor.model';
     .tbl__actions { text-align: right; white-space: nowrap; }
     .tbl__empty { text-align: center; color: var(--text-muted); padding: 28px !important; }
     code { padding: 1px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); font-size: 11px; }
+    .query { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filters { display: grid; grid-template-columns: minmax(220px, 1fr); gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-surface); }
 
     .form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
@@ -119,6 +124,16 @@ export class SensorsCrudComponent {
   /** Sensor em edição (null = nada selecionado). */
   editing = signal<Sensor | null>(null);
   editorMode = signal<'create' | 'update'>('create');
+  searchTerm = '';
+  visibleSensors() {
+    const term = this.searchTerm.trim().toLowerCase();
+    return this.sensors.sensors().filter(sensor =>
+      (!term
+        || sensor.name.toLowerCase().includes(term)
+        || sensor.sourceQualifiedName.toLowerCase().includes(term)
+        || sensor.query.toLowerCase().includes(term))
+    );
+  }
 
   /* Draft mutável vinculado ao formulário (não usamos signal aqui para
      simplificar binding com [(ngModel)] dos campos). */
@@ -198,4 +213,5 @@ export class SensorsCrudComponent {
       enabled: true,
     };
   }
+
 }

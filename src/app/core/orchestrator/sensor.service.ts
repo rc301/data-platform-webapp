@@ -69,6 +69,7 @@ export class SensorService {
       createdAt: now,
       updatedAt: now,
     };
+    if (this.hasDuplicateQuery(sensor.query)) return this.sensorsSig().find(s => normalizeSql(s.query) === normalizeSql(sensor.query)) ?? sensor;
     this.sensorsSig.update(items => [sensor, ...items]);
     this.audit.record('orchestrator.sensor.created', {
       resourceType: 'sensor', resourceId: sensor.id,
@@ -89,6 +90,7 @@ export class SensorService {
       enabled: draft.enabled ?? existing.enabled,
       updatedAt: new Date().toISOString(),
     };
+    if (this.hasDuplicateQuery(next.query, id)) return existing;
     this.sensorsSig.update(items => items.map(s => s.id === id ? next : s));
     this.audit.record('orchestrator.sensor.updated', { resourceType: 'sensor', resourceId: id });
     return next;
@@ -138,6 +140,11 @@ export class SensorService {
     const user = this.auth.user();
     return user?.userPrincipal ?? user?.name ?? 'mock.user';
   }
+
+  private hasDuplicateQuery(query: string, exceptId?: string): boolean {
+    const normalized = normalizeSql(query);
+    return this.sensorsSig().some(sensor => sensor.id !== exceptId && normalizeSql(sensor.query) === normalized);
+  }
 }
 
 /* ============================================================
@@ -147,3 +154,4 @@ function slug(value: string): string {
   return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'sensor';
 }
 function shortRand(): string { return Math.random().toString(36).slice(2, 6); }
+function normalizeSql(value: string): string { return value.replace(/\s+/g, ' ').trim().toLowerCase(); }

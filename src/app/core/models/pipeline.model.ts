@@ -2,6 +2,10 @@ import { DataLayer } from './catalog.model';
 
 export type IngestionFlowKind = 'glue_job' | 'munin_sql' | 'phoenix' | 'cdp' | 'other';
 export type PipelineRegistrationSource = 'discovered' | 'manual';
+export type PipelineExecutionResource = 'GlueJob' | 'StepFunction';
+export type PipelineExecutionAction = 'run_job' | 'rerun_failed' | 'add_partition' | 'drop_partition' | 'run_historical';
+export type PipelineExecutionRequestStatus = 'queued' | 'submitted' | 'failed_validation';
+export type DataPipelineTargetCriticality = 'altissima' | 'alta' | 'media' | 'baixa';
 
 export interface Pipeline {
   id: string;
@@ -18,6 +22,7 @@ export interface Pipeline {
   team: string;
   sources: string[];
   target: string;
+  targetCriticality?: DataPipelineTargetCriticality;
   targetLayer?: DataLayer;
   targetGoldenSource?: boolean;
   tags: string[];
@@ -71,4 +76,32 @@ export interface PipelineAlert {
   timestamp: string;
   acknowledged: boolean;
   acknowledgedBy?: string;
+}
+
+export interface PipelineExecutionRequest {
+  id: string;
+  pipelineId: string;
+  pipelineName: string;
+  sigla: string;
+  resource: PipelineExecutionResource;
+  action: PipelineExecutionAction;
+  jobName: string;
+  payload: string;
+  partitionSpec?: string;
+  historicalWindow?: string;
+  reason: string;
+  status: PipelineExecutionRequestStatus;
+  requestedAt: string;
+  requestedBy: string;
+}
+
+export interface PipelineExecutionRequestDraft {
+  pipelineId: string;
+  resource: PipelineExecutionResource;
+  action: PipelineExecutionAction;
+  jobName: string;
+  payload: string;
+  partitionSpec?: string;
+  historicalWindow?: string;
+  reason: string;
 }

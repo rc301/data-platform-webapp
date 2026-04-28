@@ -345,6 +345,7 @@ export class LayoutComponent {
       shield:      '◐',  // saúde / ops
       bell:        '◔',
       cost:        '$',
+      trigger:     '▶',
       capacity:    '▦',
       kpi:         '◧',
       demand:      '✎',  // RFC / demandas
@@ -447,6 +448,7 @@ export class LayoutComponent {
       title: 'Plataforma',
       items: [
         { label: 'Pipelines',          icon: 'pipeline', route: '/pipelines',         requiredCapabilities: ['pipeline.view'] },
+        { label: 'Acionamentos',       icon: 'trigger',  route: '/pipeline-actions',  requiredCapabilities: ['ops.viewBoard'] },
         { label: 'Orquestrador',       icon: 'orch',     route: '/orchestrator',      requiredCapabilities: ['ops.viewBoard'] },
         { label: 'Saúde & Faróis',     icon: 'shield',   route: '/ops',               requiredCapabilities: ['ops.viewBoard'] },
         { label: 'Custos',             icon: 'cost',     route: '/monitoring/costs',  requiredCapabilities: ['pipeline.viewCosts'] },
@@ -489,6 +491,7 @@ export class LayoutComponent {
       title: 'Plataforma',
       items: [
         { label: 'Pipelines',    icon: 'pipeline', route: '/pipelines',        requiredCapabilities: ['pipeline.view'] },
+        { label: 'Acionamentos', icon: 'trigger',  route: '/pipeline-actions', requiredCapabilities: ['ops.viewBoard'] },
         { label: 'Orquestrador', icon: 'orch',     route: '/orchestrator',     requiredCapabilities: ['ops.viewBoard'] },
         { label: 'Custos',       icon: 'cost',     route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
       ],
@@ -528,6 +531,7 @@ export class LayoutComponent {
       title: 'Plataforma',
       items: [
         { label: 'Pipelines', icon: 'pipeline', route: '/pipelines',        requiredCapabilities: ['pipeline.view'] },
+        { label: 'Acionamentos', icon: 'trigger', route: '/pipeline-actions', requiredCapabilities: ['ops.viewBoard'] },
         { label: 'Custos',    icon: 'cost',     route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
       ],
     },

@@ -10,9 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
-import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
-import { DurationPipe } from '../../shared/pipes/duration.pipe';
-import { DataLayer, IngestionFlowKind, Pipeline, PipelineAlert, PipelineRegistryDraft } from '../../core/models';
+import { DataLayer, IngestionFlowKind, Pipeline, PipelineRegistryDraft } from '../../core/models';
 import { AccessService } from '../../core/access/access.service';
 import { OrgService } from '../../core/org/org.service';
 import { PlatformDataService } from '../../core/services/platform-data.service';
@@ -26,19 +24,16 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
   imports: [
     CommonModule, FormsModule, MatIconModule, MatButtonModule, MatChipsModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatTooltipModule,
-    PageHeaderComponent, StatusBadgeComponent, RelativeTimePipe, DurationPipe,
+    PageHeaderComponent, StatusBadgeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Pipelines" subtitle="Monitore pipelines em uma lista operacional com filtros por escopo de dados" icon="account_tree">
+    <app-page-header title="Pipelines" subtitle="Cadastro e gerenciamento das referências de pipelines de dados da plataforma" icon="account_tree">
       <button mat-stroked-button color="primary" *ngIf="canManageRegistry()" (click)="openJsonImport()">
         <mat-icon>upload_file</mat-icon> Importar JSON
       </button>
       <button mat-flat-button color="primary" *ngIf="canManageRegistry()" (click)="openManualForm()">
         <mat-icon>add</mat-icon> Cadastrar fluxo
-      </button>
-      <button mat-stroked-button color="primary" (click)="refresh()">
-        <mat-icon>refresh</mat-icon> Atualizar
       </button>
     </app-page-header>
 
@@ -76,14 +71,11 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Status</mat-label>
+            <mat-label>Status cadastral</mat-label>
             <mat-select [(ngModel)]="draft.status">
               <mat-option value="pending">Pendente</mat-option>
-              <mat-option value="running">Executando</mat-option>
-              <mat-option value="completed">Completado</mat-option>
-              <mat-option value="failed">Falha</mat-option>
-              <mat-option value="delayed">Atrasado</mat-option>
-              <mat-option value="offline">Desligado</mat-option>
+              <mat-option value="completed">Ativo</mat-option>
+              <mat-option value="offline">Desativado</mat-option>
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Squad</mat-label><input matInput [(ngModel)]="draft.team"></mat-form-field>
@@ -118,7 +110,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
     </section>
 
     <section class="summary-strip">
-      <div class="summary-item" *ngFor="let s of summaries">
+      <div class="summary-item" *ngFor="let s of summaries()">
         <span class="summary-value" [style.color]="s.color">{{ s.count }}</span>
         <span class="summary-label">{{ s.label }}</span>
       </div>
@@ -131,15 +123,12 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Status</mat-label>
+        <mat-label>Status cadastral</mat-label>
         <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
           <mat-option value="all">Todos</mat-option>
           <mat-option value="pending">Pendente</mat-option>
-          <mat-option value="running">Executando</mat-option>
-          <mat-option value="completed">Completado</mat-option>
-          <mat-option value="failed">Falha</mat-option>
-          <mat-option value="delayed">Atrasado</mat-option>
-          <mat-option value="offline">Desligado</mat-option>
+          <mat-option value="active">Ativo</mat-option>
+          <mat-option value="offline">Desativado</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -197,27 +186,6 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
       </button>
     </section>
 
-    <section class="alerts-banner" *ngIf="unresolvedAlerts.length > 0">
-      <mat-icon color="warn">warning</mat-icon>
-      <span><strong>{{ unresolvedAlerts.length }} alertas</strong> requerem atenção</span>
-      <button mat-button color="warn" (click)="showAlerts = !showAlerts">
-        <mat-icon>{{ showAlerts ? 'visibility_off' : 'visibility' }}</mat-icon>
-        {{ showAlerts ? 'Ocultar' : 'Mostrar' }}
-      </button>
-    </section>
-
-    <section class="alerts-list" *ngIf="showAlerts">
-      <article *ngFor="let alert of unresolvedAlerts" class="alert-row" [class]="'alert-row alert-' + alert.severity">
-        <mat-icon>{{ alert.severity === 'critical' ? 'error' : alert.severity === 'high' ? 'warning' : 'info' }}</mat-icon>
-        <div>
-          <strong>{{ alert.pipelineName }}</strong>
-          <span>{{ alert.message }}</span>
-        </div>
-        <app-status-badge [status]="alert.severity" [label]="alert.type | titlecase"></app-status-badge>
-        <time>{{ alert.timestamp | relativeTime }}</time>
-      </article>
-    </section>
-
     <section class="list-shell">
       <div class="list-toolbar">
         <strong>{{ filteredPipelines().length }} pipelines</strong>
@@ -231,7 +199,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
         <span>Tabela alvo</span>
         <span>Squad</span>
         <span>Schedule</span>
-        <span>Última execução</span>
+        <span>Responsável</span>
         <span>Cadastro</span>
         <span></span>
       </div>
@@ -239,7 +207,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
       <article class="pipeline-row" *ngFor="let pipeline of filteredPipelines()" [class.pipeline-row--open]="expandedPipelineId() === pipeline.id">
         <div class="pipeline-grid">
           <div class="pipeline-main">
-            <app-status-badge [status]="pipeline.status" [label]="statusLabel(pipeline.status)"></app-status-badge>
+            <app-status-badge [status]="cadastralStatus(pipeline)" [label]="statusLabel(cadastralStatus(pipeline))"></app-status-badge>
             <div>
               <strong>{{ pipeline.name }}</strong>
               <span>{{ pipeline.description }}</span>
@@ -254,10 +222,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
           </div>
           <span>{{ pipeline.team }}</span>
           <span>{{ pipeline.schedule }}</span>
-          <span class="last-run">
-            <app-status-badge [status]="pipeline.lastRun.status" [label]="statusLabel(pipeline.lastRun.status)"></app-status-badge>
-            {{ pipeline.lastRun.startTime | relativeTime }}
-          </span>
+          <span>{{ pipeline.owner }}</span>
           <span class="manual-pill" [class.manual-pill--manual]="pipeline.registrationSource === 'manual'">
             {{ pipeline.registrationSource === 'manual' ? 'Manual' : 'Auto' }}
           </span>
@@ -280,7 +245,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
             <div class="sources-list"><code *ngFor="let source of pipeline.sources">{{ source }}</code></div>
           </div>
           <div class="detail-item"><span>SLA</span><strong>{{ pipeline.sla || '-' }}</strong></div>
-          <div class="detail-item"><span>Duração média</span><strong>{{ pipeline.avgDuration | duration }}</strong></div>
+          <div class="detail-item"><span>Criado por</span><strong>{{ pipeline.createdBy || '-' }}</strong></div>
           <div class="detail-item"><span>Responsável</span><strong>{{ pipeline.owner }}</strong></div>
           <div class="detail-item detail-item--wide">
             <span>Tags</span>
@@ -291,6 +256,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
     </section>
   `,
   styles: [`
+    :host { display: block; font-size: 13px; }
     .registry-panel { margin-bottom: 18px; padding: 16px; border-radius: var(--radius-lg); background: var(--bg-surface); }
     .registry-panel__head, .registry-panel__footer { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
     .registry-panel__head { margin-bottom: 14px; }
@@ -305,37 +271,32 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
     .summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 1px; margin-bottom: 18px; border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-overlay); }
     .summary-item { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; background: var(--bg-surface); }
     .summary-value { font-size: 26px; font-weight: 800; line-height: 1; }
+    .summary-label { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
 
     .filters-panel { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; padding: 14px; border-radius: var(--radius-lg); background: var(--bg-surface); }
     .filter-field { width: 168px; margin-bottom: -20px; }
     .search-field { flex: 1 1 280px; min-width: 260px; }
     .clear-button { margin-left: auto; }
 
-    .alerts-banner { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--warning-bg); color: var(--text-primary); }
-    .alerts-banner button { margin-left: auto; }
-    .alerts-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-    .alert-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; padding: 12px 14px; border-left: 4px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); }
-
     .list-shell { border-radius: var(--radius-lg); overflow-x: auto; background: var(--bg-surface); }
     .list-toolbar { display: flex; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); }
     .list-toolbar span { color: var(--text-secondary); font-size: 12px; }
-    .pipeline-grid { display: grid; grid-template-columns: minmax(280px, 2.2fr) 76px 92px minmax(210px, 1.4fr) 96px 150px minmax(190px, 1.2fr) 74px 124px; gap: 12px; align-items: center; padding: 12px 16px; }
+    .pipeline-grid { display: grid; grid-template-columns: minmax(260px, 2.2fr) 70px 86px minmax(210px, 1.4fr) 92px 140px minmax(130px, 1fr) 74px 124px; gap: 12px; align-items: center; padding: 11px 16px; font-size: 12px; }
     .pipeline-grid--head { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; background: var(--bg-app); border-bottom: 1px solid var(--border-subtle); }
     .pipeline-row { border-bottom: 1px solid var(--border-subtle); }
     .pipeline-row:last-child { border-bottom: 0; }
     .pipeline-row--open { background: var(--bg-elevated); }
     .pipeline-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .pipeline-main div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .pipeline-main strong { color: var(--text-primary); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .pipeline-main span { color: var(--text-secondary); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sigla, .type-pill, .layer-pill, .golden-pill { display: inline-flex; width: fit-content; align-items: center; border-radius: 6px; padding: 3px 7px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .pipeline-main strong { color: var(--text-primary); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pipeline-main span { color: var(--text-secondary); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sigla, .type-pill, .layer-pill, .golden-pill { display: inline-flex; width: fit-content; align-items: center; border-radius: 6px; padding: 3px 7px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
     .sigla { color: var(--brand-300); background: var(--bg-overlay); border: 1px solid var(--border-subtle); }
     .type-pill { color: var(--text-secondary); background: var(--bg-app); border: 1px solid var(--border-subtle); }
     .layer-pill { color: var(--info-500); background: var(--info-bg); }
     .golden-pill { color: var(--success-500); background: var(--success-bg); }
     .target-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
-    code { max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); font-size: 12px; }
-    .last-run { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 12px; }
+    code { max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); font-size: 11px; }
     .manual-pill { display: inline-flex; width: fit-content; padding: 3px 7px; border-radius: 6px; background: var(--bg-app); color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
     .manual-pill--manual { background: var(--info-bg); color: var(--info-500); }
     .row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 2px; }
@@ -364,7 +325,6 @@ export class PipelinesComponent {
   private readonly org = inject(OrgService);
 
   allPipelines = this.data.pipelines();
-  allAlerts = this.data.pipelineAlerts();
   searchTerm = '';
   statusFilter = 'all';
   typeFilter = 'all';
@@ -372,7 +332,6 @@ export class PipelinesComponent {
   siglaFilter = 'all';
   layerFilter: DataLayer | 'all' = 'all';
   goldenFilter: GoldenFilter = 'all';
-  showAlerts = false;
   jsonImportText = '';
   jsonImportError = '';
   draft: PipelineRegistryDraft = this.emptyDraft();
@@ -384,28 +343,24 @@ export class PipelinesComponent {
 
   siglas = Array.from(new Set(this.accessiblePipelines().map(pipeline => pipeline.sigla))).sort();
 
-  summaries = [
-    { label: 'Total', count: this.accessiblePipelines().length, color: 'var(--text-primary)' },
-    { label: 'Completados', count: this.accessiblePipelines().filter(p => p.status === 'completed').length, color: 'var(--success-500)' },
-    { label: 'Executando', count: this.accessiblePipelines().filter(p => p.status === 'running').length, color: 'var(--warning-500)' },
-    { label: 'Com Falha', count: this.accessiblePipelines().filter(p => p.status === 'failed').length, color: 'var(--danger-500)' },
-    { label: 'Atrasados', count: this.accessiblePipelines().filter(p => p.status === 'delayed').length, color: 'var(--warning-700)' },
-    { label: 'Pendentes', count: this.accessiblePipelines().filter(p => p.status === 'pending').length, color: 'var(--text-muted)' },
-    { label: 'Desligados', count: this.accessiblePipelines().filter(p => p.status === 'offline').length, color: 'var(--text-disabled)' },
-  ];
+  summaries(): Array<{ label: string; count: number; color: string }> {
+    const pipelines = this.accessiblePipelines();
+    return [
+      { label: 'Total de jobs', count: pipelines.length, color: 'var(--text-primary)' },
+      { label: 'Jobs ativos', count: pipelines.filter(p => this.cadastralStatus(p) === 'completed').length, color: 'var(--success-500)' },
+      { label: 'Jobs desativados', count: pipelines.filter(p => this.cadastralStatus(p) === 'offline').length, color: 'var(--text-muted)' },
+      { label: 'Novos em 30 dias', count: pipelines.filter(p => this.isNewInLast30Days(p)).length, color: 'var(--info-500)' },
+    ];
+  }
 
   readonly statusLabels: Record<string, string> = {
     pending: 'Pendente',
-    running: 'Executando',
-    completed: 'Completado',
-    failed: 'Falha',
-    delayed: 'Atrasado',
-    offline: 'Desligado',
+    running: 'Ativo',
+    completed: 'Ativo',
+    failed: 'Ativo',
+    delayed: 'Ativo',
+    offline: 'Desativado',
   };
-
-  get unresolvedAlerts(): PipelineAlert[] {
-    return this.allAlerts.filter(alert => !alert.acknowledged);
-  }
 
   statusLabel(status: string): string {
     return this.statusLabels[status] || status;
@@ -413,13 +368,6 @@ export class PipelinesComponent {
 
   canManageRegistry(): boolean {
     return this.access.can('pipeline.manageRegistry');
-  }
-
-  refresh(): void {
-    this.data.refreshOperationalSnapshot();
-    this.allPipelines = this.data.pipelines();
-    this.allAlerts = this.data.pipelineAlerts();
-    this.applyFilters();
   }
 
   openManualForm(): void {
@@ -520,7 +468,11 @@ export class PipelinesComponent {
         || pipeline.sigla.toLowerCase().includes(term),
       );
     }
-    if (this.statusFilter !== 'all') result = result.filter(pipeline => pipeline.status === this.statusFilter);
+    if (this.statusFilter !== 'all') {
+      result = result.filter(pipeline => this.statusFilter === 'active'
+        ? this.cadastralStatus(pipeline) === 'completed'
+        : this.cadastralStatus(pipeline) === this.statusFilter);
+    }
     if (this.typeFilter !== 'all') result = result.filter(pipeline => pipeline.type === this.typeFilter);
     if (this.squadFilter !== 'all') result = result.filter(pipeline => pipeline.team === this.squadFilter);
     if (this.siglaFilter !== 'all') result = result.filter(pipeline => pipeline.sigla === this.siglaFilter);
@@ -536,6 +488,13 @@ export class PipelinesComponent {
     if (this.access.can('executive.viewGlobal')) return this.allPipelines;
     const squadLabels = new Set(this.access.activeSquadIds().map(id => this.org.labelForUnit(id)));
     return this.allPipelines.filter(pipeline => squadLabels.has(pipeline.team));
+  }
+
+  private isNewInLast30Days(pipeline: Pipeline): boolean {
+    if (!pipeline.createdAt) return false;
+    const createdAt = Date.parse(pipeline.createdAt);
+    if (Number.isNaN(createdAt)) return false;
+    return Date.now() - createdAt <= 30 * 24 * 60 * 60 * 1000;
   }
 
   private emptyDraft(): PipelineRegistryDraft {
@@ -565,7 +524,7 @@ export class PipelinesComponent {
       sigla: pipeline.sigla,
       description: pipeline.description,
       ingestionKind: pipeline.ingestionKind ?? this.kindFromType(pipeline.type),
-      status: pipeline.status,
+      status: this.cadastralStatus(pipeline),
       schedule: pipeline.schedule,
       owner: pipeline.owner,
       team: pipeline.team,
@@ -609,5 +568,11 @@ export class PipelinesComponent {
       CDP: 'cdp',
       Outros: 'other',
     } as const)[type];
+  }
+
+  cadastralStatus(pipeline: Pipeline): Pipeline['status'] {
+    if (pipeline.status === 'offline') return 'offline';
+    if (pipeline.status === 'pending') return 'pending';
+    return 'completed';
   }
 }

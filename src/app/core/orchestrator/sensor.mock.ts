@@ -10,7 +10,7 @@ export const SENSORS: Sensor[] = [
     name: 'orders RDS freshness',
     description: 'Verifica se a tabela orders.rds foi atualizada nos últimos 30 min.',
     sourceQualifiedName: 'rds.orders_db.orders',
-    query: 'SELECT MAX(updated_at) AS last_update FROM orders_db.orders',
+    query: "SELECT 1 FROM orders_db.orders WHERE updated_at >= current_timestamp - interval '30' minute LIMIT 1",
     intervalMinutes: 15,
     freshnessThresholdMinutes: 30,
     ownerSquadId: 'squad-a',
@@ -22,7 +22,7 @@ export const SENSORS: Sensor[] = [
     name: 'clickstream Kinesis liveness',
     description: 'Confere se o stream Kinesis recebeu eventos nos últimos 5 min.',
     sourceQualifiedName: 'kinesis.clickstream_stream',
-    query: 'SELECT MAX(event_timestamp) FROM clickstream_raw',
+    query: "SELECT 1 FROM clickstream_raw WHERE event_timestamp >= current_timestamp - interval '5' minute LIMIT 1",
     intervalMinutes: 5,
     freshnessThresholdMinutes: 10,
     ownerSquadId: 'squad-a',
@@ -34,7 +34,7 @@ export const SENSORS: Sensor[] = [
     name: 'silver customer_base',
     description: 'Garante que silver.customer_base foi consolidado antes do customer_360.',
     sourceQualifiedName: 'silver.customer_base',
-    query: 'SELECT MAX(snapshot_at) FROM silver.customer_base',
+    query: "SELECT 1 FROM silver.customer_base WHERE snapshot_at = current_date LIMIT 1",
     intervalMinutes: 30,
     freshnessThresholdMinutes: 90,
     ownerSquadId: 'squad-b',
@@ -46,7 +46,7 @@ export const SENSORS: Sensor[] = [
     name: 'gold financial_summary',
     description: 'Pré-requisito do export para RDS de relatórios financeiros.',
     sourceQualifiedName: 'gold.financial_summary',
-    query: 'SELECT MAX(generated_at) FROM gold.financial_summary',
+    query: "SELECT 1 FROM gold.financial_summary WHERE generated_at >= current_date LIMIT 1",
     intervalMinutes: 30,
     freshnessThresholdMinutes: 60,
     ownerSquadId: 'squad-c',
@@ -56,10 +56,10 @@ export const SENSORS: Sensor[] = [
 ];
 
 export const SENSOR_STATES: SensorState[] = [
-  { sensorId: 'sens-orders-rds',         status: 'green',  lastRunAt: ago(8),   lastLatencyMs: 142,  nextRunAt: inMins(7) },
-  { sensorId: 'sens-clickstream-kinesis', status: 'yellow', lastRunAt: ago(12), lastLatencyMs: 215,  nextRunAt: inMins(0), errorMessage: 'Stream sem eventos há 12 min — limite 10 min.' },
-  { sensorId: 'sens-customer-base',      status: 'red',    lastRunAt: ago(150), lastLatencyMs: 4002, nextRunAt: inMins(20), errorMessage: 'Falha ao consultar — verifique role do motor.' },
-  { sensorId: 'sens-finance-summary',    status: 'gray' },
+  { sensorId: 'sens-orders-rds',         status: 'green',  lastResult: 1, lastRunAt: ago(8),   lastLatencyMs: 142,  nextRunAt: inMins(7) },
+  { sensorId: 'sens-clickstream-kinesis', status: 'yellow', lastResult: 0, lastRunAt: ago(12), lastLatencyMs: 215,  nextRunAt: inMins(0), errorMessage: 'Stream sem eventos há 12 min — limite 10 min.' },
+  { sensorId: 'sens-customer-base',      status: 'red',    lastResult: 0, lastRunAt: ago(150), lastLatencyMs: 4002, nextRunAt: inMins(20), errorMessage: 'Falha ao consultar — verifique role do motor.' },
+  { sensorId: 'sens-finance-summary',    status: 'gray',   lastResult: 0 },
 ];
 
 export const PIPELINE_BINDINGS: PipelineSensorBinding[] = [

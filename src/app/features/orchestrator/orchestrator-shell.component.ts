@@ -10,10 +10,10 @@ interface OrchestratorTab {
 }
 
 /**
- * Shell do Orquestrador — quatro visões coordenadas com contexto compartilhado.
+ * Shell do Orquestrador — visões coordenadas com contexto compartilhado.
  *
- *   1. Estado agora           → /orchestrator/state
- *   2. Pipelines aguardando   → /orchestrator/waiting
+ *   1. Prontidão por job      → /orchestrator/readiness
+ *   2. Self Healing           → /orchestrator/self-healing
  *   3. Sensors (CRUD)         → /orchestrator/sensors
  *   4. Pipelines & Origens    → /orchestrator/bindings
  *
@@ -29,7 +29,7 @@ interface OrchestratorTab {
     <ui-page-header
       eyebrow="Plataforma"
       title="Orquestrador"
-      subtitle="Sensores de prontidão de origens, pipelines aguardando e cadastros de orquestração." />
+      subtitle="Prontidão de jobs, self healing e cadastros de orquestração." />
 
     <nav class="tabs" aria-label="Visões do orquestrador">
       <a *ngFor="let tab of tabs"
@@ -72,8 +72,8 @@ interface OrchestratorTab {
 })
 export class OrchestratorShellComponent {
   readonly tabs: OrchestratorTab[] = [
-    { label: 'Estado agora',         description: 'Sensors com farol e próxima execução.',                route: 'state' },
-    { label: 'Pipelines aguardando', description: 'Quem está em fila esperando qual origem liberar.',     route: 'waiting' },
+    { label: 'Prontidão por job',    description: 'Query OK, falhas, pendências e destino por job.',       route: 'readiness' },
+    { label: 'Self Healing',         description: 'Ciclo diário, queries OK/pendentes e falhas.',          route: 'self-healing' },
     { label: 'Sensors',              description: 'Cadastro das queries de prontidão (CRUD).',            route: 'sensors' },
     { label: 'Pipelines & Origens',  description: 'Vínculo M:N: pipeline ↔ sensors + política de falha.', route: 'bindings' },
   ];

@@ -45,6 +45,8 @@ export interface SensorState {
   status: SensorStatus;
   /** ISO da última execução com sucesso. */
   lastRunAt?: string;
+  /** Resultado lógico da query: 1 liberou a origem; 0 ainda não liberou. */
+  lastResult?: 0 | 1;
   /** Latência observada (ms). */
   lastLatencyMs?: number;
   /** Próxima execução prevista. */

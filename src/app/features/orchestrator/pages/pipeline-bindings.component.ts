@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { UiBadgeComponent, UiCardComponent } from '../../../shared/ui';
 import { SensorService } from '../../../core/orchestrator/sensor.service';
 import { PlatformDataService } from '../../../core/services/platform-data.service';
+import { Pipeline } from '../../../core/models';
 import {
   FailureAction,
   PipelineSensorBinding,
@@ -27,11 +28,29 @@ import {
       <div card-actions>
         <button class="btn btn--primary" type="button" (click)="startNew()">+ Vincular pipeline</button>
       </div>
+      <div class="filters">
+        <select class="input" [(ngModel)]="jobTypeFilter">
+          <option value="all">Todos os tipos</option>
+          <option value="GlueJob">GlueJob</option>
+          <option value="Munin">Munin</option>
+          <option value="CDP">CDP</option>
+          <option value="Phoenix">Phoenix</option>
+          <option value="Outros">Outros</option>
+        </select>
+        <select class="input" [(ngModel)]="siglaFilter">
+          <option value="all">Todas as siglas</option>
+          <option *ngFor="let sigla of siglas()" [value]="sigla">{{ sigla }}</option>
+        </select>
+        <input class="input" type="search" [(ngModel)]="searchTerm" placeholder="Buscar pipeline, destino ou sensor…">
+      </div>
 
       <table class="tbl">
         <thead>
           <tr>
             <th>Pipeline</th>
+            <th>Tipo</th>
+            <th>Sigla</th>
+            <th>Tabela destino</th>
             <th>Sensors aguardados</th>
             <th>Em falha</th>
             <th>Espera máxima</th>
@@ -40,8 +59,11 @@ import {
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let binding of sensors.bindings()">
+          <tr *ngFor="let binding of visibleBindings()">
             <td class="tbl__name">{{ binding.pipelineName }}</td>
+            <td>{{ pipelineFor(binding.pipelineId)?.type ?? '—' }}</td>
+            <td>{{ pipelineFor(binding.pipelineId)?.sigla ?? '—' }}</td>
+            <td><code>{{ pipelineFor(binding.pipelineId)?.target ?? '—' }}</code></td>
             <td>
               <span class="chips">
                 <ui-badge tone="brand" *ngFor="let id of binding.sensorIds">{{ sensorName(id) }}</ui-badge>
@@ -56,7 +78,7 @@ import {
               <button class="btn btn--ghost" type="button" (click)="remove(binding)">Remover</button>
             </td>
           </tr>
-          <tr *ngIf="!sensors.bindings().length"><td colspan="6" class="tbl__empty">Nenhuma pipeline vinculada a sensors.</td></tr>
+          <tr *ngIf="!visibleBindings().length"><td colspan="9" class="tbl__empty">Nenhuma pipeline vinculada a sensors para os filtros atuais.</td></tr>
         </tbody>
       </table>
     </ui-card>
@@ -111,6 +133,7 @@ import {
     .tbl__empty { text-align: center; color: var(--text-muted); padding: 28px !important; }
     .chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
     .muted { color: var(--text-muted); font-size: 11px; }
+    .filters { display: grid; grid-template-columns: 180px 160px minmax(240px, 1fr); gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-surface); }
 
     .form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
@@ -139,6 +162,25 @@ export class PipelineBindingsComponent {
   private readonly platform = inject(PlatformDataService);
 
   readonly pipelines = computed(() => this.platform.pipelines());
+  readonly siglas = computed(() => Array.from(new Set(this.platform.pipelines().map(pipeline => pipeline.sigla))).sort());
+  jobTypeFilter: 'all' | Pipeline['type'] = 'all';
+  siglaFilter = 'all';
+  searchTerm = '';
+  visibleBindings() {
+    const term = this.searchTerm.trim().toLowerCase();
+    return this.sensors.bindings().filter(binding => {
+      const pipeline = this.pipelineFor(binding.pipelineId);
+      const sensorNames = binding.sensorIds.map(id => this.sensorName(id)).join(' ').toLowerCase();
+      return (!pipeline || (
+        (this.jobTypeFilter === 'all' || pipeline.type === this.jobTypeFilter)
+        && (this.siglaFilter === 'all' || pipeline.sigla === this.siglaFilter)
+      ))
+        && (!term
+          || binding.pipelineName.toLowerCase().includes(term)
+          || pipeline?.target.toLowerCase().includes(term)
+          || sensorNames.includes(term));
+    });
+  }
 
   editor = signal(false);
   editorMode = signal<'create' | 'update'>('create');
@@ -214,6 +256,10 @@ export class PipelineBindingsComponent {
 
   sensorName(id: Sensor['id']): string {
     return this.sensors.sensors().find(s => s.id === id)?.name ?? id;
+  }
+
+  pipelineFor(id: string) {
+    return this.platform.pipelines().find(pipeline => pipeline.id === id);
   }
 
   failureLabel(action: FailureAction): string {

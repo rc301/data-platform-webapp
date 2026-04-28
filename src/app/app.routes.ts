@@ -42,6 +42,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/pipelines/pipelines.routes').then(m => m.PIPELINES_ROUTES),
       },
       {
+        path: 'pipeline-actions',
+        canMatch: [capabilityGuard],
+        data: { capability: 'ops.viewBoard' },
+        loadComponent: () => import('./features/pipeline-actions/pipeline-actions.component').then(m => m.PipelineActionsComponent),
+      },
+      {
         path: 'rfcs',
         redirectTo: 'demands',
         pathMatch: 'full',

@@ -10,6 +10,7 @@ export type AuditAction =
   | 'pipeline.registry.updated'
   | 'pipeline.registry.deleted'
   | 'pipeline.registry.imported'
+  | 'pipeline.execution.requested'
   | 'demand.created'
   | 'demand.updated'
   | 'demand.cancelled'
