@@ -15,6 +15,9 @@ import { DataQualityTableFormComponent } from '../../../shared/components/data-q
 import { DataQualityCustomRule, DataQualityTableRegistration, DataQualityTableRegistrationDraft } from '../../../core/models';
 import { PlatformDataService } from '../../../core/services/platform-data.service';
 import { AuditService } from '../../../core/audit/audit.service';
+import { AccessService } from '../../../core/access/access.service';
+import { Capability } from '../../../core/access/access.types';
+import { StageConfigService } from '../../../core/journey-stages/stage-config.service';
 import { DemandService } from '../../../core/demands/demand.service';
 import { ProjectJourney, ProjectJourneyStore } from '../project-journey.store';
 import { StageRegistry, StageContext, RfcStageStore } from '../../journey-stages';
@@ -63,7 +66,7 @@ import {
         <button
           type="button"
           class="template-option"
-          *ngFor="let template of templateOptions"
+          *ngFor="let template of templateOptions()"
           [class.template-option--selected]="template.id === selectedTemplateId()"
           (click)="selectTemplate(template.id)">
           <span class="template-option__badge">{{ template.badge }}</span>
@@ -389,8 +392,20 @@ export class PipelineBuilderComponent implements OnInit {
   private readonly projectJourneys = inject(ProjectJourneyStore);
   private readonly stageRegistry = inject(StageRegistry);
   private readonly rfcStore = inject(RfcStageStore);
+  private readonly access = inject(AccessService);
+  private readonly stageConfig = inject(StageConfigService);
 
-  readonly templateOptions = JOURNEY_TEMPLATES;
+  /**
+   * Templates que o usuário pode usar agora — filtrado por capability
+   * declarada no template (`pipeline.useTemplate.<id>`). Templates sem
+   * `requiredCapability` ficam visíveis (compatibilidade com versões
+   * antigas que ainda não migraram para gating por template).
+   */
+  readonly templateOptions = computed(() =>
+    JOURNEY_TEMPLATES.filter(t =>
+      !t.requiredCapability || this.access.can(t.requiredCapability as Capability)
+    )
+  );
   readonly selectedTemplateId = signal<JourneyTemplateId>(DEFAULT_TEMPLATE_ID);
   readonly createdJourney = signal<ProjectJourney | null>(null);
   readonly isDeleted = computed(() => this.createdJourney()?.status === 'deleted');

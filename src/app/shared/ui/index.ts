@@ -9,3 +9,4 @@ export * from './ui-farol/ui-farol.component';
 export * from './ui-stat/ui-stat.component';
 export * from './ui-page-header/ui-page-header.component';
 export * from './ui-journey-stepper/ui-journey-stepper.component';
+export * from './ui-scope-switcher/ui-scope-switcher.component';

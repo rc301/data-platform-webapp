@@ -18,6 +18,8 @@ export type Capability =
   | 'catalog.view'
   | 'pipeline.view'
   | 'pipeline.create'
+  | 'pipeline.useTemplate.glue-pyspark'
+  | 'pipeline.useTemplate.sql-only'
   | 'pipeline.approveStage'
   | 'pipeline.codeReview'
   | 'pipeline.manageRegistry'

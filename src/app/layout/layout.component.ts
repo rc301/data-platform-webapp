@@ -8,6 +8,7 @@ import { AuthService } from '../core/services/auth.service';
 import { PersonaService, PersonaId } from '../core/services/persona.service';
 import { AccessService } from '../core/access/access.service';
 import { Capability } from '../core/access/access.types';
+import { UiScopeSwitcherComponent } from '../shared/ui';
 
 interface NavItem {
   label: string;
@@ -28,7 +29,7 @@ interface NavGroup {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatSidenavModule, MatMenuModule, MatTooltipModule],
+  imports: [CommonModule, RouterModule, MatSidenavModule, MatMenuModule, MatTooltipModule, UiScopeSwitcherComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="shell">
@@ -100,11 +101,14 @@ interface NavGroup {
           <!--
             Topbar deliberadamente enxuta: a navegação principal vive na sidebar
             e o título de cada página é responsabilidade do <ui-page-header>.
-            Slot 'topbar-help' reservado para um futuro link de Documentação/Ajuda.
+            O slot da esquerda fica disponível para Documentação/Ajuda futura.
           -->
           <div class="topbar__help-slot"></div>
 
           <div class="topbar__actions">
+            <!-- Switcher persistente de escopo (squad/coord/gerência). Só
+                 aparece quando o usuário pertence a 1+ escopo. -->
+            <ui-scope-switcher></ui-scope-switcher>
             <button class="user-chip" [matMenuTriggerFor]="userMenu">
               <span class="user-chip__avatar">{{ userInitials() }}</span>
               <span class="user-chip__meta">
