@@ -197,9 +197,8 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
         <span>Sigla</span>
         <span>Tipo</span>
         <span>Tabela alvo</span>
-        <span>Squad</span>
-        <span>Schedule</span>
         <span>Responsável</span>
+        <span>Schedule</span>
         <span>Cadastro</span>
         <span></span>
       </div>
@@ -220,9 +219,8 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
             <span *ngIf="pipeline.targetLayer" class="layer-pill">{{ pipeline.targetLayer | uppercase }}</span>
             <span *ngIf="pipeline.targetGoldenSource" class="golden-pill">Golden</span>
           </div>
-          <span>{{ pipeline.team }}</span>
+          <span>{{ ownerLabel(pipeline) }}</span>
           <span>{{ pipeline.schedule }}</span>
-          <span>{{ pipeline.owner }}</span>
           <span class="manual-pill" [class.manual-pill--manual]="pipeline.registrationSource === 'manual'">
             {{ pipeline.registrationSource === 'manual' ? 'Manual' : 'Auto' }}
           </span>
@@ -246,7 +244,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
           </div>
           <div class="detail-item"><span>SLA</span><strong>{{ pipeline.sla || '-' }}</strong></div>
           <div class="detail-item"><span>Criado por</span><strong>{{ pipeline.createdBy || '-' }}</strong></div>
-          <div class="detail-item"><span>Responsável</span><strong>{{ pipeline.owner }}</strong></div>
+          <div class="detail-item"><span>Squad</span><strong>{{ pipeline.team }}</strong></div>
           <div class="detail-item detail-item--wide">
             <span>Tags</span>
             <mat-chip-set><mat-chip *ngFor="let tag of pipeline.tags">{{ tag }}</mat-chip></mat-chip-set>
@@ -281,7 +279,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
     .list-shell { border-radius: var(--radius-lg); overflow-x: auto; background: var(--bg-surface); }
     .list-toolbar { display: flex; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); }
     .list-toolbar span { color: var(--text-secondary); font-size: 12px; }
-    .pipeline-grid { display: grid; grid-template-columns: minmax(260px, 2.2fr) 70px 86px minmax(210px, 1.4fr) 92px 140px minmax(130px, 1fr) 74px 124px; gap: 12px; align-items: center; padding: 11px 16px; font-size: 12px; }
+    .pipeline-grid { display: grid; grid-template-columns: minmax(260px, 2.2fr) 70px 86px minmax(210px, 1.4fr) minmax(120px, .9fr) 140px 74px 124px; gap: 12px; align-items: center; padding: 11px 16px; font-size: 12px; }
     .pipeline-grid--head { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; background: var(--bg-app); border-bottom: 1px solid var(--border-subtle); }
     .pipeline-row { border-bottom: 1px solid var(--border-subtle); }
     .pipeline-row:last-child { border-bottom: 0; }
@@ -364,6 +362,12 @@ export class PipelinesComponent {
 
   statusLabel(status: string): string {
     return this.statusLabels[status] || status;
+  }
+
+  ownerLabel(pipeline: Pipeline): string {
+    return pipeline.owner && pipeline.owner !== pipeline.team
+      ? pipeline.owner
+      : pipeline.team;
   }
 
   canManageRegistry(): boolean {
