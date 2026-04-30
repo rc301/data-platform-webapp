@@ -81,6 +81,22 @@ import {
         </button>
       </section>
 
+      <section class="stage-preview" aria-label="Etapas da jornada selecionada">
+        <div class="stage-preview__head">
+          <span>Etapas da jornada</span>
+          <strong>{{ currentTemplate().stageIds.length }}</strong>
+        </div>
+        <ol>
+          <li *ngFor="let stage of stages(); let i = index">
+            <span>{{ i + 1 }}</span>
+            <div>
+              <strong>{{ stage.title }}</strong>
+              <small>{{ stage.description }}</small>
+            </div>
+          </li>
+        </ol>
+      </section>
+
       <ui-card eyebrow="Criação" title="Criar jornada de projeto" subtitle="Depois de criada, a jornada mantém o template escolhido. Para trocar de template, apague esta jornada e crie outra.">
         <div class="creation-summary">
           <div>
@@ -288,6 +304,15 @@ import {
       line-height: 1.4;
     }
     .template-option__meta span:first-child { color: var(--success-500); font-weight: 700; }
+    .stage-preview { margin-bottom: 18px; padding: 14px; border-radius: var(--radius-lg); background: var(--bg-surface); }
+    .stage-preview__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .stage-preview__head strong { color: var(--brand-300); }
+    .stage-preview ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .stage-preview li { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; padding: 10px; border-radius: var(--radius-md); background: var(--bg-app); }
+    .stage-preview li > span { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bg-overlay); color: var(--brand-300); font-size: 11px; font-weight: 800; }
+    .stage-preview li div { display: flex; flex-direction: column; gap: 2px; }
+    .stage-preview li strong { color: var(--text-primary); font-size: 13px; }
+    .stage-preview li small { color: var(--text-muted); font-size: 12px; line-height: 1.4; }
     .creation-summary,
     .locked-template {
       display: flex;

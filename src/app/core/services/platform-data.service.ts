@@ -58,6 +58,15 @@ export class PlatformDataService {
     this.dqTableRegistrationsSig.update(registrations => [registration, ...registrations]);
   }
 
+  updateCatalogAssetConfig(id: string, patch: { goldenSource?: boolean; domain?: string; owner?: string; supportSquad?: string; tags?: string[]; classification?: string[]; description?: string }): void {
+    this.catalogAssetsSig.update(assets => assets.map(asset => asset.id === id ? { ...asset, ...patch, lastUpdated: new Date().toISOString() } : asset));
+    this.audit.record('catalog.asset.config.updated', {
+      resourceType: 'catalog-asset',
+      resourceId: id,
+      metadata: { fields: Object.keys(patch).join(',') },
+    });
+  }
+
   addPipelineRegistryEntry(draft: PipelineRegistryDraft): Pipeline {
     const pipeline = this.toPipeline(draft);
     this.pipelinesSig.update(pipelines => [pipeline, ...pipelines]);
