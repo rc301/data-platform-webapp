@@ -1,6 +1,8 @@
 import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   UiCardComponent, UiBadgeComponent, UiButtonComponent,
   UiFarolComponent, UiStatComponent, FarolStatus,
@@ -20,7 +22,7 @@ type FilterStatus = 'all' | FarolStatus;
   selector: 'app-jobs-board',
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, RouterModule, MatTooltipModule,
     UiCardComponent, UiBadgeComponent, UiButtonComponent,
     UiFarolComponent, UiStatComponent,
   ],
@@ -96,7 +98,12 @@ type FilterStatus = 'all' | FarolStatus;
         <tbody>
           <tr *ngFor="let job of visible()" [class.tbl__row--alert]="job.status === 'red'">
             <td><ui-farol [status]="job.status" /></td>
-            <td class="tbl__name">{{ job.name }}</td>
+            <td class="tbl__name">
+              <a [routerLink]="'/pipelines'" [queryParams]="{ expand: job.name }"
+                 matTooltip="Abrir detalhes do job em /pipelines">
+                {{ job.name }}
+              </a>
+            </td>
             <td>{{ job.squad }}</td>
             <td><ui-badge tone="neutral">{{ job.type }}</ui-badge></td>
             <td class="tbl__mono">{{ job.expectedStartLocal }}</td>
@@ -159,6 +166,8 @@ type FilterStatus = 'all' | FarolStatus;
     .tbl__row--alert { background: rgba(229,72,77,0.04); }
     .tbl__row--alert:hover { background: rgba(229,72,77,0.08); }
     .tbl__name { color: var(--text-primary); font-weight: 600; }
+    .tbl__name a { color: inherit; text-decoration: none; cursor: pointer; }
+    .tbl__name a:hover { color: var(--brand-300); text-decoration: underline; text-underline-offset: 3px; }
     .tbl__mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); }
     .tbl__muted { color: var(--text-muted); }
     .tbl__notes { color: var(--text-secondary); max-width: 360px; }

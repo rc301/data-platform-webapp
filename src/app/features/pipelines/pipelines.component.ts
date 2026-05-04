@@ -1,4 +1,5 @@
-import { Component, signal, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -203,7 +204,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
         <span></span>
       </div>
 
-      <article class="pipeline-row" *ngFor="let pipeline of filteredPipelines()" [class.pipeline-row--open]="expandedPipelineId() === pipeline.id">
+      <article class="pipeline-row" *ngFor="let pipeline of filteredPipelines()" [attr.data-pipeline-id]="pipeline.id" [class.pipeline-row--open]="expandedPipelineId() === pipeline.id">
         <div class="pipeline-grid">
           <div class="pipeline-main">
             <app-status-badge [status]="cadastralStatus(pipeline)" [label]="statusLabel(cadastralStatus(pipeline))"></app-status-badge>
@@ -317,10 +318,32 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
     }
   `],
 })
-export class PipelinesComponent {
+export class PipelinesComponent implements OnInit {
   private readonly data = inject(PlatformDataService);
   private readonly access = inject(AccessService);
   private readonly org = inject(OrgService);
+  private readonly route = inject(ActivatedRoute);
+
+  /**
+   * Deep-link via queryParam `expand`: outras telas (ex.: /ops/overview)
+   * podem abrir um pipeline específico expandido. Aceita id ou nome.
+   */
+  ngOnInit(): void {
+    this.route.queryParamMap.subscribe(params => {
+      const target = params.get('expand');
+      if (!target) return;
+      const match = this.allPipelines.find(p => p.id === target || p.name === target);
+      if (!match) return;
+      this.searchTerm = match.name;
+      this.applyFilters();
+      this.expandedPipelineId.set(match.id);
+      // Scroll suave após o ciclo de detecção de mudança
+      queueMicrotask(() => {
+        document.querySelector(`[data-pipeline-id="${match.id}"]`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+  }
 
   allPipelines = this.data.pipelines();
   searchTerm = '';
