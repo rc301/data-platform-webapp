@@ -61,7 +61,7 @@ type FilterStatus = 'all' | FarolStatus;
 
     <!-- KPIs -->
     <div class="stats-row">
-      <ui-stat label="Jobs monitorados" [value]="total()" />
+      <ui-stat label="Jobs agendados hoje" [value]="total()" hint="execuções esperadas no dia" />
       <ui-stat label="Tabelas com falha de qualidade" [value]="dqFailingTables()" hint="regras DQ falhando hoje" />
       <ui-stat label="Incidentes abertos" [value]="count('red')" trend="up" delta="+1" deltaPeriod="vs. ontem" />
       <ui-stat label="Tempo médio de detecção" value="3 min" hint="janela 7d" />
