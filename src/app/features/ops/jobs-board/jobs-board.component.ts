@@ -62,7 +62,7 @@ type FilterStatus = 'all' | FarolStatus;
     <!-- KPIs -->
     <div class="stats-row">
       <ui-stat label="Jobs monitorados" [value]="total()" />
-      <ui-stat label="Saúde da plataforma" [value]="healthPct() + '%'" trend="flat" delta="—" deltaPeriod="janela 24h" />
+      <ui-stat label="Tabelas com falha de qualidade" [value]="dqFailingTables()" hint="regras DQ falhando hoje" />
       <ui-stat label="Incidentes abertos" [value]="count('red')" trend="up" delta="+1" deltaPeriod="vs. ontem" />
       <ui-stat label="Tempo médio de detecção" value="3 min" hint="janela 7d" />
     </div>
@@ -204,11 +204,13 @@ export class JobsBoardComponent {
     });
   });
 
-  readonly healthPct = computed(() => {
-    const t = this.total();
-    if (!t) return 0;
-    const ok = this.count('green');
-    return Math.round((ok / t) * 100);
+  /** Quantidade de tabelas distintas com pelo menos uma regra DQ falhando. */
+  readonly dqFailingTables = computed(() => {
+    const failingTables = new Set<string>();
+    for (const rule of this.data.dqRules()) {
+      if (rule.status === 'failing') failingTables.add(rule.tableName);
+    }
+    return failingTables.size;
   });
 
   count(status: FarolStatus): number {
