@@ -34,7 +34,33 @@ export class DemandService {
     return demand;
   }
 
-  inactivate(id: string): void {
+  /**
+   * Cancelamento voluntário pelo solicitante (autosserviço). Estado terminal.
+   * Preserva histórico — registros não são removidos.
+   */
+  cancel(id: string, reason?: string): void {
+    const now = new Date().toISOString();
+    const user = this.currentUser();
+    this.demandsSig.update(items => items.map(item => item.id === id ? {
+      ...item,
+      status: 'cancelled',
+      cancelledAt: now,
+      cancelledBy: user,
+      cancelReason: reason,
+      updatedAt: now,
+      updatedBy: user,
+    } : item));
+    this.audit.record('demand.cancelled', {
+      resourceType: 'demand',
+      resourceId: id,
+      metadata: reason ? { reason } : undefined,
+    });
+  }
+
+  /**
+   * Inativação administrativa pela gestão. Estado terminal.
+   */
+  inactivate(id: string, reason?: string): void {
     const now = new Date().toISOString();
     const user = this.currentUser();
     this.demandsSig.update(items => items.map(item => item.id === id ? {
@@ -42,10 +68,15 @@ export class DemandService {
       status: 'inactive',
       inactiveAt: now,
       inactiveBy: user,
+      inactiveReason: reason,
       updatedAt: now,
       updatedBy: user,
     } : item));
-    this.audit.record('demand.inactivated', { resourceType: 'demand', resourceId: id });
+    this.audit.record('demand.inactivated', {
+      resourceType: 'demand',
+      resourceId: id,
+      metadata: reason ? { reason } : undefined,
+    });
   }
 
   private toDemand(draft: DataDemandDraft): DataDemand {

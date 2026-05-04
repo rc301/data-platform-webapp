@@ -42,6 +42,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/pipelines/pipelines.routes').then(m => m.PIPELINES_ROUTES),
       },
       {
+        path: 'pipeline-actions',
+        canMatch: [capabilityGuard],
+        data: { capability: 'ops.viewBoard' },
+        loadComponent: () => import('./features/pipeline-actions/pipeline-actions.component').then(m => m.PipelineActionsComponent),
+      },
+      {
         path: 'rfcs',
         redirectTo: 'demands',
         pathMatch: 'full',
@@ -49,7 +55,8 @@ export const routes: Routes = [
       {
         path: 'demands',
         canMatch: [capabilityGuard],
-        data: { capability: 'dev.viewProjects' },
+        // PublicViewer acessa via demand.viewOwn; demais perfis via dev.viewProjects.
+        data: { capability: ['demand.viewOwn', 'dev.viewProjects'] },
         loadComponent: () => import('./features/rfc/rfc-list.component').then(m => m.RfcListComponent),
       },
       {
@@ -90,9 +97,7 @@ export const routes: Routes = [
       },
       {
         path: 'orchestrator',
-        canMatch: [capabilityGuard],
-        data: { capability: 'ops.viewBoard' },
-        loadComponent: () => import('./features/orchestrator/orchestrator.component').then(m => m.OrchestratorComponent),
+        loadChildren: () => import('./features/orchestrator/orchestrator.routes').then(m => m.ORCHESTRATOR_ROUTES),
       },
       {
         path: 'monitoring',
@@ -109,7 +114,10 @@ export const routes: Routes = [
       {
         path: 'admin',
         canMatch: [capabilityGuard],
-        data: { capability: 'admin.manageAccess' },
+        // Qualquer capability administrativa abre a área. Sub-rotas têm seus
+        // próprios guards (admin.manageAccess / admin.manageOrg /
+        // admin.manageStages / admin.viewAudit).
+        data: { capability: ['admin.manageAccess', 'admin.manageOrg', 'admin.manageStages', 'admin.viewAudit'] },
         loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
       },
     ],

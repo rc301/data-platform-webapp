@@ -47,6 +47,12 @@ export interface JourneyTemplate {
   description: string;
   recommendedFor: string;
   stageIds: readonly JourneyStageId[];
+  /**
+   * Capability requerida para usar este template em uma nova jornada.
+   * Convenção: `pipeline.useTemplate.<id>`. O wizard filtra os templates
+   * pela capability ANTES de listar.
+   */
+  requiredCapability?: string;
 }
 
 export const STAGE_CATALOG: Record<JourneyStageId, StageDefinition> = {
@@ -232,6 +238,7 @@ export const JOURNEY_TEMPLATES: readonly JourneyTemplate[] = [
     badge: 'ETL',
     description: 'Jornada para pipelines com AWS Glue, PySpark, Terraform e esteira de deploy.',
     recommendedFor: 'Transformacoes distribuídas, jobs Glue e infraestrutura AWS versionada.',
+    requiredCapability: 'pipeline.useTemplate.glue-pyspark',
     stageIds: [
       'rfc',
       'lup',
@@ -253,6 +260,7 @@ export const JOURNEY_TEMPLATES: readonly JourneyTemplate[] = [
     badge: 'SQL',
     description: 'Jornada enxuta para pipelines em uma ferramenta que executa apenas SQL.',
     recommendedFor: 'Views, marts, validacoes e transformacoes sem codigo PySpark ou infraestrutura Glue.',
+    requiredCapability: 'pipeline.useTemplate.sql-only',
     stageIds: [
       'rfc',
       'lup',
@@ -278,6 +286,9 @@ export const TEMPLATE_BY_ID: Record<JourneyTemplateId, JourneyTemplate> =
   );
 
 export const STAGE_BY_ID = STAGE_CATALOG;
+
+/** Lista plana dos IDs preservando a ordem do catálogo — útil para iteração na UI. */
+export const JOURNEY_STAGE_IDS_BY_CATALOG: readonly JourneyStageId[] = Object.keys(STAGE_CATALOG) as JourneyStageId[];
 
 export function getJourneyTemplate(templateId: JourneyTemplateId): JourneyTemplate {
   return TEMPLATE_BY_ID[templateId];

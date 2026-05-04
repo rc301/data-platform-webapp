@@ -13,8 +13,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
-import { CatalogAsset, DataLayer } from '../../core/models';
+import { CatalogAsset, DataLayer, Pipeline } from '../../core/models';
 import { PlatformDataService } from '../../core/services/platform-data.service';
+import { AccessService } from '../../core/access/access.service';
 
 type GoldenFilter = 'all' | 'yes' | 'no';
 
@@ -101,17 +102,6 @@ type GoldenFilter = 'all' | 'yes' | 'no';
               </mat-select>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>Certificação</mat-label>
-              <mat-select [(ngModel)]="certFilter" (ngModelChange)="filterAssets()">
-                <mat-option value="all">Todos</mat-option>
-                <mat-option value="certified">Certificado</mat-option>
-                <mat-option value="in_review">Em Revisão</mat-option>
-                <mat-option value="draft">Rascunho</mat-option>
-                <mat-option value="deprecated">Depreciado</mat-option>
-              </mat-select>
-            </mat-form-field>
-
             <button mat-button color="primary" class="clear-button" (click)="clearFilters()">Limpar filtros</button>
           </section>
 
@@ -128,7 +118,7 @@ type GoldenFilter = 'all' | 'yes' | 'no';
               <span>Camada</span>
               <span>Golden</span>
               <span>Domínio</span>
-              <span>Certificação</span>
+              <span>Squad sustentação</span>
               <span>Atualização</span>
             </div>
 
@@ -148,14 +138,40 @@ type GoldenFilter = 'all' | 'yes' | 'no';
                   {{ asset.type === 'table' ? (asset.goldenSource ? 'Sim' : 'Não') : '-' }}
                 </span>
                 <span>{{ asset.domain }}</span>
-                <app-status-badge [status]="asset.certificationStatus" [label]="certificationLabel(asset.certificationStatus)"></app-status-badge>
+                <span>{{ asset.supportSquad || asset.owner }}</span>
                 <span>{{ asset.lastUpdated | relativeTime }}</span>
               </div>
 
               <div class="asset-detail" *ngIf="selectedAssetId() === asset.id">
                 <p>{{ asset.description }}</p>
+                <section class="config-panel" *ngIf="asset.type === 'table'">
+                  <div class="config-panel__head">
+                    <strong>Configurações da tabela</strong>
+                    <span *ngIf="!canEditConfig()">Somente perfis autorizados podem editar.</span>
+                  </div>
+                  <div class="config-grid">
+                    <label><span>Nome</span><input [value]="asset.name" disabled></label>
+                    <label><span>Database</span><input [value]="databaseName(asset)" disabled></label>
+                    <label><span>Sigla</span><input [value]="asset.sigla" disabled></label>
+                    <label><span>Camada</span><input [value]="asset.dataLayer || '-'" disabled></label>
+                    <label><span>Golden source</span>
+                      <select [disabled]="!canEditConfig()" [ngModel]="asset.goldenSource ? 'yes' : 'no'" (ngModelChange)="updateAssetConfig(asset, { goldenSource: $event === 'yes' })">
+                        <option value="yes">Sim</option>
+                        <option value="no">Não</option>
+                      </select>
+                    </label>
+                    <label><span>Domínio</span>
+                      <select [disabled]="!canEditConfig()" [ngModel]="asset.domain" (ngModelChange)="updateAssetConfig(asset, { domain: $event })">
+                        <option *ngFor="let domain of domains" [value]="domain.name">{{ domain.name }}</option>
+                      </select>
+                    </label>
+                    <label><span>Squad sustentação</span><input [disabled]="!canEditConfig()" [ngModel]="asset.supportSquad || asset.owner" (ngModelChange)="updateAssetConfig(asset, { supportSquad: $event })"></label>
+                    <label><span>Owner funcional</span><input [disabled]="!canEditConfig()" [ngModel]="asset.owner" (ngModelChange)="updateAssetConfig(asset, { owner: $event })"></label>
+                  </div>
+                </section>
                 <div class="detail-meta">
                   <span><mat-icon inline>person</mat-icon>{{ asset.owner }}</span>
+                  <span><mat-icon inline>support_agent</mat-icon>{{ asset.supportSquad || asset.owner }}</span>
                   <span><mat-icon inline>source</mat-icon>{{ asset.sourceSystem }}</span>
                   <span><mat-icon inline>trending_up</mat-icon>Popularidade {{ asset.popularity }}</span>
                 </div>
@@ -169,6 +185,14 @@ type GoldenFilter = 'all' | 'yes' | 'no';
                   <span *ngIf="asset.lineage.upstream.length">Upstream: {{ lineageNames(asset.lineage.upstream) }}</span>
                   <span *ngIf="asset.lineage.downstream.length">Downstream: {{ lineageNames(asset.lineage.downstream) }}</span>
                 </div>
+                <section class="ingestion-strip" *ngIf="asset.type === 'table'">
+                  <strong>Fluxos que atualizam esta tabela</strong>
+                  <div class="ingestion-flow" *ngFor="let flow of ingestionFlowsFor(asset)">
+                    <span>{{ flow.name }} · {{ flow.type }}</span>
+                    <small>Origens: {{ flow.sources.join(', ') || '-' }}</small>
+                  </div>
+                  <span class="muted" *ngIf="!ingestionFlowsFor(asset).length">Nenhum fluxo cadastrado para esta tabela.</span>
+                </section>
               </div>
             </article>
           </section>
@@ -267,6 +291,17 @@ type GoldenFilter = 'all' | 'yes' | 'no';
     .detail-meta, .lineage-strip { display: flex; flex-wrap: wrap; gap: 14px; color: var(--text-secondary); font-size: 11px; }
     .detail-meta span { display: inline-flex; align-items: center; gap: 4px; }
     .classification-chip { --mdc-chip-elevated-container-color: var(--warning-bg); }
+    .config-panel, .ingestion-strip { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: var(--radius-md); background: var(--bg-app); }
+    .config-panel__head { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); font-size: 11px; }
+    .config-panel__head strong, .ingestion-strip strong { color: var(--text-primary); font-size: 12px; }
+    .config-grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; }
+    .config-grid label { display: flex; flex-direction: column; gap: 4px; }
+    .config-grid label span { color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .config-grid input, .config-grid select { min-height: 30px; border-radius: 6px; border: 1px solid var(--border-default); background: var(--bg-surface); color: var(--text-primary); padding: 4px 8px; font: inherit; font-size: 12px; }
+    .config-grid input:disabled, .config-grid select:disabled { color: var(--text-muted); background: var(--bg-overlay); }
+    .ingestion-flow { display: flex; flex-direction: column; gap: 3px; padding: 8px; border-radius: 6px; background: var(--bg-surface); }
+    .ingestion-flow span { color: var(--text-primary); font-size: 12px; font-weight: 700; }
+    .ingestion-flow small, .muted { color: var(--text-muted); font-size: 11px; }
 
     .domain-grid { display: grid; grid-template-columns: minmax(220px, 1.4fr) 180px 90px 2fr; gap: 14px; align-items: center; padding: 10px 16px; font-size: 12px; }
     .domain-row { border-bottom: 1px solid var(--border-subtle); }
@@ -301,6 +336,7 @@ type GoldenFilter = 'all' | 'yes' | 'no';
 })
 export class CatalogComponent {
   private readonly data = inject(PlatformDataService);
+  private readonly access = inject(AccessService);
 
   assets = this.data.catalogAssets();
   domains = this.data.catalogDomains();
@@ -309,7 +345,6 @@ export class CatalogComponent {
 
   searchTerm = '';
   domainFilter = 'all';
-  certFilter = 'all';
   typeFilter = 'all';
   siglaFilter = 'all';
   layerFilter: DataLayer | 'all' = 'all';
@@ -332,15 +367,6 @@ export class CatalogComponent {
     return icons[type] || 'description';
   }
 
-  certificationLabel(status: string): string {
-    return ({
-      certified: 'Certificado',
-      in_review: 'Em revisão',
-      draft: 'Rascunho',
-      deprecated: 'Depreciado',
-    } as Record<string, string>)[status] || status;
-  }
-
   lineageNames(nodes: Array<{ name: string }>): string {
     return nodes.map(node => node.name).join(', ');
   }
@@ -349,10 +375,34 @@ export class CatalogComponent {
     this.selectedAssetId.update(current => current === asset.id ? null : asset.id);
   }
 
+  canEditConfig(): boolean {
+    return this.access.hasAny(['catalog.view', 'admin.manageOrg']);
+  }
+
+  updateAssetConfig(asset: CatalogAsset, patch: { goldenSource?: boolean; domain?: string; owner?: string; supportSquad?: string }): void {
+    if (!this.canEditConfig() || asset.type !== 'table') return;
+    this.data.updateCatalogAssetConfig(asset.id, patch);
+    this.assets = this.data.catalogAssets();
+    this.filterAssets();
+  }
+
+  databaseName(asset: CatalogAsset): string {
+    const parts = asset.qualifiedName.split('.');
+    return parts.length > 1 ? parts.at(-2) || '-' : '-';
+  }
+
+  ingestionFlowsFor(asset: CatalogAsset): Array<Pick<Pipeline, 'name' | 'type' | 'sources'>> {
+    if (asset.type !== 'table') return [];
+    return this.data.pipelines().filter(pipeline =>
+      pipeline.target === asset.qualifiedName
+      || pipeline.target.endsWith(`.${asset.name}`)
+      || asset.qualifiedName.endsWith(`.${pipeline.target.split('.').at(-1)}`)
+    ).map(({ name, type, sources }) => ({ name, type, sources }));
+  }
+
   clearFilters(): void {
     this.searchTerm = '';
     this.domainFilter = 'all';
-    this.certFilter = 'all';
     this.typeFilter = 'all';
     this.siglaFilter = 'all';
     this.layerFilter = 'all';
@@ -374,7 +424,6 @@ export class CatalogComponent {
     if (this.typeFilter !== 'all') result = result.filter(asset => asset.type === this.typeFilter);
     if (this.siglaFilter !== 'all') result = result.filter(asset => asset.sigla === this.siglaFilter);
     if (this.domainFilter !== 'all') result = result.filter(asset => asset.domain === this.domainFilter);
-    if (this.certFilter !== 'all') result = result.filter(asset => asset.certificationStatus === this.certFilter);
     if (this.layerFilter !== 'all') result = result.filter(asset => asset.type === 'table' && asset.dataLayer === this.layerFilter);
     if (this.goldenFilter !== 'all') {
       const golden = this.goldenFilter === 'yes';

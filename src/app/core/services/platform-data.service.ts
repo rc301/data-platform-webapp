@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DataQualityTableRegistration, IngestionFlowKind, Pipeline, PipelineRegistryDraft } from '../models';
+import { DataQualityTableRegistration, IngestionFlowKind, Pipeline, PipelineExecutionRequest, PipelineExecutionRequestDraft, PipelineRegistryDraft } from '../models';
 import { AuditService } from '../audit/audit.service';
 import { AuthService } from './auth.service';
 import { MOCK_CATALOG_ASSETS, MOCK_DOMAINS, MOCK_GLOSSARY } from '../mocks/catalog.mock';
@@ -21,6 +21,7 @@ export class PlatformDataService {
   private readonly healthChecksSig = signal(MOCK_HEALTH_CHECKS);
   private readonly costMetricsSig = signal(MOCK_COST_METRICS);
   private readonly pipelineRunCostsSig = signal(MOCK_PIPELINE_RUN_COSTS);
+  private readonly pipelineExecutionRequestsSig = signal<PipelineExecutionRequest[]>([]);
   private readonly catalogAssetsSig = signal(MOCK_CATALOG_ASSETS);
   private readonly catalogDomainsSig = signal(MOCK_DOMAINS);
   private readonly glossarySig = signal(MOCK_GLOSSARY);
@@ -40,6 +41,7 @@ export class PlatformDataService {
   readonly healthChecks = this.healthChecksSig.asReadonly();
   readonly costMetrics = this.costMetricsSig.asReadonly();
   readonly pipelineRunCosts = this.pipelineRunCostsSig.asReadonly();
+  readonly pipelineExecutionRequests = this.pipelineExecutionRequestsSig.asReadonly();
   readonly catalogAssets = this.catalogAssetsSig.asReadonly();
   readonly catalogDomains = this.catalogDomainsSig.asReadonly();
   readonly glossary = this.glossarySig.asReadonly();
@@ -54,6 +56,15 @@ export class PlatformDataService {
 
   addDataQualityTableRegistration(registration: DataQualityTableRegistration): void {
     this.dqTableRegistrationsSig.update(registrations => [registration, ...registrations]);
+  }
+
+  updateCatalogAssetConfig(id: string, patch: { goldenSource?: boolean; domain?: string; owner?: string; supportSquad?: string; tags?: string[]; classification?: string[]; description?: string }): void {
+    this.catalogAssetsSig.update(assets => assets.map(asset => asset.id === id ? { ...asset, ...patch, lastUpdated: new Date().toISOString() } : asset));
+    this.audit.record('catalog.asset.config.updated', {
+      resourceType: 'catalog-asset',
+      resourceId: id,
+      metadata: { fields: Object.keys(patch).join(',') },
+    });
   }
 
   addPipelineRegistryEntry(draft: PipelineRegistryDraft): Pipeline {
@@ -103,6 +114,36 @@ export class PlatformDataService {
       metadata: { count: pipelines.length },
     });
     return pipelines;
+  }
+
+  submitPipelineExecutionRequest(draft: PipelineExecutionRequestDraft): PipelineExecutionRequest | null {
+    const pipeline = this.pipelinesSig().find(item => item.id === draft.pipelineId);
+    if (!pipeline) return null;
+
+    const user = this.auth.user();
+    const request: PipelineExecutionRequest = {
+      id: `exec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      pipelineId: pipeline.id,
+      pipelineName: pipeline.name,
+      sigla: pipeline.sigla,
+      resource: draft.resource,
+      action: draft.action,
+      jobName: draft.jobName,
+      payload: draft.payload,
+      partitionSpec: draft.partitionSpec,
+      historicalWindow: draft.historicalWindow,
+      reason: draft.reason,
+      status: 'queued',
+      requestedAt: new Date().toISOString(),
+      requestedBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+    };
+    this.pipelineExecutionRequestsSig.update(requests => [request, ...requests].slice(0, 50));
+    this.audit.record('pipeline.execution.requested', {
+      resourceType: 'pipeline-execution-request',
+      resourceId: request.id,
+      metadata: { pipeline: request.pipelineName, sigla: request.sigla, resource: request.resource, action: request.action },
+    });
+    return request;
   }
 
   refreshOperationalSnapshot(): void {

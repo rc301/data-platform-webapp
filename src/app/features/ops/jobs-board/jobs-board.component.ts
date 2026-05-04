@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@a
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  UiPageHeaderComponent, UiCardComponent, UiBadgeComponent, UiButtonComponent,
+  UiCardComponent, UiBadgeComponent, UiButtonComponent,
   UiFarolComponent, UiStatComponent, FarolStatus,
 } from '../../../shared/ui';
 import { JobRow } from '../../../core/models';
@@ -21,20 +21,19 @@ type FilterStatus = 'all' | FarolStatus;
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    UiPageHeaderComponent, UiCardComponent, UiBadgeComponent, UiButtonComponent,
+    UiCardComponent, UiBadgeComponent, UiButtonComponent,
     UiFarolComponent, UiStatComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ui-page-header
-      eyebrow="Persona · Sustentação"
-      title="Painel de Faróis"
-      subtitle="Visão consolidada do estado dos jobs operacionais — clique em um farol para filtrar a tabela.">
-      <div page-actions>
-        <ui-button variant="ghost" icon="↻" (clicked)="refresh()">Atualizar agora</ui-button>
-        <ui-button variant="secondary">Configurar alertas</ui-button>
-      </div>
-    </ui-page-header>
+    <!--
+      Header da seção é responsabilidade do OpsShellComponent (cabeçalho
+      compartilhado entre tabs). Aqui só renderizamos o conteúdo do tab.
+    -->
+    <div class="board-actions">
+      <ui-button variant="ghost" icon="↻" (clicked)="refresh()">Atualizar agora</ui-button>
+      <ui-button variant="secondary">Configurar alertas</ui-button>
+    </div>
 
     <!-- Faróis (clicáveis = filtro) -->
     <div class="farol-grid">
@@ -118,6 +117,7 @@ type FilterStatus = 'all' | FarolStatus;
     </ui-card>
   `,
   styles: [`
+    .board-actions { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px; }
     .farol-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
     .farol-card {
       display: flex; flex-direction: column; align-items: flex-start; gap: 6px;

@@ -18,6 +18,8 @@ export type Capability =
   | 'catalog.view'
   | 'pipeline.view'
   | 'pipeline.create'
+  | 'pipeline.useTemplate.glue-pyspark'
+  | 'pipeline.useTemplate.sql-only'
   | 'pipeline.approveStage'
   | 'pipeline.codeReview'
   | 'pipeline.manageRegistry'
@@ -27,11 +29,16 @@ export type Capability =
   | 'dev.viewProjects'
   | 'dev.linkLups'
   | 'dev.manageLups'
+  | 'demand.viewOwn'
+  | 'demand.create'
+  | 'demand.cancel'
+  | 'demand.inactivate'
   | 'executive.viewOwnScope'
   | 'executive.viewGlobal'
   | 'ops.viewBoard'
   | 'admin.manageAccess'
   | 'admin.manageOrg'
+  | 'admin.manageStages'
   | 'admin.viewAudit';
 
 export interface AccessScope {

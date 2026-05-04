@@ -10,6 +10,7 @@ export interface CatalogAsset {
   goldenSource?: boolean;
   description: string;
   owner: string;
+  supportSquad?: string;
   domain: string;
   classification: string[];
   tags: string[];
