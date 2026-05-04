@@ -28,19 +28,19 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
     <div class="summary-row">
       <mat-card class="summary-card critical" (click)="severityFilter = 'critical'; applyFilter()">
         <span class="summary-count">{{ criticalCount }}</span>
-        <span class="summary-label">Critical</span>
+        <span class="summary-label">Críticos</span>
       </mat-card>
       <mat-card class="summary-card high" (click)="severityFilter = 'high'; applyFilter()">
         <span class="summary-count">{{ highCount }}</span>
-        <span class="summary-label">High</span>
+        <span class="summary-label">Altos</span>
       </mat-card>
       <mat-card class="summary-card medium" (click)="severityFilter = 'medium'; applyFilter()">
         <span class="summary-count">{{ mediumCount }}</span>
-        <span class="summary-label">Medium</span>
+        <span class="summary-label">Médios</span>
       </mat-card>
       <mat-card class="summary-card low" (click)="severityFilter = 'low'; applyFilter()">
         <span class="summary-count">{{ lowCount }}</span>
-        <span class="summary-label">Low</span>
+        <span class="summary-label">Baixos</span>
       </mat-card>
     </div>
 
@@ -50,10 +50,10 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
         <mat-label>Severidade</mat-label>
         <mat-select [(ngModel)]="severityFilter" (ngModelChange)="applyFilter()">
           <mat-option value="all">Todas</mat-option>
-          <mat-option value="critical">Critical</mat-option>
-          <mat-option value="high">High</mat-option>
-          <mat-option value="medium">Medium</mat-option>
-          <mat-option value="low">Low</mat-option>
+          <mat-option value="critical">Crítica</mat-option>
+          <mat-option value="high">Alta</mat-option>
+          <mat-option value="medium">Média</mat-option>
+          <mat-option value="low">Baixa</mat-option>
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline" class="filter-field">
@@ -102,11 +102,8 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
             </div>
           </div>
           <div class="alert-actions">
-            <button mat-icon-button matTooltip="Reconhecer" *ngIf="alert.status === 'active'">
+            <button mat-icon-button matTooltip="Reconhecer" *ngIf="alert.status === 'active'" (click)="acknowledge(alert)">
               <mat-icon>check_circle_outline</mat-icon>
-            </button>
-            <button mat-icon-button matTooltip="Ver detalhes">
-              <mat-icon>open_in_new</mat-icon>
             </button>
           </div>
         </div>
@@ -118,11 +115,11 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
     .summary-card { cursor: pointer; text-align: center; padding: 16px; transition: transform 0.15s; }
     .summary-card:hover { transform: translateY(-2px); }
     .summary-count { font-size: 32px; font-weight: 700; display: block; }
-    .summary-label { font-size: 13px; color: #666; }
-    .critical .summary-count { color: #c62828; }
-    .high .summary-count { color: #e65100; }
-    .medium .summary-count { color: #f9a825; }
-    .low .summary-count { color: #1565c0; }
+    .summary-label { font-size: 13px; color: var(--text-muted); }
+    .critical .summary-count { color: var(--danger-500); }
+    .high .summary-count { color: var(--warning-500); }
+    .medium .summary-count { color: var(--info-500); }
+    .low .summary-count { color: var(--neutral-500); }
 
     .filters-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
     .filter-field { min-width: 150px; }
@@ -130,24 +127,24 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
 
     .alerts-list { display: flex; flex-direction: column; gap: 8px; }
     .alert-card { overflow: hidden; }
-    .severity-border-critical { border-left: 4px solid #c62828; }
-    .severity-border-high { border-left: 4px solid #e65100; }
-    .severity-border-medium { border-left: 4px solid #f9a825; }
-    .severity-border-low { border-left: 4px solid #1565c0; }
+    .severity-border-critical { border-left: 4px solid var(--danger-500); }
+    .severity-border-high { border-left: 4px solid var(--warning-500); }
+    .severity-border-medium { border-left: 4px solid var(--info-500); }
+    .severity-border-low { border-left: 4px solid var(--neutral-500); }
 
     .alert-content { display: flex; gap: 16px; align-items: flex-start; }
     .alert-icon { padding-top: 4px; }
-    .severity-icon-critical { color: #c62828; }
-    .severity-icon-high { color: #e65100; }
-    .severity-icon-medium { color: #f9a825; }
-    .severity-icon-low { color: #1565c0; }
+    .severity-icon-critical { color: var(--danger-500); }
+    .severity-icon-high { color: var(--warning-500); }
+    .severity-icon-medium { color: var(--info-500); }
+    .severity-icon-low { color: var(--neutral-500); }
 
     .alert-body { flex: 1; }
     .alert-header-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .alert-title { margin: 0; font-size: 15px; flex: 1; }
     .alert-badges { display: flex; gap: 8px; align-items: center; }
-    .alert-message { font-size: 14px; color: #555; margin: 8px 0; }
-    .alert-footer { display: flex; gap: 16px; font-size: 13px; color: #888; }
+    .alert-message { font-size: 14px; color: var(--text-secondary); margin: 8px 0; }
+    .alert-footer { display: flex; gap: 16px; font-size: 13px; color: var(--text-muted); }
     .alert-footer mat-icon { font-size: 14px; width: 14px; height: 14px; vertical-align: middle; }
     .alert-actions { display: flex; flex-direction: column; }
   `],
@@ -177,5 +174,11 @@ export class AlertsComponent {
     if (this.statusFilter !== 'all') result = result.filter(a => a.status === this.statusFilter);
     if (this.categoryFilter !== 'all') result = result.filter(a => a.category === this.categoryFilter);
     this.filteredAlerts.set(result);
+  }
+
+  acknowledge(alert: MonitoringAlert): void {
+    this.data.acknowledgeMonitoringAlert(alert.id);
+    this.allAlerts = this.data.monitoringAlerts();
+    this.applyFilter();
   }
 }

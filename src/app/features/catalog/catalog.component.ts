@@ -413,7 +413,7 @@ export class CatalogComponent {
     return parts.length >= 2 ? parts.slice(0, -1).pop() ?? '—' : '—';
   }
 
-  /** Nome físico: drop "datalake." e similares; mostra `database.table` ou só o final. */
+  /** Nome físico compacto: mostra `database.table` ou só o final. */
   physicalName(qualifiedName: string): string {
     const parts = qualifiedName.split('.');
     if (parts.length >= 2) return parts.slice(-2).join('.');
@@ -427,11 +427,7 @@ export class CatalogComponent {
    */
   ingestionFlowsFor(asset: CatalogAsset): Array<Pick<Pipeline, 'name' | 'type' | 'sources'>> {
     return this.data.pipelines()
-      .filter(p =>
-        p.target === asset.qualifiedName
-        || p.target.endsWith(`.${asset.name}`)
-        || asset.qualifiedName.endsWith(`.${p.target.split('.').at(-1)}`),
-      )
+      .filter(p => this.sameQualifiedName(p.target, asset.qualifiedName))
       .map(({ name, type, sources }) => ({ name, type, sources }));
   }
 
@@ -449,5 +445,13 @@ export class CatalogComponent {
       asset.description, asset.sigla, asset.domain, asset.supportSquad,
     ].filter(Boolean) as string[];
     return fields.some(v => v.toLowerCase().includes(term));
+  }
+
+  private sameQualifiedName(left: string, right: string): boolean {
+    return this.normalizeQualifiedName(left) === this.normalizeQualifiedName(right);
+  }
+
+  private normalizeQualifiedName(value: string): string {
+    return value.trim().toLowerCase().replace(/^datalake\./, '');
   }
 }

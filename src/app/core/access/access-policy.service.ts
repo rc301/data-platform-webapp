@@ -54,7 +54,7 @@ export class AccessPolicyService {
     try {
       localStorage.setItem(POLICY_KEY, JSON.stringify(this.roleCapabilitiesSig()));
     } catch {
-      // Mock/local demo. Backend real deve persistir e versionar politicas.
+      // Ambiente local. Backend real deve persistir e versionar politicas.
     }
   }
 }

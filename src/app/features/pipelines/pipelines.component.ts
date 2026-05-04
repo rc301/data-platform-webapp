@@ -50,7 +50,7 @@ type RegistryPanelMode = 'closed' | 'manual' | 'json';
       <div class="json-import" *ngIf="registryPanel() === 'json'; else manualRegistryForm">
         <textarea [(ngModel)]="jsonImportText" rows="10" placeholder='Cole um objeto ou array JSON. Ex: [{"name":"legacy_daily","sigla":"ab1","ingestionKind":"munin_sql","team":"Squad A","target":"sor.legacy"}]'></textarea>
         <div class="registry-panel__footer">
-          <span>{{ jsonImportError || 'Campos ausentes recebem defaults seguros para mock e podem ser editados depois.' }}</span>
+          <span>{{ jsonImportError || 'Campos ausentes recebem defaults seguros e podem ser editados depois.' }}</span>
           <button mat-flat-button color="primary" type="button" (click)="importFromJson()">
             <mat-icon>playlist_add</mat-icon> Importar lote
           </button>
@@ -362,7 +362,9 @@ export class PipelinesComponent implements OnInit {
   registryPanel = signal<RegistryPanelMode>('closed');
   editingPipelineId = signal<string | null>(null);
 
-  siglas = Array.from(new Set(this.accessiblePipelines().map(pipeline => pipeline.sigla))).sort();
+  get siglas(): string[] {
+    return Array.from(new Set(this.accessiblePipelines().map(pipeline => pipeline.sigla))).sort();
+  }
 
   summaries(): Array<{ label: string; count: number; color: string }> {
     const pipelines = this.accessiblePipelines();

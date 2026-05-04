@@ -126,7 +126,7 @@ type PeriodFilter = 'all' | 'last-7' | 'last-30' | 'last-90';
           <strong>{{ j.name }}</strong>
           <span>{{ templateLabel(j.templateId) }}</span>
         </div>
-        <span class="mono">{{ j.lupCodes.join(', ') || '—' }}</span>
+        <span class="mono">{{ j.projectCodes.join(', ') || '—' }}</span>
         <span class="mono">{{ j.importedDemandCode || '—' }}</span>
         <span class="mono">{{ j.targetTable || '—' }}</span>
         <span>{{ j.responsible || j.createdBy }}</span>
@@ -214,7 +214,7 @@ export class ProjectsHistoryComponent {
   // Como Angular 17 não tem linkedSignal, o approach mais simples é
   // expor os campos como signals reativos. Aqui mantemos a abordagem de
   // ngModel em property + computed que lê `this.search` etc.; o Angular
-  // dispara CD em todo input — bom o suficiente para mocks.
+  // dispara CD em todo input — suficiente para a versão local.
 
   /* --- domínio: lista de etapas distintas para o filtro --- */
   readonly stages = computed(() => {
@@ -242,7 +242,7 @@ export class ProjectsHistoryComponent {
 
   openJourney(j: ProjectJourney): void {
     // Abre a jornada no builder. Em backend real, a query string carrega
-    // o id; o builder se autopopula. Mock atual já navega para a tela.
+    // o id; o builder se autopopula. Versão local já navega para a tela.
     this.router.navigate(['/dev/journeys/new'], { queryParams: { journeyId: j.id } });
   }
 
@@ -277,7 +277,7 @@ export class ProjectsHistoryComponent {
       j.importedDemandCode,
       j.responsible,
       j.createdBy,
-      ...j.lupCodes,
+      ...j.projectCodes,
     ].filter(Boolean).some(v => v!.toLowerCase().includes(term));
   }
 

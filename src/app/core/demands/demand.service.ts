@@ -104,6 +104,6 @@ export class DemandService {
 
   private currentUser(): string {
     const user = this.auth.user();
-    return user?.userPrincipal ?? user?.name ?? 'mock.user';
+    return user?.userPrincipal ?? user?.name ?? 'local.user';
   }
 }

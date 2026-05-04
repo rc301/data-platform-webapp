@@ -1,14 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AccessScope } from '../access/access.types';
 import { AuditService } from '../audit/audit.service';
-import { LUP_PROJECTS, ORG_UNITS } from './org.mock';
+import { PROJECT_CODE_RECORDS, ORG_UNITS } from './org.mock';
 import { LupProject, LupProjectDraft, OrgUnit } from './org.model';
 
 @Injectable({ providedIn: 'root' })
 export class OrgService {
   private readonly audit = inject(AuditService);
   private readonly orgUnitsSig = signal<OrgUnit[]>(ORG_UNITS);
-  private readonly projectsSig = signal<LupProject[]>(LUP_PROJECTS);
+  private readonly projectsSig = signal<LupProject[]>(PROJECT_CODE_RECORDS);
 
   readonly orgUnits = this.orgUnitsSig.asReadonly();
   readonly projects = this.projectsSig.asReadonly();

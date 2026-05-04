@@ -14,7 +14,7 @@ import {
 /**
  * Service de Assuntos / Domínios / Atribuições de Tabela.
  *
- * Mantém três coleções em memória (mock) e expõe operações de CRUD
+ * Mantém três coleções em memória e expõe operações de CRUD
  * com auditoria embutida. Quando vier backend real, esta classe vira a
  * "porta" entre UI e API; assinaturas dos métodos não mudam.
  *
@@ -154,7 +154,7 @@ export class SubjectService {
 
   private currentUser(): string {
     const user = this.auth.user();
-    return user?.userPrincipal ?? user?.name ?? 'mock.user';
+    return user?.userPrincipal ?? user?.name ?? 'local.user';
   }
 }
 

@@ -341,7 +341,7 @@ export class RfcListComponent {
   readonly isPublicOnly = computed(() =>
     !this.access.can('dev.viewProjects') && this.access.can('demand.viewOwn'));
 
-  /* --- Domínios e solicitantes do mock para popular dropdowns --- */
+  /* --- Domínios e solicitantes locais para popular dropdowns --- */
   readonly domains    = computed(() => Array.from(new Set(this.demands.demands().map(d => d.domain))).sort());
   readonly requesters = computed(() => Array.from(new Set(this.demands.demands().map(d => d.requester))).sort());
 
@@ -515,7 +515,7 @@ export class RfcListComponent {
   linkedProjectIds(d: DataDemand): string[] {
     return this.journeys.journeys()
       .filter(j => j.importedDemandCode === d.code || j.importedDemandId === d.id)
-      .flatMap(j => j.lupCodes);
+      .flatMap(j => j.projectCodes);
   }
 
   private isTerminal(status: DataDemandStatus): boolean {

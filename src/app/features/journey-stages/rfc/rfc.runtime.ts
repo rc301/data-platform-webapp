@@ -2,7 +2,7 @@ import { StageRuntime } from '../stage-runtime';
 import { RfcStageComponent } from './rfc-stage.component';
 
 /**
- * Runtime da etapa RFC — primeiro plugin formal da plataforma.
+ * Runtime da etapa de demanda — primeiro plugin formal da plataforma.
  * Hoje a aprovação é soft (humana). Quando o code-review virar agente,
  * a política passa a 'automatic' apenas alterando este arquivo.
  */

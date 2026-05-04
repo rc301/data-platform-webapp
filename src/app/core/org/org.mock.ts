@@ -16,7 +16,7 @@ export const ORG_UNITS: OrgUnit[] = [
   { id: 'coord-crm', name: 'Coordenacao CRM', level: 'coord', branch: 'business', parentId: 'mgmt-commercial' },
 ];
 
-export const LUP_PROJECTS: LupProject[] = [
+export const PROJECT_CODE_RECORDS: LupProject[] = [
   {
     id: 'lup-ed-2741',
     code: 'ED2741',
@@ -69,8 +69,8 @@ export const LUP_PROJECTS: LupProject[] = [
     id: 'lup-ed-2708',
     code: 'ED2708',
     type: 'ED',
-    name: 'orders_bronze_rebuild',
-    description: 'Reprocessamento e nova ingestao da camada bronze de pedidos.',
+    name: 'orders_sor_rebuild',
+    description: 'Reprocessamento e nova ingestao da camada SOR de pedidos.',
     squadId: 'squad-a',
     owner: 'Squad A',
     status: 'completed',

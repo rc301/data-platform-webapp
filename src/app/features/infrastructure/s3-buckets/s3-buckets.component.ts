@@ -4,7 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { BytesPipe } from '../../../shared/pipes/bytes.pipe';
 import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
@@ -13,7 +12,7 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
 @Component({
   selector: 'app-s3-buckets',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatTableModule, MatIconModule, MatChipsModule, MatTooltipModule, StatusBadgeComponent, BytesPipe, RelativeTimePipe],
+  imports: [CommonModule, MatCardModule, MatTableModule, MatIconModule, MatChipsModule, StatusBadgeComponent, BytesPipe, RelativeTimePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-card>
@@ -41,7 +40,7 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
         <ng-container matColumnDef="versioning">
           <th mat-header-cell *matHeaderCellDef>Versionamento</th>
           <td mat-cell *matCellDef="let b">
-            <mat-icon [style.color]="b.versioning ? '#2e7d32' : '#999'">{{ b.versioning ? 'check_circle' : 'cancel' }}</mat-icon>
+            <mat-icon [class.icon-ok]="b.versioning" [class.icon-muted]="!b.versioning">{{ b.versioning ? 'check_circle' : 'cancel' }}</mat-icon>
           </td>
         </ng-container>
         <ng-container matColumnDef="lastModified">
@@ -49,16 +48,17 @@ import { PlatformDataService } from '../../../core/services/platform-data.servic
           <td mat-cell *matCellDef="let b">{{ b.lastModified | relativeTime }}</td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
-        <tr mat-row *matRowDef="let row; columns: columns;" class="clickable-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns;"></tr>
       </table>
     </mat-card>
   `,
   styles: [`
     .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; }
-    .table-header h3 { margin: 0; } .count { color: #888; font-size: 14px; }
+    .table-header h3 { margin: 0; } .count { color: var(--text-muted); font-size: 14px; }
     .full-width { width: 100%; }
-    .clickable-row { cursor: pointer; } .clickable-row:hover { background: rgba(0,0,0,0.04); }
-    th.mat-mdc-header-cell { font-weight: 600; font-size: 12px; text-transform: uppercase; color: #444; }
+    .icon-ok { color: var(--success-500); }
+    .icon-muted { color: var(--text-muted); }
+    th.mat-mdc-header-cell { font-weight: 600; font-size: 12px; text-transform: uppercase; color: var(--text-secondary); }
   `],
 })
 export class S3BucketsComponent {

@@ -106,7 +106,7 @@ import {
         </div>
 
         <div *ngIf="creatingAssignment()" class="form form--inline">
-          <input class="input" placeholder="qualifiedName (ex: gold.customer_360)" [(ngModel)]="assignmentDraft.qualifiedName">
+          <input class="input" placeholder="qualifiedName (ex: spec.customer_360)" [(ngModel)]="assignmentDraft.qualifiedName">
           <select class="input" [(ngModel)]="assignmentDraft.domainId">
             <option *ngFor="let d of domainsOfSelected()" [value]="d.id">{{ d.name }}</option>
           </select>

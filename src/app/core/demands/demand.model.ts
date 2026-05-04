@@ -8,7 +8,7 @@
  *   - inactive   : encerrada administrativamente (gestão decide arquivar).
  *
  * `cancelled` e `inactive` são estados terminais e preservam o histórico
- * para auditoria — registros não são removidos do mock/banco.
+ * para auditoria — registros não são removidos da fonte local/banco.
  */
 export type DataDemandStatus = 'active' | 'in_review' | 'approved' | 'cancelled' | 'inactive';
 

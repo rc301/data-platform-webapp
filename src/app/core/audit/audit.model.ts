@@ -11,6 +11,7 @@ export type AuditAction =
   | 'pipeline.registry.deleted'
   | 'pipeline.registry.imported'
   | 'pipeline.execution.requested'
+  | 'monitoring.alert.acknowledged'
   | 'catalog.asset.config.updated'
   | 'lineage.graph.created'
   | 'demand.created'

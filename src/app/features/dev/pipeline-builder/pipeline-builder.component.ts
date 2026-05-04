@@ -58,7 +58,7 @@ import {
         <ui-button variant="ghost" link="/dev/journeys">Meus projetos</ui-button>
         <ui-button variant="primary" *ngIf="!createdJourney()" (clicked)="createProjectJourney()">Criar Jornada de Projeto</ui-button>
         <ui-button variant="danger" *ngIf="createdJourney() && !isDeleted()" (clicked)="deleteJourney()">Apagar jornada</ui-button>
-        <ui-button variant="secondary" *ngIf="createdJourney() && !isDeleted()">Salvar</ui-button>
+        <ui-button variant="secondary" icon="✓" *ngIf="createdJourney() && !isDeleted()" (clicked)="saveJourney()">Salvar</ui-button>
       </div>
     </ui-page-header>
 
@@ -192,7 +192,7 @@ import {
                   (saved)="saveQualityTable($event)">
                 </app-data-quality-table-form>
                 <p *ngIf="qualityTableSaved()">
-                  Tabela cadastrada no mock de Qualidade. Ela já fica disponível para scan do motor.
+                  Tabela cadastrada em Qualidade. Ela já fica disponível para scan do motor.
                 </p>
               </div>
             </ng-container>
@@ -217,7 +217,7 @@ import {
           </div>
         </ui-card>
 
-        <!-- Resumo lateral — lido das stores das etapas (hoje só RFC) -->
+        <!-- Resumo lateral — lido das stores das etapas. -->
         <ui-card eyebrow="Resumo da jornada" title="Contexto do projeto">
           <div class="import-demand">
             <label>
@@ -231,10 +231,10 @@ import {
           </div>
           <div class="import-demand">
             <label>
-              <span>LUPs vinculadas</span>
-              <input [ngModel]="lupCodesText" (ngModelChange)="lupCodesText = $event" placeholder="ED2741, EA1180">
+              <span>ID Projeto vinculado</span>
+              <input [ngModel]="projectCodesText" (ngModelChange)="projectCodesText = $event" placeholder="ED2741, EA1180">
             </label>
-            <ui-button variant="secondary" size="sm" (clicked)="saveLupCodes()">Vincular</ui-button>
+            <ui-button variant="secondary" size="sm" (clicked)="saveProjectCodes()">Vincular</ui-button>
           </div>
           <div class="summary-grid">
             <div><span class="summary-grid__k">Jornada</span><span class="summary-grid__v">{{ createdJourney()?.id || '—' }}</span></div>
@@ -244,7 +244,7 @@ import {
             <div><span class="summary-grid__k">Domínio</span><span class="summary-grid__v">{{ rfcDraft().domain || '—' }}</span></div>
             <div><span class="summary-grid__k">Squad</span><span class="summary-grid__v">{{ rfcDraft().squad || '—' }}</span></div>
             <div><span class="summary-grid__k">SLA</span><span class="summary-grid__v">{{ rfcDraft().sla || '—' }}</span></div>
-            <div><span class="summary-grid__k">LUPs</span><span class="summary-grid__v">{{ createdJourney()?.lupCodes?.join(', ') || '—' }}</span></div>
+            <div><span class="summary-grid__k">ID Projeto</span><span class="summary-grid__v">{{ createdJourney()?.projectCodes?.join(', ') || '—' }}</span></div>
             <div class="summary-grid__row"><span class="summary-grid__k">Destino</span><span class="summary-grid__v">{{ rfcDraft().target || '—' }}</span></div>
           </div>
         </ui-card>
@@ -452,7 +452,7 @@ export class PipelineBuilderComponent implements OnInit {
     return { context: ctx };
   });
 
-  /** Status mutável da jornada (mock — em produção viria de um service/store). */
+  /** Status mutável da jornada; em backend real virá do service de jornadas. */
   private readonly statuses = signal<JourneyStatusMap>(
     createInitialStatuses(DEFAULT_TEMPLATE_ID, firstOpenStageId(DEFAULT_TEMPLATE_ID)),
   );
@@ -481,13 +481,16 @@ export class PipelineBuilderComponent implements OnInit {
     }))
   );
 
-  qualityTableDraft: Partial<DataQualityTableRegistrationDraft> = this.createQualityTableDraft('gold.customer_360');
+  qualityTableDraft: Partial<DataQualityTableRegistrationDraft> = this.createQualityTableDraft('spec.customer_360');
   qualityTableSaved = signal(false);
   selectedDemandId = '';
-  lupCodesText = '';
+  projectCodesText = '';
   readonly availableDemands = computed(() => this.demands.demands().filter(demand => demand.status !== 'inactive'));
 
   ngOnInit(): void {
+    const journeyId = this.route.snapshot.queryParamMap.get('journeyId');
+    if (journeyId && this.loadJourney(journeyId)) return;
+
     const templateId = this.templateIdFromQuery();
     if (templateId) {
       this.resetJourneyState(templateId);
@@ -509,6 +512,12 @@ export class PipelineBuilderComponent implements OnInit {
     if (!journey) return;
     this.projectJourneys.markDeleted(journey.id);
     this.createdJourney.set(this.projectJourneys.journeys().find(item => item.id === journey.id) ?? null);
+  }
+
+  saveJourney(): void {
+    const journey = this.createdJourney();
+    if (!journey || this.isDeleted()) return;
+    this.createdJourney.set(this.projectJourneys.touch(journey.id) ?? journey);
   }
 
   resetForNewJourney(): void {
@@ -589,11 +598,11 @@ export class PipelineBuilderComponent implements OnInit {
     });
   }
 
-  saveLupCodes(): void {
+  saveProjectCodes(): void {
     const journey = this.createdJourney();
     if (!journey) return;
-    const codes = this.lupCodesText.split(',').map(code => code.trim().toUpperCase()).filter(Boolean);
-    this.projectJourneys.setLupCodes(journey.id, codes);
+    const codes = this.projectCodesText.split(',').map(code => code.trim().toUpperCase()).filter(Boolean);
+    this.projectJourneys.setProjectCodes(journey.id, codes);
     this.createdJourney.set(this.projectJourneys.journeys().find(item => item.id === journey.id) ?? journey);
   }
 
@@ -657,21 +666,54 @@ export class PipelineBuilderComponent implements OnInit {
     if (templateId === 'sql-only') {
       this.rfcStore.update({
         objective: 'Construir mart analitico com transformacoes SQL versionadas e validações automatizadas.',
-        sources: 'raw.crm_customers, raw.orders',
-        target: 'mart.customer_360',
+        sources: 'sor.crm_contacts, sor.orders',
+        target: 'spec.customer_360',
       });
-      this.qualityTableDraft = this.createQualityTableDraft('mart.customer_360');
+      this.qualityTableDraft = this.createQualityTableDraft('spec.customer_360');
       this.qualityTableSaved.set(false);
       return;
     }
 
     this.rfcStore.update({
       objective: 'Construir visão consolidada de cliente para uso de Marketing e CS.',
-      sources: 'silver.customer_base, silver.orders, bronze.clickstream',
-      target: 'gold.customer_360',
+      sources: 'sot.customer_base, sot.orders, sor.clickstream',
+      target: 'spec.customer_360',
     });
-    this.qualityTableDraft = this.createQualityTableDraft('gold.customer_360');
+    this.qualityTableDraft = this.createQualityTableDraft('spec.customer_360');
     this.qualityTableSaved.set(false);
+  }
+
+  private loadJourney(id: string): boolean {
+    const journey = this.projectJourneys.journeys().find(item => item.id === id);
+    if (!journey) return false;
+    this.createdJourney.set(journey);
+    this.resetJourneyState(journey.templateId);
+    this.applyTemplateDefaults(journey.templateId);
+    this.projectCodesText = journey.projectCodes.join(', ');
+    this.applyJourneySnapshot(journey);
+    return true;
+  }
+
+  private applyJourneySnapshot(journey: ProjectJourney): void {
+    const stages = getStagesForTemplate(journey.templateId);
+    if (!stages.length) return;
+
+    const currentIndex = Math.max(0, stages.findIndex(stage => stage.title === journey.currentStage));
+    const approvedCount = journey.status === 'completed'
+      ? stages.length
+      : Math.min(stages.length, Math.floor((journey.progress / 100) * stages.length));
+    const statusMap: JourneyStatusMap = {};
+
+    stages.forEach((stage, index) => {
+      if (index < approvedCount) {
+        statusMap[stage.id] = 'approved';
+        return;
+      }
+      statusMap[stage.id] = index === currentIndex && journey.status !== 'deleted' ? 'in_progress' : 'pending';
+    });
+
+    this.statuses.set(statusMap);
+    this.currentIdSig.set(stages[currentIndex]?.id ?? stages[0].id);
   }
 
   private createQualityTableDraft(qualifiedName: string, withMetadata = false): Partial<DataQualityTableRegistrationDraft> {

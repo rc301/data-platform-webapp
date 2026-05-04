@@ -1,5 +1,7 @@
 import { JobRow } from '../models/ops.model';
 
+export const MOCK_OPERATIONAL_SNAPSHOT_UPDATED_AT = '2026-04-25T12:00:00-03:00';
+
 /**
  * Helper de geração de "horários de finalização nos últimos 7 dias".
  * Aceita uma média alvo (HH:MM) e produz 7 horas com pequena variação
@@ -23,7 +25,7 @@ function jitter7d(meanHHmm: string, missChance = 0): ReadonlyArray<string | unde
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** PRNG determinístico — mock estável entre reloads. */
+/** PRNG determinístico — semente estável entre reloads. */
 function seededRandom(seed: string): number {
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
@@ -134,5 +136,133 @@ export const MOCK_JOBS: JobRow[] = [
     notes: 'Falhou as 05:48 - credencial expirada.',
     last7DaysFinishTimes: jitter7d('06:05'),
     /* sem todayFinishedAt — falhou */
+  },
+  {
+    id: 'j-13', name: 'customer_consent_snapshot', squad: 'Squad B', type: 'Munin',
+    cadence: 'daily',
+    expectedStartLocal: '04:30', slaDeadlineLocal: '05:20',
+    lastRunAt: '2026-04-25T04:36:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('05:05'),
+    todayFinishedAt: '05:02',
+  },
+  {
+    id: 'j-14', name: 'card_invoice_daily', squad: 'Squad C', type: 'GlueJob',
+    cadence: 'daily',
+    expectedStartLocal: '05:10', slaDeadlineLocal: '06:10',
+    lastRunAt: '2026-04-25T05:14:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('05:55'),
+    todayFinishedAt: '05:52',
+  },
+  {
+    id: 'j-15', name: 'card_usage_enrichment', squad: 'Squad C', type: 'CDP',
+    cadence: 'daily',
+    expectedStartLocal: '06:20', slaDeadlineLocal: '07:20',
+    lastRunAt: '2026-04-25T06:28:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('07:10'),
+    todayFinishedAt: '07:06',
+  },
+  {
+    id: 'j-16', name: 'credit_portfolio_daily', squad: 'Squad C', type: 'GlueJob',
+    cadence: 'daily',
+    expectedStartLocal: '07:15', slaDeadlineLocal: '08:15',
+    lastRunAt: '2026-04-25T07:22:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('08:00'),
+    todayFinishedAt: '07:58',
+  },
+  {
+    id: 'j-17', name: 'insurance_policy_snapshot', squad: 'Squad A', type: 'Munin',
+    cadence: 'daily',
+    expectedStartLocal: '08:00', slaDeadlineLocal: '09:00',
+    lastRunAt: '2026-04-25T08:08:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('08:46'),
+    todayFinishedAt: '08:44',
+  },
+  {
+    id: 'j-18', name: 'marketing_campaign_attribution', squad: 'Squad B', type: 'StepFunction',
+    cadence: 'daily',
+    expectedStartLocal: '08:30', slaDeadlineLocal: '09:30',
+    lastRunAt: '2026-04-25T08:39:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('09:15'),
+    todayFinishedAt: '09:12',
+  },
+  {
+    id: 'j-19', name: 'customer_segment_refresh', squad: 'Squad B', type: 'CDP',
+    cadence: 'daily',
+    expectedStartLocal: '09:00', slaDeadlineLocal: '10:00',
+    lastRunAt: '2026-04-25T09:08:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('09:47'),
+    todayFinishedAt: '09:50',
+  },
+  {
+    id: 'j-20', name: 'sales_order_margin_daily', squad: 'Squad A', type: 'GlueJob',
+    cadence: 'daily',
+    expectedStartLocal: '09:30', slaDeadlineLocal: '10:30',
+    lastRunStatus: undefined, status: 'yellow',
+    notes: 'Aguardando finalização do cálculo de margem.',
+    last7DaysFinishTimes: jitter7d('10:15'),
+  },
+  {
+    id: 'j-21', name: 'product_price_index', squad: 'Squad B', type: 'Munin',
+    cadence: 'daily',
+    expectedStartLocal: '10:00', slaDeadlineLocal: '11:00',
+    lastRunAt: '2026-04-25T10:04:00-03:00', lastRunStatus: 'running', status: 'yellow',
+    notes: 'Em execução; acima da duração média histórica.',
+    last7DaysFinishTimes: jitter7d('10:42'),
+  },
+  {
+    id: 'j-22', name: 'cashflow_projection_daily', squad: 'Squad C', type: 'GlueJob',
+    cadence: 'daily',
+    expectedStartLocal: '10:30', slaDeadlineLocal: '11:30',
+    lastRunAt: '2026-04-25T10:38:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('11:16'),
+    todayFinishedAt: '11:12',
+  },
+  {
+    id: 'j-23', name: 'fraud_alert_features', squad: 'Squad C', type: 'CDP',
+    cadence: 'daily',
+    expectedStartLocal: '11:10', slaDeadlineLocal: '12:10',
+    lastRunStatus: undefined, status: 'gray',
+    notes: 'Janela do dia ainda aberta no snapshot operacional.',
+    last7DaysFinishTimes: jitter7d('11:55'),
+  },
+  {
+    id: 'j-24', name: 'digital_channel_daily', squad: 'Squad B', type: 'StepFunction',
+    cadence: 'daily',
+    expectedStartLocal: '11:45', slaDeadlineLocal: '12:45',
+    lastRunAt: '2026-04-25T11:49:00-03:00', lastRunStatus: 'success', status: 'green',
+    last7DaysFinishTimes: jitter7d('12:25'),
+    todayFinishedAt: '12:23',
+  },
+  {
+    id: 'j-25', name: 'inventory_position_snapshot', squad: 'Squad A', type: 'Outros',
+    cadence: 'daily',
+    expectedStartLocal: '12:30', slaDeadlineLocal: '13:30',
+    lastRunStatus: undefined, status: 'gray',
+    notes: 'Aguardando janela de execução.',
+    last7DaysFinishTimes: jitter7d('13:10'),
+  },
+  {
+    id: 'j-26', name: 'vendor_master_validation', squad: 'Squad C', type: 'GlueJob',
+    cadence: 'daily',
+    expectedStartLocal: '13:00', slaDeadlineLocal: '14:00',
+    lastRunStatus: undefined, status: 'gray',
+    notes: 'Aguardando disponibilidade do ERP.',
+    last7DaysFinishTimes: jitter7d('13:45'),
+  },
+  {
+    id: 'j-27', name: 'customer_profitability_daily', squad: 'Squad B', type: 'Munin',
+    cadence: 'daily',
+    expectedStartLocal: '13:30', slaDeadlineLocal: '14:45',
+    lastRunStatus: undefined, status: 'gray',
+    notes: 'Dependente do fechamento parcial de finanças.',
+    last7DaysFinishTimes: jitter7d('14:22'),
+  },
+  {
+    id: 'j-28', name: 'regulatory_report_extract', squad: 'Squad C', type: 'GlueJob',
+    cadence: 'daily',
+    expectedStartLocal: '15:00', slaDeadlineLocal: '16:00',
+    lastRunStatus: undefined, status: 'gray',
+    notes: 'Execução prevista para o período da tarde.',
+    last7DaysFinishTimes: jitter7d('15:42'),
   },
 ];

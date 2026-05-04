@@ -24,8 +24,8 @@ export interface ProjectJourney {
   importedDemandId?: string;
   importedDemandCode?: string;
   /** IDs Projeto vinculados (ex.: ED2741, EA1180). */
-  lupCodes: string[];
-  /** Tabela final / nome lógico do produto de dados (ex: gold.customer_360). */
+  projectCodes: string[];
+  /** Tabela final / nome lógico do produto de dados (ex: spec.customer_360). */
   targetTable?: string;
   /** Responsável atual pela jornada (ex.: tech lead da squad). */
   responsible?: string;
@@ -65,9 +65,9 @@ export class ProjectJourneyStore {
       templateId,
       status: 'active',
       createdAt: now,
-      createdBy: user?.name ?? 'Usuário mock',
+      createdBy: user?.name ?? 'Usuário local',
       updatedAt: now,
-      lupCodes: [],
+      projectCodes: [],
       currentStage: STAGE_BY_ID[firstStageId].title,
       progress: 0,
     };
@@ -85,9 +85,20 @@ export class ProjectJourneyStore {
         status: 'deleted',
         updatedAt: now,
         deletedAt: now,
-        deletedBy: user?.name ?? 'Usuário mock',
+        deletedBy: user?.name ?? 'Usuário local',
       };
     }));
+  }
+
+  touch(id: string): ProjectJourney | null {
+    const now = new Date().toISOString();
+    let updated: ProjectJourney | null = null;
+    this.journeysSig.update(journeys => journeys.map(journey => {
+      if (journey.id !== id) return journey;
+      updated = { ...journey, updatedAt: now };
+      return updated;
+    }));
+    return updated;
   }
 
   importDemand(id: string, demandId: string, demandCode: string): void {
@@ -100,11 +111,11 @@ export class ProjectJourneyStore {
     } : journey));
   }
 
-  setLupCodes(id: string, lupCodes: string[]): void {
+  setProjectCodes(id: string, projectCodes: string[]): void {
     const now = new Date().toISOString();
     this.journeysSig.update(journeys => journeys.map(journey => journey.id === id ? {
       ...journey,
-      lupCodes,
+      projectCodes,
       updatedAt: now,
     } : journey));
   }

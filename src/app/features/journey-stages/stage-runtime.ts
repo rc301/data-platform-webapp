@@ -5,7 +5,7 @@ import { Capability } from '../../core/access/access.types';
  * ============================================================================
  *  Journey Stages — runtime contract
  * ----------------------------------------------------------------------------
- *  Cada etapa de uma jornada (RFC, criar repo, terraform import, deploy, etc.)
+ *  Cada etapa de uma jornada (demanda, criar repo, terraform import, deploy, etc.)
  *  é tratada como um plugin que implementa StageRuntime. Templates de jornada
  *  são apenas listas ordenadas de stage IDs — eles não conhecem implementação.
  *
@@ -34,7 +34,7 @@ export interface StageBlockedReason {
 export interface StageContext {
   readonly journeyId: string;
   readonly stageId: JourneyStageId;
-  /** Snapshot do projeto (LUP, squad, domínio, destino, etc.). */
+  /** Snapshot do projeto (ID Projeto, squad, domínio, destino, etc.). */
   readonly project: Record<string, unknown>;
   /** Saídas das etapas anteriores, indexadas por stageId. */
   readonly previousOutputs: Readonly<Record<string, unknown>>;
@@ -76,7 +76,7 @@ export interface StageRuntime<TInput = unknown, TOutput = unknown, TConfig = unk
   readonly render?: Type<unknown>;
 
   /**
-   * Pré-condições. Use para sinalizar "RFC só após LUP existir", "deploy
+   * Pré-condições. Use para sinalizar "demanda só após ID Projeto existir", "deploy
    * prod só após code review aprovado" etc. Retorna `true` quando livre.
    */
   canStart?(ctx: StageContext): true | StageBlockedReason;
