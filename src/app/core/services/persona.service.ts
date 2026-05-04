@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 
-export type PersonaId = 'developer' | 'sustaining' | 'manager';
+export type PersonaId = 'developer' | 'sustaining' | 'manager' | 'admin';
 
 export interface Persona {
   id: PersonaId;
@@ -14,7 +14,7 @@ export interface Persona {
 export const PERSONAS: Persona[] = [
   {
     id: 'developer',
-    label: 'Engenheiro de Dados — Desenvolvimento',
+    label: 'Desenvolvedor',
     shortLabel: 'Desenvolvedor',
     description: 'Construir pipelines de ponta a ponta com aprovações guiadas.',
     icon: 'terminal',
@@ -22,7 +22,7 @@ export const PERSONAS: Persona[] = [
   },
   {
     id: 'sustaining',
-    label: 'Engenheiro de Dados — Sustentação',
+    label: 'Sustentação',
     shortLabel: 'Sustentação',
     description: 'Operação 24x7, faróis de SLA e diagnóstico de incidentes.',
     icon: 'shield',
@@ -35,6 +35,14 @@ export const PERSONAS: Persona[] = [
     description: 'Indicadores executivos, custos e capacidade da plataforma.',
     icon: 'analytics',
     homeRoute: '/executive',
+  },
+  {
+    id: 'admin',
+    label: 'Admin',
+    shortLabel: 'Admin',
+    description: 'Acesso completo às telas e configurações da plataforma.',
+    icon: 'admin_panel_settings',
+    homeRoute: '/admin/policies',
   },
 ];
 

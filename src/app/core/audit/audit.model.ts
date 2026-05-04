@@ -12,6 +12,7 @@ export type AuditAction =
   | 'pipeline.registry.imported'
   | 'pipeline.execution.requested'
   | 'catalog.asset.config.updated'
+  | 'lineage.graph.created'
   | 'demand.created'
   | 'demand.updated'
   | 'demand.cancelled'

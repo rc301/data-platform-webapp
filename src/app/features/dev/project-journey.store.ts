@@ -5,12 +5,15 @@ import {
   STAGE_BY_ID,
   getJourneyTemplate,
 } from './pipeline-builder/journey-config';
+import { PROJECT_JOURNEYS_SEED } from './project-journey.mock';
 
-export type ProjectJourneyStatus = 'draft' | 'active' | 'deleted';
+export type ProjectJourneyStatus = 'draft' | 'active' | 'completed' | 'deleted';
 
 export interface ProjectJourney {
   id: string;
+  /** Nome de produto / pipeline. Curto e estável (vai virar slug). */
   name: string;
+  /** Template usado: glue-pyspark ou sql-only. */
   templateId: JourneyTemplateId;
   status: ProjectJourneyStatus;
   createdAt: string;
@@ -20,7 +23,16 @@ export interface ProjectJourney {
   deletedBy?: string;
   importedDemandId?: string;
   importedDemandCode?: string;
+  /** IDs Projeto vinculados (ex.: ED2741, EA1180). */
   lupCodes: string[];
+  /** Tabela final / nome lógico do produto de dados (ex: gold.customer_360). */
+  targetTable?: string;
+  /** Responsável atual pela jornada (ex.: tech lead da squad). */
+  responsible?: string;
+  /** Squad da jornada — mostrado em consultas de gestão. */
+  squadId?: string;
+  /** Domínio funcional (ex.: Comercial, Financeiro). */
+  domain?: string;
   currentStage: string;
   progress: number;
 }
@@ -28,10 +40,18 @@ export interface ProjectJourney {
 @Injectable({ providedIn: 'root' })
 export class ProjectJourneyStore {
   private readonly auth = inject(AuthService);
-  private readonly journeysSig = signal<ProjectJourney[]>([]);
+  private readonly journeysSig = signal<ProjectJourney[]>([...PROJECT_JOURNEYS_SEED]);
 
   readonly journeys = this.journeysSig.asReadonly();
-  readonly activeJourney = computed(() => this.journeysSig().find(journey => journey.status !== 'deleted') ?? null);
+  readonly activeJourney = computed(() => this.journeysSig().find(journey => journey.status === 'active' || journey.status === 'draft') ?? null);
+  readonly mineActive = computed(() => {
+    const me = this.auth.user()?.name;
+    return this.journeysSig().filter(j => j.status === 'active' && (j.createdBy === me || j.responsible === me));
+  });
+  readonly mineCompleted = computed(() => {
+    const me = this.auth.user()?.name;
+    return this.journeysSig().filter(j => j.status === 'completed' && (j.createdBy === me || j.responsible === me));
+  });
 
   create(templateId: JourneyTemplateId): ProjectJourney {
     const now = new Date().toISOString();

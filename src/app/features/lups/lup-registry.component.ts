@@ -21,21 +21,26 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
   imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTooltipModule, MatDialogModule, PageHeaderComponent, StatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Cadastro de LUPs" subtitle="Consulta e manutenção governada dos registros LUP do seu escopo" icon="assignment">
-      <button mat-flat-button color="primary" *ngIf="canManage()" (click)="openForm()"><mat-icon>add</mat-icon> Nova LUP</button>
+    <app-page-header
+      title="Projetos"
+      subtitle="Cadastro e manutenção dos projetos da sua gerência. Cada registro tem um ID Projeto único usado em demandas, jornadas e relatórios."
+      icon="assignment">
+      <button mat-flat-button color="primary" *ngIf="canManage()" (click)="openForm()">
+        <mat-icon>add</mat-icon> Novo projeto
+      </button>
     </app-page-header>
 
     <section class="lup-form" *ngIf="formOpen()">
       <div class="form-head">
         <div>
-          <strong>{{ editingId() ? 'Editar LUP' : 'Cadastrar LUP' }}</strong>
+          <strong>{{ editingId() ? 'Editar projeto' : 'Cadastrar projeto' }}</strong>
           <span>Criação, edição e exclusão ficam registradas na auditoria.</span>
         </div>
         <button mat-icon-button type="button" (click)="closeForm()" matTooltip="Fechar"><mat-icon>close</mat-icon></button>
       </div>
 
       <div class="form-grid">
-        <mat-form-field appearance="outline"><mat-label>Código</mat-label><input matInput [(ngModel)]="draft.code" placeholder="ex: ED2741"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>ID Projeto</mat-label><input matInput [(ngModel)]="draft.code" placeholder="ex: ED2741"></mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Tipo</mat-label>
           <mat-select [(ngModel)]="draft.type">
@@ -74,7 +79,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
         <mat-form-field appearance="outline"><mat-label>Progresso (%)</mat-label><input matInput type="number" min="0" max="100" [(ngModel)]="draft.progress"></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>Pipelines</mat-label><input matInput type="number" min="0" [(ngModel)]="draft.pipelineCount"></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>Custo mensal estimado</mat-label><input matInput type="number" min="0" [(ngModel)]="draft.monthlyCost"></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>LUPs vinculadas</mat-label><input matInput [ngModel]="linkedProjectText" (ngModelChange)="linkedProjectText = $event" placeholder="EA1180, ED2719"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Projetos vinculados</mat-label><input matInput [ngModel]="linkedProjectText" (ngModelChange)="linkedProjectText = $event" placeholder="EA1180, ED2719"></mat-form-field>
         <mat-form-field appearance="outline" class="form-grid__wide"><mat-label>Descrição</mat-label><textarea matInput rows="3" [(ngModel)]="draft.description"></textarea></mat-form-field>
       </div>
 
@@ -85,7 +90,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
     </section>
 
     <section class="filters">
-      <mat-form-field appearance="outline"><mat-label>Buscar</mat-label><input matInput [(ngModel)]="searchTerm" placeholder="Código, nome, owner ou descrição"></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Buscar</mat-label><input matInput [(ngModel)]="searchTerm" placeholder="ID Projeto, nome, owner ou descrição"></mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Tipo</mat-label>
         <mat-select [(ngModel)]="typeFilter">
@@ -110,7 +115,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
 
     <section class="lup-table">
       <div class="lup-row lup-row--head">
-        <span>LUP</span><span>Tipo</span><span>Squad</span><span>Status</span><span>Saúde</span><span>Progresso</span><span>Pipelines</span><span>Atualizado</span><span></span>
+        <span>ID Projeto</span><span>Tipo</span><span>Squad</span><span>Status</span><span>Saúde</span><span>Progresso</span><span>Pipelines</span><span>Atualizado</span><span></span>
       </div>
       <article class="lup-row" *ngFor="let project of visibleProjects()">
         <div class="main"><strong>{{ project.code }}</strong><span>{{ project.name }}</span></div>
@@ -126,7 +131,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
           <button mat-icon-button type="button" matTooltip="Excluir" [disabled]="!canManage()" (click)="deleteProject(project)"><mat-icon>delete</mat-icon></button>
         </div>
       </article>
-      <div class="empty" *ngIf="!visibleProjects().length">Nenhuma LUP encontrada para os filtros atuais.</div>
+      <div class="empty" *ngIf="!visibleProjects().length">Nenhum projeto encontrado para os filtros atuais.</div>
     </section>
   `,
   styles: [`
@@ -237,8 +242,8 @@ export class LupRegistryComponent {
   deleteProject(project: LupProject): void {
     this.dialog.open(ConfirmDialogComponent, {
       data: {
-        title: 'Excluir LUP',
-        message: `Deseja excluir a LUP ${project.code}? Esta operação será registrada na auditoria.`,
+        title: 'Excluir projeto',
+        message: `Deseja excluir o projeto ${project.code}? Esta operação será registrada na auditoria.`,
         confirmText: 'Excluir',
         warn: true,
       },

@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DataQualityTableRegistration, IngestionFlowKind, Pipeline, PipelineExecutionRequest, PipelineExecutionRequestDraft, PipelineRegistryDraft } from '../models';
+import { DataQualityTableRegistration, IngestionFlowKind, LineageGraph, Pipeline, PipelineExecutionRequest, PipelineExecutionRequestDraft, PipelineRegistryDraft } from '../models';
 import { AuditService } from '../audit/audit.service';
 import { AuthService } from './auth.service';
 import { MOCK_CATALOG_ASSETS, MOCK_DOMAINS, MOCK_GLOSSARY } from '../mocks/catalog.mock';
@@ -56,6 +56,28 @@ export class PlatformDataService {
 
   addDataQualityTableRegistration(registration: DataQualityTableRegistration): void {
     this.dqTableRegistrationsSig.update(registrations => [registration, ...registrations]);
+  }
+
+  addManualLineageGraph(draft: Omit<LineageGraph, 'id' | 'registrationSource' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>): LineageGraph | null {
+    if (!draft.pipelineId || !this.pipelinesSig().some(pipeline => pipeline.id === draft.pipelineId)) return null;
+    const now = new Date().toISOString();
+    const user = this.auth.user();
+    const graph: LineageGraph = {
+      ...draft,
+      id: `lineage-manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      registrationSource: 'manual',
+      createdAt: now,
+      createdBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+      updatedAt: now,
+      updatedBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+    };
+    this.lineageGraphsSig.update(graphs => [graph, ...graphs]);
+    this.audit.record('lineage.graph.created', {
+      resourceType: 'lineage-graph',
+      resourceId: graph.id,
+      metadata: { entityName: graph.entityName, entityType: graph.entityType, pipelineId: graph.pipelineId ?? '', source: graph.registrationSource ?? 'manual' },
+    });
+    return graph;
   }
 
   updateCatalogAssetConfig(id: string, patch: { goldenSource?: boolean; domain?: string; owner?: string; supportSquad?: string; tags?: string[]; classification?: string[]; description?: string }): void {

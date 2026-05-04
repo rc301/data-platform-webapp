@@ -353,7 +353,7 @@ export class LayoutComponent {
       capacity:    '▦',
       kpi:         '◧',
       demand:      '✎',  // RFC / demandas
-      lup:         '◧',  // projeto LUP
+      project:     '◧',  // ID Projeto / Cadastro de Projetos
       glossary:    '✦',  // padrões de nomes
       access:      '⚿',  // governança — políticas
       orgtree:     '⌬',  // hierarquia
@@ -364,13 +364,13 @@ export class LayoutComponent {
   }
 
   /**
-   * Estrutura final de IA da sidebar (revisão de UX/IA validada):
+   * Estrutura final de IA da sidebar:
    *   • Início                    — atalho da persona
-   *   • Gestão de Projetos        — Demandas, LUPs, Histórico, Nova jornada
+   *   • Gestão de Projetos        — Demandas, Projetos, Jornadas, Nova jornada (exceto Sustentação)
    *   • Dados                     — Catálogo, Linhagem, Qualidade
    *   • Plataforma                — Pipelines, Orquestrador, Saúde&Faróis, Custos
    *   • Utilidades                — Padrões de Nomes
-   *   • Governança (admin)        — placeholder (sub-rotas vêm na Onda 4)
+   *   • Governança (admin)        — Políticas, Estrutura, Assuntos, Etapas, Auditoria
    *
    * `requiredCapabilities` é OR — se o usuário tem QUALQUER uma das
    * capabilities listadas, o item aparece.
@@ -381,8 +381,13 @@ export class LayoutComponent {
     if (isPublicOnly) return this.filterGroups(this.publicNav);
 
     const id = this.persona.active().id;
+    if (id === 'admin') return this.filterGroups(this.adminNav);
+
     const baseGroups = id === 'developer' ? this.devNav : id === 'sustaining' ? this.opsNav : this.mgrNav;
     const allowedGroups = this.filterGroups(baseGroups);
+    if (id === 'developer') return allowedGroups;
+    if (id === 'sustaining') return allowedGroups;
+    if (id === 'manager') return allowedGroups;
 
     if (this.access.hasAny(['admin.manageAccess', 'admin.manageOrg', 'admin.viewAudit'])) {
       // Onda 4 quebra este item em sub-rotas (Políticas, Estrutura, Assuntos,
@@ -434,34 +439,28 @@ export class LayoutComponent {
     {
       title: 'Gestão de Projetos',
       items: [
-        { label: 'Nova jornada',          icon: 'build',  route: '/dev/journeys/new', primary: true, requiredCapabilities: ['pipeline.create'] },
-        { label: 'Demandas',              icon: 'demand', route: '/demands',                          requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'LUPs',                  icon: 'lup',    route: '/lups',                             requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Histórico de projetos', icon: 'list',   route: '/projects',                         requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Nova jornada', icon: 'build',   route: '/dev/journeys/new', primary: true, requiredCapabilities: ['pipeline.create'] },
+        { label: 'Demandas',     icon: 'demand',  route: '/demands',                         requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Projetos',     icon: 'project', route: '/lups',                            requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Jornadas',     icon: 'list',    route: '/projects',                        requiredCapabilities: ['dev.viewProjects'] },
       ],
     },
     {
       title: 'Dados',
       items: [
-        { label: 'Catálogo', icon: 'catalog', route: '/catalog',      requiredCapabilities: ['catalog.viewBasic'] },
-        { label: 'Linhagem', icon: 'lineage', route: '/lineage',      requiredCapabilities: ['lineage.view'] },
+        { label: 'Catálogo',  icon: 'catalog', route: '/catalog',      requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Linhagem',  icon: 'lineage', route: '/lineage',      requiredCapabilities: ['lineage.view'] },
         { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
       ],
     },
     {
       title: 'Plataforma',
       items: [
-        { label: 'Pipelines',          icon: 'pipeline', route: '/pipelines',         requiredCapabilities: ['pipeline.view'] },
-        { label: 'Acionamentos',       icon: 'trigger',  route: '/pipeline-actions',  requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Orquestrador',       icon: 'orch',     route: '/orchestrator',      requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Saúde & Faróis',     icon: 'shield',   route: '/ops',               requiredCapabilities: ['ops.viewBoard'] },
-        { label: 'Custos',             icon: 'cost',     route: '/monitoring/costs',  requiredCapabilities: ['pipeline.viewCosts'] },
-      ],
-    },
-    {
-      title: 'Utilidades',
-      items: [
-        { label: 'Padrões de Nomes', icon: 'glossary', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Pipelines',      icon: 'pipeline', route: '/pipelines',        requiredCapabilities: ['pipeline.view'] },
+        { label: 'Acionamentos',   icon: 'trigger',  route: '/pipeline-actions', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Orquestrador',   icon: 'orch',     route: '/orchestrator',     requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Saúde & Faróis', icon: 'shield',   route: '/ops/overview',     requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Custos',         icon: 'cost',     route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
       ],
     },
   ];
@@ -471,16 +470,8 @@ export class LayoutComponent {
     {
       title: 'Início',
       items: [
-        { label: 'Saúde & Faróis', icon: 'shield', route: '/ops',                exact: true, requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Saúde & Faróis', icon: 'shield', route: '/ops/overview',       exact: true, requiredCapabilities: ['ops.viewBoard'] },
         { label: 'Alertas',        icon: 'bell',   route: '/monitoring/alerts',  badge: 3,    requiredCapabilities: ['ops.viewBoard'] },
-      ],
-    },
-    {
-      title: 'Gestão de Projetos',
-      items: [
-        // Sustentação consulta (read-only) durante incidentes — sem CTA "Nova jornada".
-        { label: 'Demandas',  icon: 'demand', route: '/demands', requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'LUPs',      icon: 'lup',    route: '/lups',    requiredCapabilities: ['dev.viewProjects'] },
       ],
     },
     {
@@ -500,12 +491,6 @@ export class LayoutComponent {
         { label: 'Custos',       icon: 'cost',     route: '/monitoring/costs', requiredCapabilities: ['pipeline.viewCosts'] },
       ],
     },
-    {
-      title: 'Utilidades',
-      items: [
-        { label: 'Padrões de Nomes', icon: 'glossary', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
-      ],
-    },
   ];
 
   /* ===== Persona: Gestão ===== */
@@ -520,9 +505,9 @@ export class LayoutComponent {
     {
       title: 'Gestão de Projetos',
       items: [
-        { label: 'Demandas',              icon: 'demand', route: '/demands',  requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'LUPs',                  icon: 'lup',    route: '/lups',     requiredCapabilities: ['dev.viewProjects'] },
-        { label: 'Histórico de projetos', icon: 'list',   route: '/projects', requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Demandas', icon: 'demand',  route: '/demands',  requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Projetos', icon: 'project', route: '/lups',     requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Jornadas', icon: 'list',    route: '/projects', requiredCapabilities: ['dev.viewProjects'] },
       ],
     },
     {
@@ -543,6 +528,62 @@ export class LayoutComponent {
       title: 'Utilidades',
       items: [
         { label: 'Padrões de Nomes', icon: 'glossary', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
+      ],
+    },
+  ];
+
+  /* ===== Persona: Admin ===== */
+  private adminNav: NavGroup[] = [
+    {
+      title: 'Início',
+      items: [
+        { label: 'Visão do Desenvolvedor', icon: 'home',     route: '/dev',                exact: true, requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Saúde & Faróis',         icon: 'shield',   route: '/ops/overview',       exact: true, requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'KPIs da Plataforma',     icon: 'kpi',      route: '/executive',          exact: true, requiredCapabilities: ['executive.viewOwnScope'] },
+        { label: 'Capacidade & SLAs',      icon: 'capacity', route: '/executive/capacity',              requiredCapabilities: ['executive.viewOwnScope'] },
+      ],
+    },
+    {
+      title: 'Gestão de Projetos',
+      items: [
+        { label: 'Nova jornada', icon: 'build',   route: '/dev/journeys/new', primary: true, requiredCapabilities: ['pipeline.create'] },
+        { label: 'Demandas',     icon: 'demand',  route: '/demands',                         requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Projetos',     icon: 'project', route: '/lups',                            requiredCapabilities: ['dev.viewProjects'] },
+        { label: 'Jornadas',     icon: 'list',    route: '/projects',                        requiredCapabilities: ['dev.viewProjects'] },
+      ],
+    },
+    {
+      title: 'Dados',
+      items: [
+        { label: 'Catálogo',  icon: 'catalog', route: '/catalog',      requiredCapabilities: ['catalog.viewBasic'] },
+        { label: 'Linhagem',  icon: 'lineage', route: '/lineage',      requiredCapabilities: ['lineage.view'] },
+        { label: 'Qualidade', icon: 'quality', route: '/data-quality', requiredCapabilities: ['dataQuality.view'] },
+      ],
+    },
+    {
+      title: 'Plataforma',
+      items: [
+        { label: 'Pipelines',      icon: 'pipeline', route: '/pipelines',         requiredCapabilities: ['pipeline.view'] },
+        { label: 'Acionamentos',   icon: 'trigger',  route: '/pipeline-actions',  requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Orquestrador',   icon: 'orch',     route: '/orchestrator',      requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Saúde & Faróis', icon: 'shield',   route: '/monitoring/alerts', requiredCapabilities: ['ops.viewBoard'] },
+        { label: 'Custos',         icon: 'cost',     route: '/monitoring/costs',  requiredCapabilities: ['pipeline.viewCosts'] },
+      ],
+    },
+    {
+      title: 'Utilidades',
+      items: [
+        { label: 'Padrões de Nomes', icon: 'glossary', route: '/term-abbreviations', requiredCapabilities: ['catalog.viewBasic'] },
+      ],
+    },
+    {
+      title: 'Governança',
+      items: [
+        { label: 'Políticas de Acesso',      icon: 'access',   route: '/admin/policies', requiredCapabilities: ['admin.manageAccess'] },
+        { label: 'Estrutura organizacional', icon: 'orgtree',  route: '/admin/org',      requiredCapabilities: ['admin.manageOrg'] },
+        { label: 'Assuntos & Domínios',      icon: 'subjects', route: '/admin/subjects', requiredCapabilities: ['admin.manageOrg'] },
+        { label: 'Catálogo de Etapas',       icon: 'stages',   route: '/admin/stages',   requiredCapabilities: ['admin.manageStages'] },
+        { label: 'Auditoria',                icon: 'audit',    route: '/admin/audit',    requiredCapabilities: ['admin.viewAudit'] },
       ],
     },
   ];

@@ -56,6 +56,7 @@ import {
       [subtitle]="createdJourney() ? 'Template travado para garantir rastreabilidade da jornada criada.' : 'Escolha o tipo de jornada antes de criar o projeto.'">
       <div page-actions>
         <ui-button variant="ghost" link="/dev/journeys">Meus projetos</ui-button>
+        <ui-button variant="primary" *ngIf="!createdJourney()" (clicked)="createProjectJourney()">Criar Jornada de Projeto</ui-button>
         <ui-button variant="danger" *ngIf="createdJourney() && !isDeleted()" (clicked)="deleteJourney()">Apagar jornada</ui-button>
         <ui-button variant="secondary" *ngIf="createdJourney() && !isDeleted()">Salvar</ui-button>
       </div>
@@ -97,7 +98,7 @@ import {
         </ol>
       </section>
 
-      <ui-card eyebrow="Criação" title="Criar jornada de projeto" subtitle="Depois de criada, a jornada mantém o template escolhido. Para trocar de template, apague esta jornada e crie outra.">
+      <ui-card eyebrow="Criação" title="Jornada selecionada" subtitle="Depois de criada, a jornada mantém o template escolhido. Para trocar de template, apague esta jornada e crie outra.">
         <div class="creation-summary">
           <div>
             <span>Template selecionado</span>
@@ -107,7 +108,6 @@ import {
         </div>
         <div card-footer class="footer-row">
           <span class="footer-row__gate">O template não poderá ser alterado após a criação.</span>
-          <ui-button variant="primary" (clicked)="createProjectJourney()">Criar Jornada de Projeto</ui-button>
         </div>
       </ui-card>
     </ng-container>

@@ -1,6 +1,8 @@
 import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   UiCardComponent, UiBadgeComponent, UiButtonComponent,
   UiFarolComponent, UiStatComponent, FarolStatus,
@@ -20,7 +22,7 @@ type FilterStatus = 'all' | FarolStatus;
   selector: 'app-jobs-board',
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, RouterModule, MatTooltipModule,
     UiCardComponent, UiBadgeComponent, UiButtonComponent,
     UiFarolComponent, UiStatComponent,
   ],
@@ -61,8 +63,8 @@ type FilterStatus = 'all' | FarolStatus;
 
     <!-- KPIs -->
     <div class="stats-row">
-      <ui-stat label="Jobs monitorados" [value]="total()" />
-      <ui-stat label="Saúde da plataforma" [value]="healthPct() + '%'" trend="flat" delta="—" deltaPeriod="janela 24h" />
+      <ui-stat label="Jobs agendados hoje" [value]="total()" hint="execuções esperadas no dia" />
+      <ui-stat label="Tabelas com falha de qualidade" [value]="dqFailingTables()" hint="regras DQ falhando hoje" />
       <ui-stat label="Incidentes abertos" [value]="count('red')" trend="up" delta="+1" deltaPeriod="vs. ontem" />
       <ui-stat label="Tempo médio de detecção" value="3 min" hint="janela 7d" />
     </div>
@@ -96,7 +98,12 @@ type FilterStatus = 'all' | FarolStatus;
         <tbody>
           <tr *ngFor="let job of visible()" [class.tbl__row--alert]="job.status === 'red'">
             <td><ui-farol [status]="job.status" /></td>
-            <td class="tbl__name">{{ job.name }}</td>
+            <td class="tbl__name">
+              <a [routerLink]="'/pipelines'" [queryParams]="{ expand: job.name }"
+                 matTooltip="Abrir detalhes do job em /pipelines">
+                {{ job.name }}
+              </a>
+            </td>
             <td>{{ job.squad }}</td>
             <td><ui-badge tone="neutral">{{ job.type }}</ui-badge></td>
             <td class="tbl__mono">{{ job.expectedStartLocal }}</td>
@@ -159,6 +166,8 @@ type FilterStatus = 'all' | FarolStatus;
     .tbl__row--alert { background: rgba(229,72,77,0.04); }
     .tbl__row--alert:hover { background: rgba(229,72,77,0.08); }
     .tbl__name { color: var(--text-primary); font-weight: 600; }
+    .tbl__name a { color: inherit; text-decoration: none; cursor: pointer; }
+    .tbl__name a:hover { color: var(--brand-300); text-decoration: underline; text-underline-offset: 3px; }
     .tbl__mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); }
     .tbl__muted { color: var(--text-muted); }
     .tbl__notes { color: var(--text-secondary); max-width: 360px; }
@@ -204,11 +213,13 @@ export class JobsBoardComponent {
     });
   });
 
-  readonly healthPct = computed(() => {
-    const t = this.total();
-    if (!t) return 0;
-    const ok = this.count('green');
-    return Math.round((ok / t) * 100);
+  /** Quantidade de tabelas distintas com pelo menos uma regra DQ falhando. */
+  readonly dqFailingTables = computed(() => {
+    const failingTables = new Set<string>();
+    for (const rule of this.data.dqRules()) {
+      if (rule.status === 'failing') failingTables.add(rule.dataset);
+    }
+    return failingTables.size;
   });
 
   count(status: FarolStatus): number {
