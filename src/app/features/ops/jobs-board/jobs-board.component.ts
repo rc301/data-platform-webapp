@@ -208,7 +208,7 @@ export class JobsBoardComponent {
   readonly dqFailingTables = computed(() => {
     const failingTables = new Set<string>();
     for (const rule of this.data.dqRules()) {
-      if (rule.status === 'failing') failingTables.add(rule.tableName);
+      if (rule.status === 'failing') failingTables.add(rule.dataset);
     }
     return failingTables.size;
   });
