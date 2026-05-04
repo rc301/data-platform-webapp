@@ -2,8 +2,12 @@ export type DataLayer = 'sor' | 'sot' | 'spec';
 
 export interface CatalogAsset {
   id: string;
+  /** Nome físico — como aparece no banco (ex: customer_360). */
   name: string;
+  /** Nome qualificado (`database.tabela`), usado em queries. */
   qualifiedName: string;
+  /** Nome lógico de negócio — descrição amigável (ex: "Cliente 360"). */
+  logicalName?: string;
   type: 'table' | 'view' | 'dashboard' | 'column' | 'schema' | 'database' | 'pipeline';
   sigla: string;
   dataLayer?: DataLayer;
@@ -16,6 +20,8 @@ export interface CatalogAsset {
   tags: string[];
   glossaryTerms: string[];
   certificationStatus: 'certified' | 'in_review' | 'draft' | 'deprecated';
+  /** SLA de entrega (texto humano: "D-1 até 07h30", "A cada 5 min"). */
+  slaDelivery?: string;
   lastUpdated: string;
   createdAt: string;
   popularity: number;

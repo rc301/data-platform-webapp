@@ -1,7 +1,7 @@
 import {
   Component, Input, OnChanges, SimpleChanges, ElementRef,
   AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
-  ViewChild, inject,
+  ViewChild, inject, Output, EventEmitter,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -85,6 +85,8 @@ function initMermaidOnce(): void {
 })
 export class MermaidDiagramComponent implements AfterViewInit, OnChanges {
   @Input() definition = '';
+  @Output() renderReady = new EventEmitter<void>();
+  @Output() renderError = new EventEmitter<string>();
   @ViewChild('diagramEl') diagramEl!: ElementRef<HTMLDivElement>;
 
   private readonly cdr = inject(ChangeDetectorRef);
@@ -124,10 +126,12 @@ export class MermaidDiagramComponent implements AfterViewInit, OnChanges {
       if (seq !== this.renderSeq) return;
       this.diagramEl.nativeElement.innerHTML = svg;
       this.renderState = 'ready';
+      this.renderReady.emit();
     } catch (err: unknown) {
       if (seq !== this.renderSeq) return;
       this.errorMsg = err instanceof Error ? err.message : String(err);
       this.renderState = 'error';
+      this.renderError.emit(this.errorMsg);
     }
 
     this.cdr.markForCheck();

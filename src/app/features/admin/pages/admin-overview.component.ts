@@ -21,7 +21,7 @@ import { OrgService } from '../../../core/org/org.service';
       <ui-stat label="Roles configurados"           [value]="roles.length" />
       <ui-stat label="Capabilities"                  [value]="capabilities.length" />
       <ui-stat label="Unidades organizacionais"      [value]="org.orgUnits().length" />
-      <ui-stat label="Projetos LUP cadastrados"      [value]="org.projects().length" />
+      <ui-stat label="Projetos cadastrados"          [value]="org.projects().length" />
     </div>
 
     <div class="grid">

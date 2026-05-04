@@ -5,7 +5,7 @@ import { OrgService } from '../../../core/org/org.service';
 import { AccessService } from '../../../core/access/access.service';
 
 /**
- * Visualização da árvore organizacional + projetos LUP visíveis no escopo
+ * Visualização da árvore organizacional + projetos visíveis no escopo
  * ativo. CRUD completo da hierarquia será adicionado em onda futura, mas a
  * base de dados (OrgService) já expõe create/update/delete.
  */
@@ -31,10 +31,10 @@ import { AccessService } from '../../../core/access/access.service';
       </table>
     </ui-card>
 
-    <ui-card eyebrow="LUP" title="Projetos visíveis no escopo ativo" [padded]="false">
+    <ui-card eyebrow="Projetos" title="Projetos visíveis no escopo ativo" [padded]="false">
       <table class="tbl">
         <thead>
-          <tr><th>Código</th><th>Projeto</th><th>Squad</th><th>Status</th><th>Farol</th><th>Custo mensal</th><th>Progresso</th></tr>
+          <tr><th>ID Projeto</th><th>Projeto</th><th>Squad</th><th>Status</th><th>Farol</th><th>Custo mensal</th><th>Progresso</th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let project of visibleProjects()">

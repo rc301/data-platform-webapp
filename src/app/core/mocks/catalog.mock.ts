@@ -3,7 +3,9 @@ import { CatalogAsset, CatalogDomain, CatalogGlossaryTerm } from '../models';
 export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   {
     id: 'asset-1', name: 'customer_360', qualifiedName: 'datalake.gold.customer_360', type: 'table',
+    logicalName: 'Cliente 360',
     sigla: 'eg4', dataLayer: 'spec', goldenSource: true,
+    slaDelivery: 'D-1 até 07h30',
     description: 'Visão unificada do cliente combinando dados de CRM, pedidos e comportamento',
     owner: 'Analytics Engineering', supportSquad: 'Squad B', domain: 'Customer', classification: ['PII', 'Confidential'],
     tags: ['golden-record', 'certified'], glossaryTerms: ['Customer', 'Customer Lifetime Value'],
@@ -35,7 +37,9 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-2', name: 'orders', qualifiedName: 'datalake.bronze.orders', type: 'table',
+    logicalName: 'Pedidos (bronze)',
     sigla: 'ab1', dataLayer: 'sor', goldenSource: false,
+    slaDelivery: 'Até 30 min após disponibilidade na origem',
     description: 'Dados brutos de pedidos ingeridos do banco transacional',
     owner: 'Data Engineering', supportSquad: 'Squad A', domain: 'Sales', classification: ['Internal'],
     tags: ['raw', 'high-volume'], glossaryTerms: ['Order', 'Revenue'],
@@ -44,7 +48,9 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-3', name: 'financial_transactions', qualifiedName: 'datalake.gold.financial_transactions', type: 'table',
+    logicalName: 'Transações financeiras',
     sigla: 'as7', dataLayer: 'spec', goldenSource: true,
+    slaDelivery: 'D-1 até 06h30',
     description: 'Transações financeiras curadas com metadados enriquecidos',
     owner: 'Finance Data', supportSquad: 'Squad C', domain: 'Finance', classification: ['Restricted', 'Confidential'],
     tags: ['finance', 'sla-critical'], glossaryTerms: ['Transaction', 'Revenue'],
@@ -53,7 +59,9 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   },
   {
     id: 'asset-4', name: 'clickstream', qualifiedName: 'datalake.bronze.clickstream', type: 'table',
+    logicalName: 'Clickstream digital (bronze)',
     sigla: 'ab1', dataLayer: 'sor', goldenSource: false,
+    slaDelivery: 'A cada 5 min',
     description: 'Eventos de clickstream brutos de aplicações web e mobile',
     owner: 'Data Engineering', supportSquad: 'Squad A', domain: 'Digital', classification: ['Internal'],
     tags: ['streaming', 'high-volume', 'raw'], glossaryTerms: ['Event', 'Session'],

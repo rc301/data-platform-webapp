@@ -1,47 +1,68 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTableModule } from '@angular/material/table';
-import { MatSortModule } from '@angular/material/sort';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-import { MetricCardComponent } from '../../shared/components/metric-card/metric-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { DataQualityTableFormComponent } from '../../shared/components/data-quality-table-form/data-quality-table-form.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
+import { AccessService } from '../../core/access/access.service';
 import { PlatformDataService } from '../../core/services/platform-data.service';
-import { DataQualityCustomRule, DataQualityTableRegistration, DataQualityTableRegistrationDraft } from '../../core/models';
+import {
+  CatalogAsset,
+  DataQualityCustomRule,
+  DataQualityRule,
+  DataQualityTableColumn,
+  DataQualityTableRegistration,
+  DataQualityTableRegistrationDraft,
+} from '../../core/models';
+
+interface TableQualityRow {
+  asset: CatalogAsset;
+  score: number;
+  status: 'approved' | 'warning' | 'critical';
+  rules: DataQualityRule[];
+  slaBreaches: number;
+}
+
+interface FieldMetricRow {
+  field: string;
+  type: string;
+  kind: 'qualitative' | 'quantitative';
+  metrics: Array<{ name: string; score: number }>;
+}
 
 @Component({
   selector: 'app-data-quality',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule,
-    MatTableModule, MatSortModule, MatTooltipModule,
-    PageHeaderComponent, MetricCardComponent, StatusBadgeComponent, DataQualityTableFormComponent, RelativeTimePipe,
+    CommonModule, FormsModule, MatButtonModule, MatCardModule, MatChipsModule,
+    MatFormFieldModule, MatIconModule, MatInputModule, MatProgressBarModule,
+    MatSelectModule, MatTabsModule, MatTooltipModule,
+    PageHeaderComponent, StatusBadgeComponent, DataQualityTableFormComponent, RelativeTimePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Qualidade de Dados" subtitle="Cadastre tabelas para o motor de qualidade e monitore regras derivadas" icon="verified">
-      <button mat-stroked-button color="primary" (click)="showCreateForm.set(true)">
-        <mat-icon>add</mat-icon> Cadastrar Tabela
+    <app-page-header title="Qualidade de Dados" subtitle="Acompanhe a qualidade das tabelas monitoradas pela plataforma" icon="verified">
+      <button mat-stroked-button color="primary" *ngIf="canManageMetadata()" (click)="showCreateForm.set(true)">
+        <mat-icon>add</mat-icon> Cadastrar qualidade
       </button>
     </app-page-header>
 
-    <section class="create-panel" *ngIf="showCreateForm()">
+    <section class="create-panel" *ngIf="showCreateForm() && canManageMetadata()">
       <app-data-quality-table-form
         [value]="tableRegistrationDraft"
         title="Cadastrar qualidade por tabela"
-        description="Após liberar acesso à role do motor de qualidade, consulte a tabela e complete chave primária, validações genéricas e regras customizadas."
+        description="Após liberar acesso à role do motor, consulte metadata da tabela e complete chave primária, validações e regras customizadas."
         submitLabel="Cadastrar tabela"
         (metadataRequested)="loadSampleMetadata()"
         (saved)="saveTableRegistration($event)"
@@ -49,179 +70,244 @@ import { DataQualityCustomRule, DataQualityTableRegistration, DataQualityTableRe
       </app-data-quality-table-form>
     </section>
 
-    <!-- Score Overview -->
-    <div class="metrics-grid">
-      <app-metric-card label="Score Geral" [value]="overallScore" icon="speed" suffix="%" iconBg="#e8f5e9" iconColor="#2e7d32" [trend]="'up'" [changePercent]="2.1"></app-metric-card>
-      <app-metric-card label="Tabelas Cadastradas" [value]="tableRegistrations().length" icon="table_chart" iconBg="#e3f2fd" iconColor="#1565c0" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Regras Aprovadas" [value]="passingCount" icon="check_circle" iconBg="#e8f5e9" iconColor="#2e7d32" [showTrend]="false"></app-metric-card>
-      <app-metric-card label="Regras Reprovadas" [value]="failingCount" icon="cancel" iconBg="#ffebee" iconColor="#c62828" [showTrend]="false"></app-metric-card>
-    </div>
+    <mat-tab-group animationDuration="160ms">
+      <mat-tab>
+        <ng-template mat-tab-label><mat-icon class="tab-icon">monitoring</mat-icon> Hoje</ng-template>
 
-    <mat-card class="registrations-card">
-      <mat-card-header>
-        <mat-card-title>Tabelas sob qualidade</mat-card-title>
-        <mat-card-subtitle>Cadastros por tabela disponíveis para varredura do motor</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="registration-list">
-          <div class="registration-row registration-row--head">
-            <span>Tabela</span><span>Role</span><span>PK</span><span>Customizadas</span><span>Status</span>
-          </div>
-          <div class="registration-row" *ngFor="let registration of tableRegistrations()">
-            <code>{{ registration.qualifiedName }}</code>
-            <span>{{ registration.engineRole }}</span>
-            <span>{{ registration.primaryKeyColumns.join(', ') || '-' }}</span>
-            <span>{{ registration.customRules.length }}</span>
-            <app-status-badge [status]="registration.status" [label]="registrationStatusLabel(registration.status)"></app-status-badge>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
+        <section class="kpi-grid">
+          <article class="kpi-card">
+            <span>Tabelas aprovadas</span>
+            <strong>{{ approvedTablesPct() }}%</strong>
+            <small>{{ approvedTablesCount() }} de {{ monitoredTablesCount() }} tabelas monitoradas hoje.</small>
+          </article>
+          <article class="kpi-card">
+            <span>Estouro de SLA</span>
+            <strong>{{ slaBreachesToday() }}</strong>
+            <small>Pilar de temporalidade nas execuções de hoje.</small>
+          </article>
+          <article class="kpi-card">
+            <span>Qualidade 100%</span>
+            <strong>{{ perfectTablesCount() }}</strong>
+            <small>Tabelas sem desvio nas regras avaliadas.</small>
+          </article>
+        </section>
 
-    <!-- Score Breakdown -->
-    <mat-card class="breakdown-card">
-      <mat-card-header>
-        <mat-card-title>Dimensões de Qualidade</mat-card-title>
-        <mat-card-subtitle>Detalhamento do score por dimensão de qualidade</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="dimension-grid">
-          <div *ngFor="let dim of dimensions" class="dimension-item">
-            <div class="dim-header">
-              <mat-icon [style.color]="dim.color">{{ dim.icon }}</mat-icon>
-              <span class="dim-name">{{ dim.name }}</span>
-              <span class="dim-score" [style.color]="dim.score >= 95 ? '#2e7d32' : dim.score >= 90 ? '#e65100' : '#c62828'">{{ dim.score }}%</span>
+        <section class="panel">
+          <div class="panel__head">
+            <div>
+              <span>Panorama operacional</span>
+              <strong>Qualidade das tabelas monitoradas</strong>
             </div>
-            <mat-progress-bar [value]="dim.score" [color]="dim.score >= 95 ? 'primary' : dim.score >= 90 ? 'accent' : 'warn'"></mat-progress-bar>
+            <small>{{ tableQualityRows().length }} tabelas</small>
           </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
 
-    <!-- Filters -->
-    <mat-card class="filters-card">
-      <div class="filters-row">
-        <mat-form-field appearance="outline" class="filter-field search-field">
-          <mat-icon matPrefix>search</mat-icon>
-          <input matInput placeholder="Buscar regras..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="filter-field">
-          <mat-label>Status</mat-label>
-          <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
-            <mat-option value="all">Todos</mat-option>
-            <mat-option value="passing">Aprovada</mat-option>
-            <mat-option value="failing">Reprovada</mat-option>
-            <mat-option value="warning">Alerta</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="filter-field">
-          <mat-label>Tipo</mat-label>
-          <mat-select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()">
-            <mat-option value="all">Todos</mat-option>
-            <mat-option value="completeness">Completude</mat-option>
-            <mat-option value="uniqueness">Unicidade</mat-option>
-            <mat-option value="validity">Validade</mat-option>
-            <mat-option value="consistency">Consistência</mat-option>
-            <mat-option value="freshness">Atualidade</mat-option>
-            <mat-option value="accuracy">Acurácia</mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </mat-card>
+          <div class="quality-table">
+            <div class="quality-row quality-row--head">
+              <span>Tabela</span><span>Score</span><span>Status</span><span>SLA</span><span>Regras</span>
+            </div>
+            <div class="quality-row" *ngFor="let row of tableQualityRows()">
+              <div class="main">
+                <strong>{{ row.asset.name }}</strong>
+                <code>{{ row.asset.qualifiedName }}</code>
+              </div>
+              <div class="score">
+                <strong>{{ row.score }}%</strong>
+                <mat-progress-bar [value]="row.score"></mat-progress-bar>
+              </div>
+              <app-status-badge [status]="row.status === 'approved' ? 'passing' : row.status === 'warning' ? 'warning' : 'failing'" [label]="qualityStatusLabel(row.status)"></app-status-badge>
+              <span>{{ row.slaBreaches ? row.slaBreaches + ' estouro(s)' : 'Sem estouro' }}</span>
+              <span>{{ row.rules.length }}</span>
+            </div>
+          </div>
+        </section>
+      </mat-tab>
 
-    <!-- Rules Table -->
-    <mat-card class="rules-card">
-      <table mat-table [dataSource]="filteredRules()" matSort class="rules-table">
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let rule"><app-status-badge [status]="rule.status"></app-status-badge></td>
-        </ng-container>
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
-          <td mat-cell *matCellDef="let rule">
-            <div class="rule-name-cell">
-              <strong>{{ rule.name }}</strong>
-              <span class="rule-desc">{{ rule.description }}</span>
+      <mat-tab>
+        <ng-template mat-tab-label><mat-icon class="tab-icon">table_chart</mat-icon> Detalhe da Tabela</ng-template>
+
+        <section class="filters">
+          <mat-form-field appearance="outline" class="table-select">
+            <mat-label>Tabela</mat-label>
+            <mat-select [ngModel]="selectedTableName()" (ngModelChange)="selectedTableName.set($event)">
+              <mat-option *ngFor="let row of tableQualityRows()" [value]="row.asset.qualifiedName">
+                {{ row.asset.qualifiedName }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </section>
+
+        <section class="detail-layout" *ngIf="selectedTableRow() as row">
+          <article class="panel score-panel">
+            <div class="panel__head">
+              <div>
+                <span>Últimos 5 dias</span>
+                <strong>{{ row.asset.name }}</strong>
+              </div>
+              <div class="score-hero">
+                <span>Score atual</span>
+                <strong>{{ row.score }}%</strong>
+              </div>
             </div>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="dataset">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Dataset</th>
-          <td mat-cell *matCellDef="let rule"><code>{{ rule.dataset }}</code></td>
-        </ng-container>
-        <ng-container matColumnDef="ruleType">
-          <th mat-header-cell *matHeaderCellDef>Tipo</th>
-          <td mat-cell *matCellDef="let rule"><mat-chip>{{ rule.ruleType | titlecase }}</mat-chip></td>
-        </ng-container>
-        <ng-container matColumnDef="score">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Score</th>
-          <td mat-cell *matCellDef="let rule">
-            <div class="score-cell">
-              <span class="score-value" [class.score-good]="rule.currentScore >= rule.threshold" [class.score-bad]="rule.currentScore < rule.threshold">{{ rule.currentScore }}%</span>
-              <span class="score-threshold">/ {{ rule.threshold }}%</span>
+            <div class="daily-score-grid">
+              <div class="daily-score-card" *ngFor="let point of lastFiveScores()">
+                <span>{{ point.date | date:'dd/MM' }}</span>
+                <strong>{{ point.score }}%</strong>
+                <div class="daily-score-card__bar">
+                  <i [style.width.%]="point.score"></i>
+                </div>
+              </div>
             </div>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="lastEvaluated">
-          <th mat-header-cell *matHeaderCellDef>Última Avaliação</th>
-          <td mat-cell *matCellDef="let rule">{{ rule.lastEvaluated | relativeTime }}</td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="rule-row"></tr>
-      </table>
-    </mat-card>
+          </article>
+
+          <article class="panel">
+            <div class="panel__head">
+              <div>
+                <span>Campos e métricas</span>
+                <strong>Qualidade por tipo de dado</strong>
+              </div>
+            </div>
+            <div class="field-list">
+              <div class="field-row" *ngFor="let field of fieldMetricRows()">
+                <div class="field-row__head">
+                  <div>
+                    <strong>{{ field.field }}</strong>
+                    <span>{{ field.type }} · {{ field.kind === 'qualitative' ? 'Qualitativo' : 'Quantitativo' }}</span>
+                  </div>
+                </div>
+                <div class="metric-pills">
+                  <span class="metric-pill" *ngFor="let metric of field.metrics">
+                    {{ metric.name }} <strong>{{ metric.score }}%</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel__head">
+              <div>
+                <span>Regras ativas</span>
+                <strong>Monitoramento da tabela</strong>
+              </div>
+            </div>
+            <div class="rules-list">
+              <div class="rule-line" *ngFor="let rule of rulesForSelectedTable()">
+                <app-status-badge [status]="rule.status"></app-status-badge>
+                <div>
+                  <strong>{{ rule.name }}</strong>
+                  <span>{{ rule.description }}</span>
+                </div>
+                <code>{{ rule.column || 'tabela' }}</code>
+              </div>
+            </div>
+          </article>
+        </section>
+      </mat-tab>
+
+      <mat-tab *ngIf="canManageMetadata()">
+        <ng-template mat-tab-label><mat-icon class="tab-icon">rule</mat-icon> Metadados</ng-template>
+
+        <section class="kpi-grid kpi-grid--compact">
+          <article class="kpi-card">
+            <span>Tabelas cadastradas</span>
+            <strong>{{ tableRegistrations().length }}</strong>
+            <small>Metadados prontos para o motor de qualidade.</small>
+          </article>
+          <article class="kpi-card">
+            <span>Regras qualitativas</span>
+            <strong>{{ qualitativeRuleTemplates.length }}</strong>
+            <small>Templates genéricos ativos.</small>
+          </article>
+          <article class="kpi-card">
+            <span>Regras quantitativas</span>
+            <strong>{{ quantitativeRuleTemplates.length }}</strong>
+            <small>Templates genéricos ativos.</small>
+          </article>
+        </section>
+
+        <section class="metadata-grid">
+          <article class="panel">
+            <div class="panel__head"><div><span>Campos qualitativos</span><strong>Regras monitoradas</strong></div></div>
+            <label class="check-row" *ngFor="let rule of qualitativeRuleTemplates">
+              <input type="checkbox" checked>
+              <span>{{ rule }}</span>
+            </label>
+          </article>
+          <article class="panel">
+            <div class="panel__head"><div><span>Campos quantitativos</span><strong>Regras ativas</strong></div></div>
+            <label class="check-row" *ngFor="let rule of quantitativeRuleTemplates">
+              <input type="checkbox" checked>
+              <span>{{ rule }}</span>
+            </label>
+          </article>
+        </section>
+      </mat-tab>
+    </mat-tab-group>
   `,
   styles: [`
-    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .create-panel { margin-bottom: 20px; }
-
-    .registrations-card { margin-bottom: 16px; }
-    .registration-list { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
-    .registration-row { display: grid; grid-template-columns: 1.2fr 1.4fr 1fr 110px 150px; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); font-size: 13px; }
-    .registration-row:last-child { border-bottom: 0; }
-    .registration-row--head { background: var(--bg-app); color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
-
-    .breakdown-card { margin-bottom: 16px; }
-    .dimension-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-    .dimension-item { display: flex; flex-direction: column; gap: 8px; }
-    .dim-header { display: flex; align-items: center; gap: 8px; }
-    .dim-name { flex: 1; font-weight: 500; font-size: 14px; }
-    .dim-score { font-weight: 700; font-size: 16px; }
-
-    .filters-card { margin-bottom: 16px; }
-    .filters-row { display: flex; gap: 12px; padding: 16px; flex-wrap: wrap; }
-    .filter-field { margin-bottom: -20px; }
-    .search-field { flex: 1; min-width: 200px; }
-
-    .rules-card { overflow: hidden; }
-    .rules-table { width: 100%; }
-    .rule-row { cursor: pointer; }
-    .rule-row:hover { background: rgba(0,0,0,0.04); }
-    .rule-name-cell { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; }
-    .rule-name-cell strong { font-size: 14px; }
-    .rule-desc { font-size: 12px; color: #888; }
-    code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-    .score-cell { display: flex; align-items: baseline; gap: 4px; }
-    .score-value { font-weight: 700; font-size: 16px; }
-    .score-good { color: #2e7d32; }
-    .score-bad { color: #c62828; }
-    .score-threshold { font-size: 12px; color: #999; }
-
-    th.mat-mdc-header-cell { font-weight: 600; color: #444; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tab-icon { margin-right: 6px; }
+    .create-panel { margin-bottom: 18px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0; }
+    .kpi-grid--compact { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .kpi-card, .panel { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); }
+    .kpi-card { padding: 16px; }
+    .kpi-card span, .panel__head span { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .kpi-card strong { display: block; margin-top: 8px; color: var(--text-primary); font-size: 30px; line-height: 1; }
+    .kpi-card small { display: block; margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+    .panel { overflow: hidden; }
+    .panel__head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); }
+    .panel__head div { display: flex; flex-direction: column; gap: 4px; }
+    .panel__head strong { color: var(--text-primary); font-size: 14px; }
+    .panel__head small { color: var(--text-muted); font-size: 12px; }
+    .quality-table { overflow-x: auto; }
+    .quality-row { display: grid; grid-template-columns: minmax(240px, 1.4fr) 170px 140px 130px 80px; gap: 14px; align-items: center; min-width: 840px; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 13px; }
+    .quality-row:last-child { border-bottom: 0; }
+    .quality-row--head { background: var(--bg-app); color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .main strong, .field-row strong, .rule-line strong { color: var(--text-primary); font-size: 13px; }
+    code { width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px; border-radius: 4px; background: var(--bg-app); color: var(--text-primary); font-size: 11px; }
+    .score { display: flex; flex-direction: column; gap: 6px; }
+    .score strong { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .filters { margin: 16px 0; padding: 14px; border-radius: var(--radius-lg); background: var(--bg-surface); }
+    .table-select { width: min(520px, 100%); margin-bottom: -20px; }
+    .detail-layout { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .score-panel { background: var(--bg-surface); }
+    .score-hero { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding: 10px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-overlay); min-width: 140px; }
+    .score-hero span { color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .score-hero strong { color: var(--text-primary); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .daily-score-grid { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 12px; padding: 16px; }
+    .daily-score-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--radius-md); background: var(--bg-app); border: 1px solid var(--border-subtle); }
+    .daily-score-card span { color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .daily-score-card strong { color: var(--text-primary); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .daily-score-card__bar { height: 6px; overflow: hidden; border-radius: 999px; background: var(--bg-overlay); }
+    .daily-score-card__bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand-400), var(--success-500)); }
+    .field-list, .rules-list { display: flex; flex-direction: column; }
+    .field-row, .rule-line { padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); }
+    .field-row:last-child, .rule-line:last-child { border-bottom: 0; }
+    .field-row__head div, .rule-line div { display: flex; flex-direction: column; gap: 3px; }
+    .field-row span, .rule-line span { color: var(--text-secondary); font-size: 12px; }
+    .metric-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .metric-pill { display: inline-flex; gap: 6px; align-items: center; padding: 4px 8px; border-radius: 999px; background: var(--bg-overlay); color: var(--text-secondary); font-size: 11px; }
+    .metric-pill strong { color: var(--text-primary); font-size: 11px; }
+    .rule-line { display: grid; grid-template-columns: 110px minmax(220px, 1fr) auto; gap: 12px; align-items: center; }
+    .metadata-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-top: 16px; }
+    .check-row { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 13px; }
+    .check-row:last-child { border-bottom: 0; }
+    .check-row input { accent-color: var(--brand-400); }
+    @media (max-width: 760px) {
+      .rule-line { grid-template-columns: 1fr; }
+      .daily-score-grid { grid-template-columns: 1fr; }
+    }
   `],
 })
 export class DataQualityComponent {
   private readonly data = inject(PlatformDataService);
+  private readonly access = inject(AccessService);
 
   allRules = signal(this.data.dqRules());
   tableRegistrations = signal(this.data.dqTableRegistrations());
-  trends = this.data.dqTrends();
-  filteredRules = signal([...this.allRules()]);
   showCreateForm = signal(false);
-  searchTerm = '';
-  statusFilter = 'all';
-  typeFilter = 'all';
-  displayedColumns = ['status', 'name', 'dataset', 'ruleType', 'score', 'lastEvaluated'];
+  selectedTableName = signal('');
 
   tableRegistrationDraft: Partial<DataQualityTableRegistrationDraft> = {
     database: '',
@@ -236,39 +322,81 @@ export class DataQualityComponent {
     customRulesText: '',
   };
 
-  latestTrend = this.trends[this.trends.length - 1];
-
-  dimensions = [
-    { name: 'Completude', score: this.latestTrend.completeness, icon: 'check_box', color: '#1a237e' },
-    { name: 'Unicidade', score: this.latestTrend.uniqueness, icon: 'fingerprint', color: '#4a148c' },
-    { name: 'Validade', score: this.latestTrend.validity, icon: 'rule', color: '#004d40' },
-    { name: 'Consistência', score: this.latestTrend.consistency, icon: 'sync', color: '#e65100' },
-    { name: 'Atualidade', score: this.latestTrend.freshness, icon: 'schedule', color: '#1565c0' },
+  qualitativeRuleTemplates = [
+    'Completude mínima de campos obrigatórios',
+    'Formato válido para identificadores e e-mails',
+    'Domínio de valores permitido',
+    'Consistência semântica com cadastro mestre',
   ];
 
-  get overallScore(): number { return this.latestTrend.overallScore; }
-  get passingCount(): number { return this.allRules().filter(r => r.status === 'passing').length; }
-  get failingCount(): number { return this.allRules().filter(r => r.status === 'failing').length; }
-  get warningCount(): number { return this.allRules().filter(r => r.status === 'warning').length; }
+  quantitativeRuleTemplates = [
+    'Faixa mínima e máxima esperada',
+    'Detecção de outliers por janela histórica',
+    'Distribuição estatística dentro do padrão',
+    'Variação diária de volume dentro do limite',
+  ];
 
-  applyFilters(): void {
-    let result = this.allRules();
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      result = result.filter(r => r.name.toLowerCase().includes(term) || r.dataset.toLowerCase().includes(term));
-    }
-    if (this.statusFilter !== 'all') result = result.filter(r => r.status === this.statusFilter);
-    if (this.typeFilter !== 'all') result = result.filter(r => r.ruleType === this.typeFilter);
-    this.filteredRules.set(result);
+  tableQualityRows = computed<TableQualityRow[]>(() => {
+    const tables = this.data.catalogAssets().filter(asset => asset.type === 'table');
+    return tables.map(asset => {
+      const rules = this.rulesForAsset(asset);
+      const score = rules.length ? Math.round(rules.reduce((sum, rule) => sum + rule.currentScore, 0) / rules.length) : this.seedScore(asset.name);
+      const slaBreaches = rules.filter(rule => rule.ruleType === 'freshness' && rule.status !== 'passing').length;
+      return {
+        asset,
+        rules,
+        score,
+        slaBreaches,
+        status: score >= 95 ? 'approved' : score >= 90 ? 'warning' : 'critical',
+      };
+    });
+  });
+
+  selectedTableRow = computed(() => {
+    const rows = this.tableQualityRows();
+    const selected = this.selectedTableName() || rows[0]?.asset.qualifiedName;
+    return rows.find(row => row.asset.qualifiedName === selected) ?? rows[0] ?? null;
+  });
+
+  monitoredTablesCount = computed(() => this.tableQualityRows().length);
+  approvedTablesCount = computed(() => this.tableQualityRows().filter(row => row.status === 'approved').length);
+  approvedTablesPct = computed(() => this.monitoredTablesCount() ? Math.round((this.approvedTablesCount() / this.monitoredTablesCount()) * 100) : 0);
+  slaBreachesToday = computed(() => this.tableQualityRows().reduce((sum, row) => sum + row.slaBreaches, 0));
+  perfectTablesCount = computed(() => this.tableQualityRows().filter(row => row.score === 100).length);
+
+  lastFiveScores = computed(() => {
+    const base = this.selectedTableRow()?.score ?? 95;
+    return this.data.dqTrends().slice(-5).map((trend, index) => ({
+      date: trend.date,
+      score: Math.max(80, Math.min(100, Math.round(base - 2 + index + this.seedOffset(trend.date)))),
+    }));
+  });
+
+  rulesForSelectedTable = computed(() => this.selectedTableRow()?.rules ?? []);
+
+  fieldMetricRows = computed<FieldMetricRow[]>(() => {
+    const row = this.selectedTableRow();
+    const registration = row ? this.registrationFor(row.asset) : undefined;
+    const columns = registration?.columns?.length ? registration.columns : this.fallbackColumns(row?.asset);
+    return columns.map(column => {
+      const kind = this.isQuantitative(column) ? 'quantitative' : 'qualitative';
+      return {
+        field: column.name,
+        type: column.type,
+        kind,
+        metrics: (kind === 'quantitative' ? ['Completude', 'Faixa válida', 'Outliers', 'Distribuição'] : ['Completude', 'Validade', 'Padronização', 'Consistência'])
+          .map((name, index) => ({ name, score: this.metricScore(column.name, index) })),
+      };
+    });
+  });
+
+  canManageMetadata(): boolean {
+    const roles = this.access.context()?.roles ?? [];
+    return roles.some(role => ['techlead', 'coordinator', 'manager', 'platform-admin'].includes(role));
   }
 
-  registrationStatusLabel(status: DataQualityTableRegistration['status']): string {
-    return ({
-      draft: 'Rascunho',
-      registered: 'Cadastrada',
-      waiting_access: 'Aguardando acesso',
-      ready_to_scan: 'Pronta para scan',
-    } as const)[status];
+  qualityStatusLabel(status: TableQualityRow['status']): string {
+    return ({ approved: 'Aprovada', warning: 'Atenção', critical: 'Crítica' } as const)[status];
   }
 
   loadSampleMetadata(): void {
@@ -298,6 +426,51 @@ export class DataQualityComponent {
     this.data.addDataQualityTableRegistration(this.toTableRegistration(draft));
     this.tableRegistrations.set(this.data.dqTableRegistrations());
     this.showCreateForm.set(false);
+  }
+
+  private rulesForAsset(asset: CatalogAsset): DataQualityRule[] {
+    return this.allRules().filter(rule =>
+      rule.dataset === asset.qualifiedName ||
+      rule.dataset.endsWith(`.${asset.name}`) ||
+      asset.qualifiedName.endsWith(`.${rule.dataset.split('.').at(-1)}`)
+    );
+  }
+
+  private registrationFor(asset: CatalogAsset): DataQualityTableRegistration | undefined {
+    return this.tableRegistrations().find(registration =>
+      registration.qualifiedName === asset.qualifiedName ||
+      registration.qualifiedName.endsWith(`.${asset.name}`)
+    );
+  }
+
+  private fallbackColumns(asset?: CatalogAsset): DataQualityTableColumn[] {
+    const prefix = asset?.name ?? 'tabela';
+    return [
+      { name: `${prefix}_id`, type: 'STRING', nullable: false },
+      { name: 'descricao', type: 'STRING', nullable: true },
+      { name: 'valor_total', type: 'DECIMAL(18,2)', nullable: true },
+      { name: 'updated_at', type: 'TIMESTAMP', nullable: false },
+    ];
+  }
+
+  private isQuantitative(column: DataQualityTableColumn): boolean {
+    return /int|decimal|double|float|number|numeric|bigint/i.test(column.type);
+  }
+
+  private seedScore(value: string): number {
+    return 88 + (this.hash(value) % 13);
+  }
+
+  private metricScore(value: string, index: number): number {
+    return 86 + ((this.hash(value) + index * 7) % 15);
+  }
+
+  private seedOffset(value: string): number {
+    return this.hash(value) % 3;
+  }
+
+  private hash(value: string): number {
+    return value.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
   }
 
   private toTableRegistration(draft: DataQualityTableRegistrationDraft): DataQualityTableRegistration {
