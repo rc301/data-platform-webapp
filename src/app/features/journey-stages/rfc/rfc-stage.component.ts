@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { StageContext } from '../stage-runtime';
 import { RfcStageStore } from './rfc-stage.store';
 
-/** Modelo do draft de RFC. */
+/** Modelo do draft de demanda. */
 export interface RfcDraft {
   productName: string;
   domain:      string;
@@ -16,7 +16,7 @@ export interface RfcDraft {
 }
 
 /**
- * Plugin de UI da etapa RFC.
+ * Plugin de UI da etapa de demanda.
  * Comunica com o container via RfcStageStore — o container nunca toca
  * em selector ou API específica deste plugin.
  */
@@ -26,7 +26,7 @@ export interface RfcDraft {
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h4 class="section-title">Formulário RFC</h4>
+    <h4 class="section-title">Formulário da demanda</h4>
     <div class="form-grid">
       <label class="field">
         <span class="field__label">Nome do produto de dados</span>
@@ -58,7 +58,7 @@ export interface RfcDraft {
       </label>
       <label class="field field--full">
         <span class="field__label">Destino</span>
-        <input class="field__input" [ngModel]="draft().target" (ngModelChange)="patch({ target: $event })" placeholder="ex: gold.customer_360" />
+        <input class="field__input" [ngModel]="draft().target" (ngModelChange)="patch({ target: $event })" placeholder="ex: spec.customer_360" />
       </label>
     </div>
   `,

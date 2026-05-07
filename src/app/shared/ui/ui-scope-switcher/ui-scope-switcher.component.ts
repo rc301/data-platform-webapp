@@ -11,7 +11,7 @@ import { AccessScope } from '../../../core/access/access.types';
  * Mostra o escopo ativo do usuário (squad / coord / gerência / superint /
  * diretoria) e, quando ele pertence a mais de um, permite trocar. O estado
  * é persistido no `AccessService` (que escreve no localStorage) e influi
- * imediatamente em queries derivadas (LUPs, custos, KPIs, etc.).
+ * imediatamente em queries derivadas (IDs Projeto, custos, KPIs, etc.).
  *
  * Renderiza nada se o usuário não tem escopos (ex.: PublicViewer puro).
  */

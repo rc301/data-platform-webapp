@@ -34,7 +34,6 @@ type FilterStatus = 'all' | FarolStatus;
     -->
     <div class="board-actions">
       <ui-button variant="ghost" icon="↻" (clicked)="refresh()">Atualizar agora</ui-button>
-      <ui-button variant="secondary">Configurar alertas</ui-button>
     </div>
 
     <!-- Faróis (clicáveis = filtro) -->
@@ -186,7 +185,7 @@ export class JobsBoardComponent {
   private readonly data = inject(PlatformDataService);
   private readonly access = inject(AccessService);
   private readonly org = inject(OrgService);
-  private readonly jobs = signal<JobRow[]>(this.accessibleJobs());
+  private readonly jobs = computed<JobRow[]>(() => this.accessibleJobs());
   protected readonly searchSig = signal('');
   protected readonly squadSig = signal<string>('all');
   private readonly filterSig = signal<FilterStatus>('all');
@@ -230,7 +229,6 @@ export class JobsBoardComponent {
 
   refresh(): void {
     this.data.refreshOperationalSnapshot();
-    this.jobs.set([...this.accessibleJobs()]);
   }
 
   formatTime(iso: string): string {

@@ -7,12 +7,12 @@ const EMPTY_DRAFT: RfcDraft = {
   objective:   'Construir visão consolidada de cliente para uso de Marketing e CS.',
   squad:       'Squad B',
   sla:         'D-1 até 07h30 UTC-3',
-  sources:     'silver.customer_base, silver.orders, bronze.clickstream',
-  target:      'gold.customer_360',
+  sources:     'sot.customer_base, sot.orders, sor.clickstream',
+  target:      'spec.customer_360',
 };
 
 /**
- * Store da etapa RFC.
+ * Store da etapa de demanda.
  *
  * Plugins de etapa precisam comunicar dados ao container (builder), mas o
  * container não pode conhecer a API específica de cada plugin — caso

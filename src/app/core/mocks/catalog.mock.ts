@@ -2,7 +2,7 @@ import { CatalogAsset, CatalogDomain, CatalogGlossaryTerm } from '../models';
 
 export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
   {
-    id: 'asset-1', name: 'customer_360', qualifiedName: 'datalake.gold.customer_360', type: 'table',
+    id: 'asset-1', name: 'customer_360', qualifiedName: 'spec.customer_360', type: 'table',
     logicalName: 'Cliente 360',
     sigla: 'eg4', dataLayer: 'spec', goldenSource: true,
     slaDelivery: 'D-1 até 07h30',
@@ -13,12 +13,12 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
     popularity: 95, sourceSystem: 'AWS Glue', atlanLink: 'https://atlan.company.com/assets/customer_360',
     lineage: {
       upstream: [
-        { id: 'ln-1', name: 'raw.crm_contacts', type: 'table', source: 'Salesforce' },
-        { id: 'ln-2', name: 'raw.orders', type: 'table', source: 'RDS' },
-        { id: 'ln-3', name: 'raw.clickstream', type: 'table', source: 'Kinesis' },
+        { id: 'ln-1', name: 'sor.crm_contacts', type: 'table', source: 'Salesforce' },
+        { id: 'ln-2', name: 'sot.customer_base', type: 'table', source: 'CDP' },
+        { id: 'ln-3', name: 'sor.clickstream', type: 'table', source: 'Kinesis' },
       ],
       downstream: [
-        { id: 'ln-4', name: 'gold.customer_kpis', type: 'view', source: 'RDS Reporting' },
+        { id: 'ln-4', name: 'spec.customer_kpis', type: 'view', source: 'RDS Reporting' },
         { id: 'ln-5', name: 'bi.customer_dashboard', type: 'dashboard', source: 'Tableau' },
       ]
     },
@@ -36,7 +36,7 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
     }
   },
   {
-    id: 'asset-2', name: 'orders', qualifiedName: 'datalake.bronze.orders', type: 'table',
+    id: 'asset-2', name: 'orders', qualifiedName: 'sor.orders', type: 'table',
     logicalName: 'Pedidos (bronze)',
     sigla: 'ab1', dataLayer: 'sor', goldenSource: false,
     slaDelivery: 'Até 30 min após disponibilidade na origem',
@@ -44,21 +44,21 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
     owner: 'Data Engineering', supportSquad: 'Squad A', domain: 'Sales', classification: ['Internal'],
     tags: ['raw', 'high-volume'], glossaryTerms: ['Order', 'Revenue'],
     certificationStatus: 'certified', lastUpdated: '2026-03-15T09:42:00Z', createdAt: '2025-01-15T00:00:00Z',
-    popularity: 88, sourceSystem: 'RDS', lineage: { upstream: [], downstream: [{ id: 'ln-10', name: 'curated.customer_360', type: 'table', source: 'Glue' }] }
+    popularity: 88, sourceSystem: 'RDS', lineage: { upstream: [], downstream: [{ id: 'ln-10', name: 'spec.customer_360', type: 'table', source: 'CDP' }] }
   },
   {
-    id: 'asset-3', name: 'financial_transactions', qualifiedName: 'datalake.gold.financial_transactions', type: 'table',
-    logicalName: 'Transações financeiras',
+    id: 'asset-3', name: 'financial', qualifiedName: 'rds.reporting_db.financial', type: 'table',
+    logicalName: 'Relatório financeiro',
     sigla: 'as7', dataLayer: 'spec', goldenSource: true,
-    slaDelivery: 'D-1 até 06h30',
-    description: 'Transações financeiras curadas com metadados enriquecidos',
+    slaDelivery: 'D-1 até 05h00',
+    description: 'Tabela de consumo financeiro publicada no RDS de relatórios',
     owner: 'Finance Data', supportSquad: 'Squad C', domain: 'Finance', classification: ['Restricted', 'Confidential'],
     tags: ['finance', 'sla-critical'], glossaryTerms: ['Transaction', 'Revenue'],
     certificationStatus: 'certified', lastUpdated: '2026-03-15T09:00:00Z', createdAt: '2025-03-01T00:00:00Z',
-    popularity: 82, sourceSystem: 'AWS Glue', lineage: { upstream: [{ id: 'ln-20', name: 'raw.payments', type: 'table', source: 'Stripe' }], downstream: [{ id: 'ln-21', name: 'reporting.financial_summary', type: 'view', source: 'RDS' }] }
+    popularity: 82, sourceSystem: 'AWS Glue', lineage: { upstream: [{ id: 'ln-20', name: 'spec.financial_summary', type: 'table', source: 'Glue' }], downstream: [{ id: 'ln-21', name: 'reporting.financial_summary', type: 'view', source: 'RDS' }] }
   },
   {
-    id: 'asset-4', name: 'clickstream', qualifiedName: 'datalake.bronze.clickstream', type: 'table',
+    id: 'asset-4', name: 'clickstream', qualifiedName: 'sor.clickstream', type: 'table',
     logicalName: 'Clickstream digital (bronze)',
     sigla: 'ab1', dataLayer: 'sor', goldenSource: false,
     slaDelivery: 'A cada 5 min',
@@ -66,19 +66,21 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
     owner: 'Data Engineering', supportSquad: 'Squad A', domain: 'Digital', classification: ['Internal'],
     tags: ['streaming', 'high-volume', 'raw'], glossaryTerms: ['Event', 'Session'],
     certificationStatus: 'in_review', lastUpdated: '2026-03-15T09:58:00Z', createdAt: '2025-08-01T00:00:00Z',
-    popularity: 72, sourceSystem: 'Kinesis', lineage: { upstream: [], downstream: [{ id: 'ln-30', name: 'curated.customer_360', type: 'table', source: 'Glue' }] }
+    popularity: 72, sourceSystem: 'Kinesis', lineage: { upstream: [], downstream: [{ id: 'ln-30', name: 'spec.customer_360', type: 'table', source: 'CDP' }] }
   },
   {
-    id: 'asset-5', name: 'products', qualifiedName: 'datalake.silver.products', type: 'table',
+    id: 'asset-5', name: 'products', qualifiedName: 'sot.products', type: 'table',
+    logicalName: 'Produtos harmonizados',
     sigla: 'as7', dataLayer: 'sot', goldenSource: true,
     description: 'Catálogo de produtos curado com atributos enriquecidos',
     owner: 'Product Data', supportSquad: 'Squad B', domain: 'Product', classification: ['Internal'],
     tags: ['product', 'master-data'], glossaryTerms: ['Product', 'SKU'],
     certificationStatus: 'certified', lastUpdated: '2026-03-14T05:55:00Z', createdAt: '2025-04-01T00:00:00Z',
-    popularity: 68, sourceSystem: 'AWS Glue', lineage: { upstream: [{ id: 'ln-40', name: 'bronze.product_feed', type: 'table', source: 'ERP' }], downstream: [] }
+    popularity: 68, sourceSystem: 'AWS Glue', lineage: { upstream: [{ id: 'ln-40', name: 'sor.product_feed', type: 'table', source: 'ERP' }], downstream: [] }
   },
   {
-    id: 'asset-6', name: 'iot_sensor_readings', qualifiedName: 'datalake.bronze.iot_sensor_readings', type: 'table',
+    id: 'asset-6', name: 'iot_sensors', qualifiedName: 'sor.iot_sensors', type: 'table',
+    logicalName: 'Sensores IoT',
     sigla: 'as7', dataLayer: 'sor', goldenSource: false,
     description: 'Dados de telemetria de sensores IoT',
     owner: 'IoT Team', supportSquad: 'Squad C', domain: 'Engineering', classification: ['Internal'],
@@ -86,15 +88,48 @@ export const MOCK_CATALOG_ASSETS: CatalogAsset[] = [
     certificationStatus: 'draft', lastUpdated: '2026-03-15T09:59:00Z', createdAt: '2025-11-01T00:00:00Z',
     popularity: 45, sourceSystem: 'Kinesis', lineage: { upstream: [], downstream: [] }
   },
+  {
+    id: 'asset-7', name: 'crm_contacts', qualifiedName: 'sor.crm_contacts', type: 'table',
+    logicalName: 'Contatos CRM',
+    sigla: 'eg4', dataLayer: 'sor', goldenSource: false,
+    slaDelivery: 'Até 1h após disponibilidade na origem',
+    description: 'Contatos e contas CRM ingeridos do Salesforce para a camada SOR',
+    owner: 'CRM Team', supportSquad: 'Squad B', domain: 'Customer', classification: ['PII', 'Internal'],
+    tags: ['crm', 'incremental'], glossaryTerms: ['Customer', 'Contact'],
+    certificationStatus: 'in_review', lastUpdated: '2026-03-15T09:18:00Z', createdAt: '2025-09-01T00:00:00Z',
+    popularity: 64, sourceSystem: 'Phoenix', lineage: { upstream: [], downstream: [{ id: 'ln-50', name: 'spec.customer_360', type: 'table', source: 'CDP' }] }
+  },
+  {
+    id: 'asset-8', name: 'all_domains', qualifiedName: 'spec.all_domains', type: 'table',
+    logicalName: 'Domínios integrados',
+    sigla: 'eg4', dataLayer: 'spec', goldenSource: false,
+    slaDelivery: 'D-1 até 07h00',
+    description: 'Tabela integrada por orquestração diária multi-domínio',
+    owner: 'Data Platform', supportSquad: 'Squad A', domain: 'Engineering', classification: ['Internal'],
+    tags: ['orchestration', 'full-refresh'], glossaryTerms: ['SLA', 'Data Freshness'],
+    certificationStatus: 'in_review', lastUpdated: '2026-03-15T07:00:00Z', createdAt: '2025-12-01T00:00:00Z',
+    popularity: 58, sourceSystem: 'Munin', lineage: { upstream: [{ id: 'ln-60', name: 'sor.orders', type: 'table', source: 'Glue' }, { id: 'ln-61', name: 'sor.clickstream', type: 'table', source: 'Glue' }], downstream: [] }
+  },
+  {
+    id: 'asset-9', name: 'erp_master', qualifiedName: 'sor.erp_master', type: 'table',
+    logicalName: 'Dados mestres ERP',
+    sigla: 'cd2', dataLayer: 'sor', goldenSource: false,
+    slaDelivery: 'D-1 até 02h00',
+    description: 'Dados mestre de materiais, fornecedores e centros de custo sincronizados do ERP',
+    owner: 'ERP Data', supportSquad: 'Squad C', domain: 'Engineering', classification: ['Internal'],
+    tags: ['erp', 'master-data'], glossaryTerms: ['Master Data'],
+    certificationStatus: 'draft', lastUpdated: '2026-03-14T01:30:00Z', createdAt: '2026-01-10T00:00:00Z',
+    popularity: 37, sourceSystem: 'Outros', lineage: { upstream: [], downstream: [] }
+  },
 ];
 
 export const MOCK_DOMAINS: CatalogDomain[] = [
-  { id: 'dom-1', name: 'Customer', description: 'Todos os ativos de dados relacionados a clientes', owner: 'Analytics Engineering', assetCount: 24, subDomains: ['CRM', 'Behavioral', 'Segmentation'] },
-  { id: 'dom-2', name: 'Sales', description: 'Dados de vendas e pedidos', owner: 'Sales Analytics', assetCount: 18, subDomains: ['Orders', 'Revenue', 'Forecast'] },
-  { id: 'dom-3', name: 'Finance', description: 'Dados financeiros e contábeis', owner: 'Finance Data', assetCount: 15, subDomains: ['Transactions', 'Reporting', 'Budgeting'] },
-  { id: 'dom-4', name: 'Product', description: 'Catálogo de produtos e inventário', owner: 'Product Data', assetCount: 12, subDomains: ['Catalog', 'Inventory', 'Pricing'] },
-  { id: 'dom-5', name: 'Digital', description: 'Analíticas digitais e comportamento', owner: 'Digital Analytics', assetCount: 20, subDomains: ['Clickstream', 'Mobile', 'Engagement'] },
-  { id: 'dom-6', name: 'Engineering', description: 'Dados de IoT e infraestrutura', owner: 'Engineering', assetCount: 8, subDomains: ['IoT', 'Infrastructure', 'Monitoring'] },
+  { id: 'dom-1', name: 'Customer', description: 'Todos os ativos de dados relacionados a clientes', owner: 'Analytics Engineering', assetCount: 2, subDomains: ['CRM', 'Behavioral', 'Segmentation'] },
+  { id: 'dom-2', name: 'Sales', description: 'Dados de vendas e pedidos', owner: 'Sales Analytics', assetCount: 1, subDomains: ['Orders', 'Revenue', 'Forecast'] },
+  { id: 'dom-3', name: 'Finance', description: 'Dados financeiros e contábeis', owner: 'Finance Data', assetCount: 1, subDomains: ['Transactions', 'Reporting', 'Budgeting'] },
+  { id: 'dom-4', name: 'Product', description: 'Catálogo de produtos e inventário', owner: 'Product Data', assetCount: 1, subDomains: ['Catalog', 'Inventory', 'Pricing'] },
+  { id: 'dom-5', name: 'Digital', description: 'Analíticas digitais e comportamento', owner: 'Digital Analytics', assetCount: 1, subDomains: ['Clickstream', 'Mobile', 'Engagement'] },
+  { id: 'dom-6', name: 'Engineering', description: 'Dados de IoT, ERP e operação da plataforma', owner: 'Engineering', assetCount: 3, subDomains: ['IoT', 'ERP', 'Monitoring'] },
 ];
 
 export const MOCK_GLOSSARY: CatalogGlossaryTerm[] = [

@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { UiPageHeaderComponent } from '../../shared/ui';
+import { PlatformDataService } from '../../core/services/platform-data.service';
 
 interface OpsTab {
   label: string;
@@ -14,9 +15,8 @@ interface OpsTab {
  *
  * Cabeçalho fixo (compartilhado entre os tabs) com indicador de
  * "Última atualização": para sustentação 24x7, saber a freshness do dado
- * em tela é tão importante quanto o próprio dado. O timestamp é atualizado
- * a cada segundo enquanto a aba estiver visível; o ícone serve de affordance
- * para "atualizar agora" (futuro: dispara refetch ao backend).
+ * em tela é tão importante quanto o próprio dado. Este horário representa
+ * o snapshot operacional recebido, não o relógio do navegador.
  */
 @Component({
   selector: 'app-ops-shell',
@@ -29,11 +29,11 @@ interface OpsTab {
       title="Saúde & Faróis"
       subtitle="Visão consolidada da operação. Use os tabs para alternar entre o painel de faróis e o andamento diário acumulado.">
       <div page-actions>
-        <button class="freshness" type="button" (click)="refresh()" [attr.aria-label]="'Atualizar dados, última atualização ' + (lastUpdatedAt() | date:'HH:mm:ss')">
+        <button class="freshness" type="button" (click)="refresh()" [attr.aria-label]="'Atualizar dados, snapshot operacional de ' + (lastUpdatedAt() | date:'dd/MM HH:mm:ss')">
           <span class="freshness__pulse" aria-hidden="true"></span>
           <span class="freshness__text">
-            <small>Atualizado às</small>
-            <strong>{{ lastUpdatedAt() | date:'HH:mm:ss' }}</strong>
+            <small>Dados atualizados</small>
+            <strong>{{ lastUpdatedAt() | date:'dd/MM HH:mm:ss' }}</strong>
           </span>
           <span class="freshness__icon" aria-hidden="true">↻</span>
         </button>
@@ -111,31 +111,21 @@ interface OpsTab {
     .tabs__item span   { font-size: 11px; color: var(--text-muted); line-height: 1.35; }
   `],
 })
-export class OpsShellComponent implements OnInit, OnDestroy {
+export class OpsShellComponent {
+  private readonly data = inject(PlatformDataService);
+
   readonly tabs: OpsTab[] = [
     { label: 'Painel de Faróis',     description: 'Estado por job, com filtros por status e squad.',                  route: 'overview' },
     { label: 'Andamento Diário',     description: 'Curva acumulada de finalizações vs. expectativa histórica (7d).', route: 'daily-progress' },
   ];
 
   /**
-   * Timestamp da última atualização visível. No mock representa o tick do
-   * relógio em tempo real; com backend real, será o timestamp do snapshot
-   * mais recente recebido (e o `refresh()` dispara um refetch).
+   * Timestamp do snapshot operacional usado para avaliar atraso vs. janela
+   * esperada. No backend real, deve vir do metadado da carga/refetch.
    */
-  readonly lastUpdatedAt = signal<Date>(new Date());
-  private timerId?: number;
-
-  ngOnInit(): void {
-    // Tick por segundo. Em produção: reduzir para 5–10s ou amarrar a um
-    // observable de freshness do backend.
-    this.timerId = window.setInterval(() => this.lastUpdatedAt.set(new Date()), 1000);
-  }
-
-  ngOnDestroy(): void {
-    if (this.timerId) clearInterval(this.timerId);
-  }
+  readonly lastUpdatedAt = computed(() => new Date(this.data.operationalSnapshotUpdatedAt()));
 
   refresh(): void {
-    this.lastUpdatedAt.set(new Date());
+    this.data.refreshOperationalSnapshot();
   }
 }

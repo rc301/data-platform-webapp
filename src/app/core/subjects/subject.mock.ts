@@ -26,11 +26,11 @@ export const SUBJECT_DOMAINS: SubjectDomain[] = [
 ];
 
 export const TABLE_ASSIGNMENTS: TableAssignment[] = [
-  { qualifiedName: 'gold.customer_360',          subjectId: 'subj-contas',  domainId: 'dom-cc-corrente',     source: 'manual',    updatedAt: NOW, updatedBy: 'admin@dp' },
-  { qualifiedName: 'gold.poupanca_saldos',       subjectId: 'subj-contas',  domainId: 'dom-cc-poupanca',     source: 'daily-job', updatedAt: NOW, updatedBy: 'system' },
-  { qualifiedName: 'gold.cartao_fatura',         subjectId: 'subj-cartoes', domainId: 'dom-cart-credito',    source: 'daily-job', updatedAt: NOW, updatedBy: 'system' },
-  { qualifiedName: 'gold.cartao_uso_diario',     subjectId: 'subj-cartoes', domainId: 'dom-cart-debito',     source: 'daily-job', updatedAt: NOW, updatedBy: 'system' },
-  { qualifiedName: 'gold.cdc_carteira',          subjectId: 'subj-credito', domainId: 'dom-cred-cdc',        source: 'manual',    updatedAt: NOW, updatedBy: 'admin@dp' },
-  { qualifiedName: 'gold.imobiliario_carteira',  subjectId: 'subj-credito', domainId: 'dom-cred-imobiliario', source: 'manual',   updatedAt: NOW, updatedBy: 'admin@dp' },
-  { qualifiedName: 'gold.seguro_vida_apolices',  subjectId: 'subj-seguros', domainId: 'dom-seg-vida',        source: 'agent',     updatedAt: NOW, updatedBy: 'agent@dp' },
+  { qualifiedName: 'spec.customer_360',             subjectId: 'subj-contas',  domainId: 'dom-cc-corrente',      source: 'manual',    updatedAt: NOW, updatedBy: 'admin@dp' },
+  { qualifiedName: 'spec.poupanca_saldos',          subjectId: 'subj-contas',  domainId: 'dom-cc-poupanca',      source: 'daily-job', updatedAt: NOW, updatedBy: 'system' },
+  { qualifiedName: 'spec.cartao_fatura',            subjectId: 'subj-cartoes', domainId: 'dom-cart-credito',     source: 'daily-job', updatedAt: NOW, updatedBy: 'system' },
+  { qualifiedName: 'spec.cartao_uso_diario',        subjectId: 'subj-cartoes', domainId: 'dom-cart-debito',      source: 'daily-job', updatedAt: NOW, updatedBy: 'system' },
+  { qualifiedName: 'spec.cdc_carteira',             subjectId: 'subj-credito', domainId: 'dom-cred-cdc',         source: 'manual',    updatedAt: NOW, updatedBy: 'admin@dp' },
+  { qualifiedName: 'spec.imobiliario_carteira',     subjectId: 'subj-credito', domainId: 'dom-cred-imobiliario', source: 'manual',    updatedAt: NOW, updatedBy: 'admin@dp' },
+  { qualifiedName: 'spec.seguro_vida_apolices',     subjectId: 'subj-seguros', domainId: 'dom-seg-vida',         source: 'agent',     updatedAt: NOW, updatedBy: 'agent@dp' },
 ];

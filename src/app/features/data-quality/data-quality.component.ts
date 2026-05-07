@@ -304,8 +304,8 @@ export class DataQualityComponent {
   private readonly data = inject(PlatformDataService);
   private readonly access = inject(AccessService);
 
-  allRules = signal(this.data.dqRules());
-  tableRegistrations = signal(this.data.dqTableRegistrations());
+  readonly allRules = this.data.dqRules;
+  readonly tableRegistrations = this.data.dqTableRegistrations;
   showCreateForm = signal(false);
   selectedTableName = signal('');
 
@@ -400,22 +400,27 @@ export class DataQualityComponent {
   }
 
   loadSampleMetadata(): void {
+    const asset = this.selectedTableRow()?.asset ?? this.data.catalogAssets().find(item => item.qualifiedName === 'spec.customer_360');
+    const qualifiedName = asset?.qualifiedName ?? 'spec.customer_360';
+    const { database, tableName } = this.splitQualifiedName(qualifiedName);
+    const columns = asset?.schema?.columns?.length
+      ? asset.schema.columns.map(column => ({
+          name: column.name,
+          type: column.type,
+          nullable: column.isNullable,
+          description: column.description,
+        }))
+      : this.fallbackColumns(asset);
     this.tableRegistrationDraft = {
-      database: 'spec',
-      tableName: 'customer_360',
-      qualifiedName: 'spec.customer_360',
-      owner: 'Squad B',
+      database,
+      tableName,
+      qualifiedName,
+      owner: asset?.supportSquad ?? 'Data Platform',
       engineRole: 'role_data_quality_engine_prod',
-      rowCount: 2500000,
-      sizeGb: 42.7,
-      columns: [
-        { name: 'customer_id', type: 'STRING', nullable: false, description: 'Chave funcional do cliente' },
-        { name: 'email', type: 'STRING', nullable: true, description: 'E-mail principal' },
-        { name: 'total_orders', type: 'INT', nullable: false },
-        { name: 'ltv', type: 'DECIMAL(18,2)', nullable: false },
-        { name: 'updated_at', type: 'TIMESTAMP', nullable: false },
-      ],
-      primaryKeyColumns: ['customer_id'],
+      rowCount: asset?.name === 'customer_360' ? 2500000 : undefined,
+      sizeGb: asset?.name === 'customer_360' ? 42.7 : undefined,
+      columns,
+      primaryKeyColumns: columns.filter(column => /(^|_)id$/i.test(column.name)).slice(0, 1).map(column => column.name),
       qualitativeValidations: '',
       quantitativeValidations: '',
       customRulesText: '',
@@ -424,26 +429,26 @@ export class DataQualityComponent {
 
   saveTableRegistration(draft: DataQualityTableRegistrationDraft): void {
     this.data.addDataQualityTableRegistration(this.toTableRegistration(draft));
-    this.tableRegistrations.set(this.data.dqTableRegistrations());
     this.showCreateForm.set(false);
   }
 
   private rulesForAsset(asset: CatalogAsset): DataQualityRule[] {
-    return this.allRules().filter(rule =>
-      rule.dataset === asset.qualifiedName ||
-      rule.dataset.endsWith(`.${asset.name}`) ||
-      asset.qualifiedName.endsWith(`.${rule.dataset.split('.').at(-1)}`)
-    );
+    return this.allRules().filter(rule => this.sameQualifiedName(rule.dataset, asset.qualifiedName));
   }
 
   private registrationFor(asset: CatalogAsset): DataQualityTableRegistration | undefined {
-    return this.tableRegistrations().find(registration =>
-      registration.qualifiedName === asset.qualifiedName ||
-      registration.qualifiedName.endsWith(`.${asset.name}`)
-    );
+    return this.tableRegistrations().find(registration => this.sameQualifiedName(registration.qualifiedName, asset.qualifiedName));
   }
 
   private fallbackColumns(asset?: CatalogAsset): DataQualityTableColumn[] {
+    if (asset?.schema?.columns?.length) {
+      return asset.schema.columns.map(column => ({
+        name: column.name,
+        type: column.type,
+        nullable: column.isNullable,
+        description: column.description,
+      }));
+    }
     const prefix = asset?.name ?? 'tabela';
     return [
       { name: `${prefix}_id`, type: 'STRING', nullable: false },
@@ -513,5 +518,21 @@ export class DataQualityComponent {
 
   private normalizeSeverity(value: string): DataQualityCustomRule['severity'] {
     return value === 'low' || value === 'medium' || value === 'high' || value === 'critical' ? value : 'medium';
+  }
+
+  private sameQualifiedName(left: string, right: string): boolean {
+    return this.normalizeQualifiedName(left) === this.normalizeQualifiedName(right);
+  }
+
+  private normalizeQualifiedName(value: string): string {
+    return value.trim().toLowerCase().replace(/^datalake\./, '');
+  }
+
+  private splitQualifiedName(qualifiedName: string): { database: string; tableName: string } {
+    const parts = qualifiedName.split('.');
+    return {
+      database: parts.length > 1 ? parts.slice(0, -1).join('.') : 'default',
+      tableName: parts.at(-1) ?? qualifiedName,
+    };
   }
 }

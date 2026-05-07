@@ -352,7 +352,7 @@ export class LayoutComponent {
       trigger:     '▶',
       capacity:    '▦',
       kpi:         '◧',
-      demand:      '✎',  // RFC / demandas
+      demand:      '✎',  // demandas
       project:     '◧',  // ID Projeto / Cadastro de Projetos
       glossary:    '✦',  // padrões de nomes
       access:      '⚿',  // governança — políticas

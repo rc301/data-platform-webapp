@@ -21,7 +21,7 @@ import {
  *   • waiting  — pipelines em fila esperando origens (derivado em runtime)
  *
  * O service não atualiza `states` — esses dados viriam do backend / CloudWatch.
- * No mock, os dados são fixos; UI consulta via `state(id)`.
+ * Na fonte local, os dados são fixos; UI consulta via `state(id)`.
  */
 @Injectable({ providedIn: 'root' })
 export class SensorService {
@@ -138,7 +138,7 @@ export class SensorService {
 
   private currentUser(): string {
     const user = this.auth.user();
-    return user?.userPrincipal ?? user?.name ?? 'mock.user';
+    return user?.userPrincipal ?? user?.name ?? 'local.user';
   }
 
   private hasDuplicateQuery(query: string, exceptId?: string): boolean {

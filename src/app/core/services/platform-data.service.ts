@@ -7,7 +7,7 @@ import { MOCK_DQ_RULES, MOCK_DQ_TABLE_REGISTRATIONS, MOCK_DQ_TRENDS } from '../m
 import { MOCK_COST_METRICS, MOCK_HEALTH_CHECKS, MOCK_METRICS, MOCK_PIPELINE_RUN_COSTS, MOCK_RECENT_ALERTS } from '../mocks/dashboard.mock';
 import { MOCK_GLUE_JOBS, MOCK_S3_BUCKETS, MOCK_STEP_FUNCTIONS } from '../mocks/infrastructure.mock';
 import { MOCK_LINEAGE_GRAPHS } from '../mocks/lineage.mock';
-import { MOCK_JOBS } from '../mocks/ops.mock';
+import { MOCK_JOBS, MOCK_OPERATIONAL_SNAPSHOT_UPDATED_AT } from '../mocks/ops.mock';
 import { MOCK_PIPELINE_ALERTS, MOCK_PIPELINES } from '../mocks/pipelines.mock';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +33,7 @@ export class PlatformDataService {
   private readonly s3BucketsSig = signal(MOCK_S3_BUCKETS);
   private readonly lineageGraphsSig = signal(MOCK_LINEAGE_GRAPHS);
   private readonly jobsSig = signal(MOCK_JOBS);
+  private readonly operationalSnapshotUpdatedAtSig = signal(MOCK_OPERATIONAL_SNAPSHOT_UPDATED_AT);
 
   readonly pipelines = this.pipelinesSig.asReadonly();
   readonly pipelineAlerts = this.pipelineAlertsSig.asReadonly();
@@ -53,6 +54,7 @@ export class PlatformDataService {
   readonly s3Buckets = this.s3BucketsSig.asReadonly();
   readonly lineageGraphs = this.lineageGraphsSig.asReadonly();
   readonly jobs = this.jobsSig.asReadonly();
+  readonly operationalSnapshotUpdatedAt = this.operationalSnapshotUpdatedAtSig.asReadonly();
 
   addDataQualityTableRegistration(registration: DataQualityTableRegistration): void {
     this.dqTableRegistrationsSig.update(registrations => [registration, ...registrations]);
@@ -67,9 +69,9 @@ export class PlatformDataService {
       id: `lineage-manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       registrationSource: 'manual',
       createdAt: now,
-      createdBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+      createdBy: user?.userPrincipal ?? user?.name ?? 'local.user',
       updatedAt: now,
-      updatedBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+      updatedBy: user?.userPrincipal ?? user?.name ?? 'local.user',
     };
     this.lineageGraphsSig.update(graphs => [graph, ...graphs]);
     this.audit.record('lineage.graph.created', {
@@ -157,7 +159,7 @@ export class PlatformDataService {
       reason: draft.reason,
       status: 'queued',
       requestedAt: new Date().toISOString(),
-      requestedBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+      requestedBy: user?.userPrincipal ?? user?.name ?? 'local.user',
     };
     this.pipelineExecutionRequestsSig.update(requests => [request, ...requests].slice(0, 50));
     this.audit.record('pipeline.execution.requested', {
@@ -168,11 +170,25 @@ export class PlatformDataService {
     return request;
   }
 
+  acknowledgeMonitoringAlert(id: string): void {
+    const user = this.auth.user();
+    const principal = user?.userPrincipal ?? user?.name ?? 'local.user';
+    this.monitoringAlertsSig.update(alerts => alerts.map(alert =>
+      alert.id === id ? { ...alert, status: 'acknowledged', acknowledgedBy: principal } : alert
+    ));
+    this.audit.record('monitoring.alert.acknowledged', {
+      resourceType: 'monitoring-alert',
+      resourceId: id,
+      metadata: { acknowledgedBy: principal },
+    });
+  }
+
   refreshOperationalSnapshot(): void {
     this.pipelinesSig.set([...MOCK_PIPELINES]);
     this.pipelineAlertsSig.set([...MOCK_PIPELINE_ALERTS]);
     this.monitoringAlertsSig.set([...MOCK_RECENT_ALERTS]);
     this.jobsSig.set([...MOCK_JOBS]);
+    this.operationalSnapshotUpdatedAtSig.set(MOCK_OPERATIONAL_SNAPSHOT_UPDATED_AT);
   }
 
   private toPipeline(draft: PipelineRegistryDraft): Pipeline {
@@ -207,9 +223,9 @@ export class PlatformDataService {
         duration: draft.avgDuration,
       },
       createdAt: now,
-      createdBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+      createdBy: user?.userPrincipal ?? user?.name ?? 'local.user',
       updatedAt: now,
-      updatedBy: user?.userPrincipal ?? user?.name ?? 'mock.user',
+      updatedBy: user?.userPrincipal ?? user?.name ?? 'local.user',
     };
   }
 

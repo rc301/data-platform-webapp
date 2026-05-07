@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import {
   UiPageHeaderComponent, UiCardComponent, UiBadgeComponent, UiButtonComponent,
 } from '../../../shared/ui';
@@ -32,7 +32,7 @@ interface JourneyRow {
     <ui-page-header
       eyebrow="Persona · Desenvolvedor"
       title="Meus projetos"
-      subtitle="Acompanhe jornadas de projeto em curso e projetos LUP do seu escopo.">
+      subtitle="Acompanhe jornadas de projeto em curso e IDs Projeto do seu escopo.">
       <div page-actions>
         <ui-button variant="primary" icon="+" link="/dev/journeys/new">Nova jornada</ui-button>
       </div>
@@ -44,11 +44,15 @@ interface JourneyRow {
           <tr>
             <th>Projeto</th><th>Domínio</th><th>Squad</th>
             <th>Etapa atual</th><th>Progresso</th><th>Status</th>
-            <th>Atualizado</th><th></th>
+            <th>Atualizado</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of rows()">
+          <tr *ngFor="let r of rows()"
+              tabindex="0"
+              [class.tbl__row--disabled]="!canOpenRow(r)"
+              (dblclick)="openRow(r)"
+              (keydown.enter)="openRow(r)">
             <td class="tbl__name">{{ r.name }}</td>
             <td>{{ r.domain }}</td>
             <td>{{ r.squad }}</td>
@@ -64,7 +68,6 @@ interface JourneyRow {
               </ng-container>
               <ng-template #updatedAt>{{ r.updatedAt }}</ng-template>
             </td>
-            <td><ui-button size="sm" variant="secondary" link="/dev/journeys/new" [disabled]="r.status === 'deleted'">Abrir</ui-button></td>
           </tr>
         </tbody>
       </table>
@@ -78,7 +81,10 @@ interface JourneyRow {
     }
     .tbl tbody td { padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
     .tbl tbody tr:last-child td { border-bottom: 0; }
+    .tbl tbody tr { cursor: pointer; }
     .tbl tbody tr:hover { background: rgba(76,141,255,0.04); }
+    .tbl__row--disabled { cursor: default; }
+    .tbl__row--disabled:hover { background: transparent; }
     .tbl__name { color: var(--text-primary); font-weight: 600; }
     .tbl__stage { color: var(--text-primary); }
     .tbl__muted { color: var(--text-muted); font-size: 12px; }
@@ -92,6 +98,7 @@ export class JourneysListComponent {
   private readonly access = inject(AccessService);
   private readonly org = inject(OrgService);
   private readonly projectJourneys = inject(ProjectJourneyStore);
+  private readonly router = inject(Router);
 
   rows = computed<JourneyRow[]>(() => {
     const context = this.access.context();
@@ -108,6 +115,15 @@ export class JourneysListComponent {
   }
   labelFor(s: JourneyRow['status']) {
     return ({ active: 'Em andamento', review: 'Aguarda aprovação', blocked: 'Bloqueada', done: 'Concluída', deleted: 'Deletada' } as const)[s];
+  }
+
+  openRow(row: JourneyRow): void {
+    if (!this.canOpenRow(row)) return;
+    this.router.navigate(['/dev/journeys/new'], { queryParams: { journeyId: row.id } });
+  }
+
+  canOpenRow(row: JourneyRow): boolean {
+    return row.status !== 'deleted' && (row.id.startsWith('pj-') || row.id.startsWith('project-journey-'));
   }
 
   private toRow(project: LupProject): JourneyRow {
@@ -152,7 +168,7 @@ export class JourneysListComponent {
 
   private stageFor(status: LupStatus): string {
     return ({
-      draft: 'RFC',
+      draft: 'Demanda',
       in_progress: 'Deploy Dev/Hml',
       waiting_approval: 'Infra de sandbox',
       in_production: 'Produção',

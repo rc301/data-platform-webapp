@@ -145,7 +145,7 @@ import { ProjectJourney, ProjectJourneyStatus, ProjectJourneyStore } from '../pr
               <strong>{{ j.name }}</strong>
               <small>{{ templateLabel(j.templateId) }}</small>
             </td>
-            <td class="tbl__mono">{{ j.lupCodes.join(', ') || '—' }}</td>
+            <td class="tbl__mono">{{ j.projectCodes.join(', ') || '—' }}</td>
             <td class="tbl__mono">{{ j.importedDemandCode || '—' }}</td>
             <td class="tbl__mono">{{ j.targetTable || '—' }}</td>
             <td>{{ j.currentStage }}</td>

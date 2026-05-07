@@ -72,14 +72,15 @@ export const MOCK_PIPELINE_RUN_COSTS: PipelineRunCost[] = [
   },
   {
     id: 'prc-4',
-    pipelineId: 'pipeline-manual-sample',
-    pipelineName: 'legacy_manual_reference',
-    runId: 'manual-ref',
+    pipelineId: 'pipeline-9',
+    pipelineName: 'sync_erp_master_data',
+    runId: 'run-9a',
     engine: 'Outros',
-    startedAt: '2026-03-15T01:00:00Z',
-    durationMinutes: 0,
+    startedAt: '2026-03-14T01:00:00Z',
+    durationMinutes: 30,
+    recordsProcessed: 95000,
     hasDiscriminatedCost: false,
-    note: 'Referência criada manualmente na plataforma; custo não discriminado.',
+    note: 'Processo legado sem tagueamento de custo por execução.',
   },
 ];
 
@@ -91,8 +92,8 @@ export const MOCK_RECENT_ALERTS: MonitoringAlert[] = [
   },
   {
     id: 'alert-2', severity: 'high', source: 'Qualidade de Dados', title: 'Qualidade de dados abaixo do limite',
-    message: 'Dataset customer_master com score de completude caiu para 87% (limite: 95%).',
-    timestamp: '2026-03-15T08:30:00Z', status: 'active', relatedResource: 'dq-rule-3', category: 'data_quality'
+    message: 'Tabela spec.customer_360 com score de completude caiu para 87% (limite: 95%).',
+    timestamp: '2026-03-15T08:30:00Z', status: 'active', relatedResource: 'spec.customer_360', category: 'data_quality'
   },
   {
     id: 'alert-3', severity: 'medium', source: 'Infraestrutura', title: 'Pool de conexões RDS próximo do limite',
@@ -105,8 +106,8 @@ export const MOCK_RECENT_ALERTS: MonitoringAlert[] = [
     timestamp: '2026-03-14T16:00:00Z', status: 'active', relatedResource: 'cost-glue', category: 'cost'
   },
   {
-    id: 'alert-5', severity: 'high', source: 'Monitor de Pipelines', title: 'Risco de violação de SLA: financial_reporting',
-    message: 'Pipeline financial_reporting está 45min atrasado. Prazo do SLA em 2h.',
+    id: 'alert-5', severity: 'high', source: 'Monitor de Pipelines', title: 'Risco de violação de SLA: orchestration_daily_full',
+    message: 'Pipeline orchestration_daily_full está 45min atrasada em relação ao SLA.',
     timestamp: '2026-03-15T09:00:00Z', status: 'active', relatedResource: 'pipeline-5', category: 'pipeline'
   },
 ];

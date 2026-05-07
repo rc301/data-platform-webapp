@@ -1,14 +1,14 @@
 import { DataQualityRule, DataQualityReport, DataQualityTableRegistration, DataQualityTrend } from '../models';
 
 export const MOCK_DQ_RULES: DataQualityRule[] = [
-  { id: 'dq-1', name: 'Orders Not Null', description: 'Order ID e Customer ID não podem ser nulos', dataset: 'raw.orders', column: 'order_id', ruleType: 'completeness', threshold: 99.9, currentScore: 99.95, status: 'passing', lastEvaluated: '2026-03-15T08:00:00Z', owner: 'Data Engineering', tags: ['critical', 'orders'] },
-  { id: 'dq-2', name: 'Customer Email Format', description: 'E-mail do cliente deve ter formato válido', dataset: 'curated.customer_360', column: 'email', ruleType: 'validity', threshold: 98, currentScore: 97.2, status: 'warning', lastEvaluated: '2026-03-15T07:30:00Z', owner: 'Analytics', tags: ['customer'] },
-  { id: 'dq-3', name: 'Customer Completeness', description: 'Completude do registro mestre de clientes', dataset: 'curated.customer_master', ruleType: 'completeness', threshold: 95, currentScore: 87, status: 'failing', lastEvaluated: '2026-03-15T08:00:00Z', owner: 'Data Engineering', tags: ['critical', 'customer'] },
-  { id: 'dq-4', name: 'Product SKU Unique', description: 'SKU do produto deve ser único', dataset: 'curated.products', column: 'sku', ruleType: 'uniqueness', threshold: 100, currentScore: 100, status: 'passing', lastEvaluated: '2026-03-15T06:00:00Z', owner: 'Product Data', tags: ['product'] },
-  { id: 'dq-5', name: 'Financial Data Freshness', description: 'Dados financeiros devem ser atualizados em até 4 horas', dataset: 'curated.financial_transactions', ruleType: 'freshness', threshold: 100, currentScore: 100, status: 'passing', lastEvaluated: '2026-03-15T09:00:00Z', owner: 'Finance', tags: ['finance', 'sla'] },
-  { id: 'dq-6', name: 'Cross-DB Order Consistency', description: 'Totais de pedidos devem ser consistentes entre raw e curated', dataset: 'curated.orders', ruleType: 'consistency', threshold: 99.5, currentScore: 99.8, status: 'passing', lastEvaluated: '2026-03-15T08:30:00Z', owner: 'Data Engineering', tags: ['orders', 'reconciliation'] },
-  { id: 'dq-7', name: 'Revenue Accuracy', description: 'Valores de receita devem estar dentro do intervalo esperado', dataset: 'curated.financial_summary', column: 'total_revenue', ruleType: 'accuracy', threshold: 99, currentScore: 98.5, status: 'warning', lastEvaluated: '2026-03-15T07:00:00Z', owner: 'Finance', tags: ['finance'] },
-  { id: 'dq-8', name: 'Clickstream Freshness', description: 'Dados de clickstream com atraso máximo de 10 min', dataset: 'raw.clickstream', ruleType: 'freshness', threshold: 100, currentScore: 100, status: 'passing', lastEvaluated: '2026-03-15T09:55:00Z', owner: 'Data Engineering', tags: ['clickstream', 'real-time'] },
+  { id: 'dq-1', name: 'Orders Not Null', description: 'Order ID e Customer ID não podem ser nulos', dataset: 'sor.orders', column: 'order_id', ruleType: 'completeness', threshold: 99.9, currentScore: 99.95, status: 'passing', lastEvaluated: '2026-03-15T08:00:00Z', owner: 'Data Engineering', tags: ['critical', 'orders'] },
+  { id: 'dq-2', name: 'Customer Email Format', description: 'E-mail do cliente deve ter formato válido', dataset: 'spec.customer_360', column: 'email', ruleType: 'validity', threshold: 98, currentScore: 97.2, status: 'warning', lastEvaluated: '2026-03-15T07:30:00Z', owner: 'Analytics', tags: ['customer'] },
+  { id: 'dq-3', name: 'Customer Completeness', description: 'Completude do registro mestre de clientes', dataset: 'spec.customer_360', ruleType: 'completeness', threshold: 95, currentScore: 87, status: 'failing', lastEvaluated: '2026-03-15T08:00:00Z', owner: 'Data Engineering', tags: ['critical', 'customer'] },
+  { id: 'dq-4', name: 'Product SKU Unique', description: 'SKU do produto deve ser único', dataset: 'sot.products', column: 'sku', ruleType: 'uniqueness', threshold: 100, currentScore: 100, status: 'passing', lastEvaluated: '2026-03-15T06:00:00Z', owner: 'Product Data', tags: ['product'] },
+  { id: 'dq-5', name: 'Financial Data Freshness', description: 'Dados financeiros devem ser atualizados em até 4 horas', dataset: 'rds.reporting_db.financial', ruleType: 'freshness', threshold: 100, currentScore: 100, status: 'passing', lastEvaluated: '2026-03-15T09:00:00Z', owner: 'Finance', tags: ['finance', 'sla'] },
+  { id: 'dq-6', name: 'Cross-DB Order Consistency', description: 'Totais de pedidos devem ser consistentes entre origem e SOR', dataset: 'sor.orders', ruleType: 'consistency', threshold: 99.5, currentScore: 99.8, status: 'passing', lastEvaluated: '2026-03-15T08:30:00Z', owner: 'Data Engineering', tags: ['orders', 'reconciliation'] },
+  { id: 'dq-7', name: 'Revenue Accuracy', description: 'Valores de receita devem estar dentro do intervalo esperado', dataset: 'rds.reporting_db.financial', column: 'total_revenue', ruleType: 'accuracy', threshold: 99, currentScore: 98.5, status: 'warning', lastEvaluated: '2026-03-15T07:00:00Z', owner: 'Finance', tags: ['finance'] },
+  { id: 'dq-8', name: 'Clickstream Freshness', description: 'Dados de clickstream com atraso máximo de 10 min', dataset: 'sor.clickstream', ruleType: 'freshness', threshold: 100, currentScore: 100, status: 'passing', lastEvaluated: '2026-03-15T09:55:00Z', owner: 'Data Engineering', tags: ['clickstream', 'real-time'] },
 ];
 
 export const MOCK_DQ_TABLE_REGISTRATIONS: DataQualityTableRegistration[] = [
@@ -62,7 +62,7 @@ function seededWave(seed: number, amplitude: number): number {
 
 export const MOCK_DQ_REPORT: DataQualityReport = {
   id: 'report-1',
-  dataset: 'gold.customer_360',
+  dataset: 'spec.customer_360',
   runDate: '2026-03-15T08:00:00Z',
   overallScore: 94.2,
   recordsAnalyzed: 2500000,

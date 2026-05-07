@@ -9,7 +9,7 @@ export interface JourneyStep {
   title: string;
   shortTitle?: string;
   description?: string;
-  /** Tag curta opcional (ex: "RFC", "LUP", "GitHub", "Terraform"). */
+  /** Tag curta opcional (ex: "ID Projeto", "GitHub", "Terraform"). */
   badge?: string;
   status: JourneyStepStatus;
 }

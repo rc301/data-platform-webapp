@@ -64,12 +64,12 @@ function initMermaidOnce(): void {
     .loading-state {
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 16px; padding: 64px;
-      color: #666; font-size: 14px;
+      color: var(--text-muted); font-size: 14px;
     }
 
     .error-state {
       display: flex; flex-direction: column; align-items: center;
-      gap: 8px; padding: 48px; color: #c62828; font-size: 14px;
+      gap: 8px; padding: 48px; color: var(--danger-500); font-size: 14px;
       text-align: center;
     }
     .error-state mat-icon { font-size: 40px; width: 40px; height: 40px; }

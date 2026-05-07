@@ -1,11 +1,20 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import {
   UiPageHeaderComponent, UiCardComponent, UiBadgeComponent, UiButtonComponent, UiStatComponent, UiFarolComponent,
 } from '../../../shared/ui';
+import { PlatformDataService } from '../../../core/services/platform-data.service';
+import { MonitoringAlert } from '../../../core/models';
 
 interface SLAStatus { domain: string; total: number; healthy: number; }
+interface ExecutiveRisk {
+  severity: string;
+  tone: 'danger' | 'warning' | 'info' | 'neutral';
+  title: string;
+  desc: string;
+  owner: string;
+}
 
 @Component({
   selector: 'app-executive-overview',
@@ -21,26 +30,25 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
       title="KPIs da Plataforma de Dados"
       subtitle="Indicadores executivos consolidados — abril/2026.">
       <div page-actions>
-        <ui-button variant="ghost">Exportar PDF</ui-button>
         <ui-button variant="secondary" link="/executive/capacity">Capacidade & SLAs →</ui-button>
       </div>
     </ui-page-header>
 
     <!-- KPIs principais -->
     <div class="kpis">
-      <ui-stat label="Runs com custo detalhado" value="2" trend="flat" delta="mock" deltaPeriod="job run" hint="sem total global" />
-      <ui-stat label="Pipelines em produção" value="142" trend="up" delta="+9" deltaPeriod="trimestre" />
-      <ui-stat label="Saúde média (SLA)" value="97.4%" trend="flat" delta="—" deltaPeriod="objetivo: 99%" />
-      <ui-stat label="Volume processado" value="48.6 TB" trend="up" delta="+12%" deltaPeriod="vs. mar/26" />
-      <ui-stat label="Squads ativas" value="6" />
-      <ui-stat label="Custo por TB" value="R$ 3.79" trend="down" delta="-4.1%" deltaPeriod="ganho de eficiência" />
+      <ui-stat label="Runs com custo detalhado" [value]="detailedCostRuns()" trend="flat" delta="job run" hint="sem total global" />
+      <ui-stat label="Jobs ativos" [value]="activePipelines()" trend="flat" delta="cadastro" deltaPeriod="plataforma" />
+      <ui-stat label="Saúde média (SLA)" [value]="slaHealthPct() + '%'" trend="flat" delta="objetivo: 99%" />
+      <ui-stat label="Registros processados" [value]="processedRecords()" trend="flat" delta="último run" />
+      <ui-stat label="Squads ativas" [value]="activeSquads()" />
+      <ui-stat label="Custo médio por run" [value]="avgCostPerDetailedRun()" trend="flat" delta="runs detalhados" />
     </div>
 
     <div class="grid">
       <!-- Saúde por domínio -->
       <ui-card eyebrow="Operação" title="Saúde de SLA por domínio" subtitle="Janela atual — abril/26.">
         <div class="sla-grid">
-          <div class="sla-tile" *ngFor="let s of slaByDomain">
+          <div class="sla-tile" *ngFor="let s of slaByDomain()">
             <div class="sla-tile__head">
               <span class="sla-tile__name">{{ s.domain }}</span>
               <ui-farol [status]="farolFor(s)" [label]="((s.healthy / s.total) * 100 | number:'1.0-0') + '%'" />
@@ -58,7 +66,7 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
       <!-- Capacidade -->
       <ui-card eyebrow="Capacidade" title="Utilização de recursos" subtitle="Média móvel 7d.">
         <div class="cap-list">
-          <div class="cap-row" *ngFor="let r of capacity">
+          <div class="cap-row" *ngFor="let r of capacity()">
             <div class="cap-row__head">
               <span>{{ r.label }}</span>
               <span class="cap-row__value">{{ r.value }}%</span>
@@ -74,7 +82,7 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
       <!-- Riscos / Atenção -->
       <ui-card eyebrow="Riscos" title="Itens que demandam atenção">
         <div class="risk-list">
-          <div class="risk-row" *ngFor="let r of risks">
+          <div class="risk-row" *ngFor="let r of risks()">
             <ui-badge [tone]="r.tone">{{ r.severity }}</ui-badge>
             <div class="risk-row__main">
               <span class="risk-row__title">{{ r.title }}</span>
@@ -130,33 +138,102 @@ interface SLAStatus { domain: string; total: number; healthy: number; }
   `],
 })
 export class ExecutiveOverviewComponent {
-  slaByDomain: SLAStatus[] = [
-    { domain: 'Comercial', total: 38, healthy: 37 },
-    { domain: 'Financeiro', total: 24, healthy: 22 },
-    { domain: 'Operações', total: 31, healthy: 30 },
-    { domain: 'Marketing', total: 18, healthy: 18 },
-    { domain: 'Risco', total: 14, healthy: 13 },
-    { domain: 'IoT', total: 17, healthy: 14 },
-  ];
+  private readonly data = inject(PlatformDataService);
 
-  capacity = [
+  readonly detailedCostRuns = computed(() => this.data.pipelineRunCosts().filter(run => run.hasDiscriminatedCost).length);
+  readonly activePipelines = computed(() => this.data.pipelines().filter(pipeline => pipeline.status !== 'offline').length);
+  readonly activeSquads = computed(() => new Set(this.data.pipelines().map(pipeline => pipeline.team)).size);
+  readonly slaHealthPct = computed(() => {
+    const jobs = this.data.jobs();
+    return jobs.length ? Math.round((jobs.filter(job => job.status === 'green').length / jobs.length) * 1000) / 10 : 0;
+  });
+  readonly processedRecords = computed(() => this.formatLargeNumber(
+    this.data.pipelines().reduce((sum, pipeline) => sum + (pipeline.lastRun.recordsProcessed ?? 0), 0),
+  ));
+  readonly avgCostPerDetailedRun = computed(() => {
+    const runs = this.data.pipelineRunCosts().filter(run => run.hasDiscriminatedCost && run.costUsd !== undefined);
+    const avg = runs.length ? runs.reduce((sum, run) => sum + (run.costUsd ?? 0), 0) / runs.length : 0;
+    return runs.length ? `US$ ${avg.toFixed(2)}` : 'Indisponível';
+  });
+
+  readonly slaByDomain = computed<SLAStatus[]>(() => {
+    const assetsByTarget = new Map(this.data.catalogAssets().map(asset => [this.normalizeQualifiedName(asset.qualifiedName), asset]));
+    const rows = new Map<string, SLAStatus>();
+    for (const pipeline of this.data.pipelines()) {
+      const asset = assetsByTarget.get(this.normalizeQualifiedName(pipeline.target));
+      if (!asset) continue;
+      const current = rows.get(asset.domain) ?? { domain: asset.domain, total: 0, healthy: 0 };
+      current.total += 1;
+      if (!['failed', 'delayed', 'offline'].includes(pipeline.status)) current.healthy += 1;
+      rows.set(asset.domain, current);
+    }
+    return Array.from(rows.values()).sort((a, b) => a.domain.localeCompare(b.domain));
+  });
+
+  readonly capacity = computed(() => [
     { label: 'Glue (DPU horas / cota mensal)', value: 62, note: 'Tendência estável; folga confortável até o fim do mês.' },
-    { label: 'S3 (storage / acordo comercial)', value: 78, note: 'Atenção: 78% da cota anual, tendência de aumento de 4pp/mês.' },
-    { label: 'Step Functions (transições)', value: 41, note: 'Dentro do esperado.' },
-    { label: 'RDS (conexões simultâneas)', value: 92, note: 'Crítico: pico atingiu 92% — avaliar pool ou réplica de leitura.' },
-  ];
+    { label: 'Pipelines com custo detalhado', value: this.costCoveragePct(), note: 'Cobertura baseada apenas em job runs com custo discriminado.' },
+    { label: 'Jobs com linhagem cadastrada', value: this.lineageCoveragePct(), note: 'Inclui linhagem automática e manual vinculada a pipelines.' },
+    { label: 'Alertas ativos', value: Math.min(100, this.data.monitoringAlerts().filter(alert => alert.status === 'active').length * 20), note: 'Pressão operacional derivada de alertas ativos.' },
+  ]);
 
-  risks = [
-    { severity: 'CRÍTICO',  tone: 'danger'  as const, title: 'RDS reporting próximo do limite de conexões', desc: 'Picos a 92% — risco de impacto em finance_curated_to_rds.', owner: 'Squad C' },
-    { severity: 'ALTO',     tone: 'warning' as const, title: 'S3 corporativo atingirá cota anual em 8 meses', desc: 'Sem ação, plataforma estoura cota antes da renovação contratual.', owner: 'Plataforma' },
-    { severity: 'MÉDIO',    tone: 'info'    as const, title: 'Custo do domínio Marketing +11.4% MoM', desc: 'Aumento associado a ingestão real-time não otimizada.', owner: 'Squad B' },
-    { severity: 'MÉDIO',    tone: 'info'    as const, title: 'Cobertura de testes abaixo de 70% em 2 pipelines', desc: 'Risco de regressão silenciosa em produção.', owner: 'Squad A' },
-  ];
+  readonly risks = computed<ExecutiveRisk[]>(() =>
+    this.data.monitoringAlerts()
+      .filter(alert => alert.status !== 'resolved')
+      .slice(0, 4)
+      .map(alert => ({
+        severity: this.severityLabel(alert.severity),
+        tone: this.severityTone(alert.severity),
+        title: alert.title,
+        desc: alert.message,
+        owner: this.ownerFor(alert),
+      })),
+  );
 
   farolFor(s: SLAStatus): 'green' | 'yellow' | 'red' {
     const pct = (s.healthy / s.total) * 100;
     if (pct >= 99) return 'green';
     if (pct >= 95) return 'yellow';
     return 'red';
+  }
+
+  private costCoveragePct(): number {
+    const runs = this.data.pipelineRunCosts();
+    return runs.length ? Math.round((runs.filter(run => run.hasDiscriminatedCost).length / runs.length) * 100) : 0;
+  }
+
+  private lineageCoveragePct(): number {
+    const pipelines = this.data.pipelines();
+    if (!pipelines.length) return 0;
+    const graphPipelineIds = new Set(this.data.lineageGraphs().map(graph => graph.pipelineId).filter(Boolean));
+    return Math.round((pipelines.filter(pipeline => graphPipelineIds.has(pipeline.id)).length / pipelines.length) * 100);
+  }
+
+  private ownerFor(alert: MonitoringAlert): string {
+    if (alert.category === 'pipeline') {
+      return this.data.pipelines().find(pipeline => pipeline.id === alert.relatedResource)?.team ?? 'Plataforma';
+    }
+    if (alert.category === 'data_quality') {
+      return this.data.catalogAssets().find(asset => this.normalizeQualifiedName(asset.qualifiedName) === this.normalizeQualifiedName(alert.relatedResource))?.supportSquad ?? 'Qualidade';
+    }
+    return 'Plataforma';
+  }
+
+  private severityLabel(severity: MonitoringAlert['severity']): string {
+    return ({ critical: 'CRÍTICO', high: 'ALTO', medium: 'MÉDIO', low: 'BAIXO', info: 'INFO' } as const)[severity];
+  }
+
+  private severityTone(severity: MonitoringAlert['severity']): ExecutiveRisk['tone'] {
+    return severity === 'critical' ? 'danger' : severity === 'high' ? 'warning' : severity === 'medium' ? 'info' : 'neutral';
+  }
+
+  private formatLargeNumber(value: number): string {
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)} mi`;
+    if (value >= 1_000) return `${Math.round(value / 1_000)} mil`;
+    return String(value);
+  }
+
+  private normalizeQualifiedName(value: string): string {
+    return value.trim().toLowerCase().replace(/^datalake\./, '');
   }
 }

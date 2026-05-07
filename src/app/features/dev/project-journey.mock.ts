@@ -1,7 +1,7 @@
 import { ProjectJourney } from './project-journey.store';
 
 /**
- * Mocks de jornadas de projeto. Usados pela tela "Jornadas" (consulta) e
+ * Sementes locais de jornadas de projeto. Usadas pela tela "Jornadas" (consulta) e
  * pela "Visão do Desenvolvedor" para popular as listas de em-andamento /
  * concluídas / deletadas. Estados terminais (completed/deleted) preservam
  * histórico e aparecem na consulta.
@@ -20,8 +20,8 @@ export const PROJECT_JOURNEYS_SEED: ProjectJourney[] = [
     updatedAt: '2026-04-26T10:14:00-03:00',
     importedDemandId: 'demand-1',
     importedDemandCode: 'DEM-00012',
-    lupCodes: ['ED2741'],
-    targetTable: 'gold.customer_360',
+    projectCodes: ['ED2741'],
+    targetTable: 'spec.customer_360',
     responsible: 'Rafael Carvalho',
     squadId: 'squad-b',
     domain: 'Comercial',
@@ -37,8 +37,8 @@ export const PROJECT_JOURNEYS_SEED: ProjectJourney[] = [
     createdBy: 'Thais Borges',
     updatedAt: '2026-04-25T18:00:00-03:00',
     importedDemandCode: 'DEM-00009',
-    lupCodes: ['ED2736'],
-    targetTable: 'gold.risk_exposure_daily',
+    projectCodes: ['ED2736'],
+    targetTable: 'spec.risk_exposure_daily',
     responsible: 'Thais Borges',
     squadId: 'squad-c',
     domain: 'Risco',
@@ -54,8 +54,8 @@ export const PROJECT_JOURNEYS_SEED: ProjectJourney[] = [
     createdBy: 'Murilo Tavares',
     updatedAt: '2026-04-08T11:30:00-03:00',
     importedDemandCode: 'DEM-00005',
-    lupCodes: ['ED2719', 'EA1102'],
-    targetTable: 'gold.finance_curated_v2',
+    projectCodes: ['ED2719', 'EA1102'],
+    targetTable: 'spec.finance_curated_v2',
     responsible: 'Murilo Tavares',
     squadId: 'squad-c',
     domain: 'Financeiro',
@@ -71,8 +71,8 @@ export const PROJECT_JOURNEYS_SEED: ProjectJourney[] = [
     createdBy: 'Beatriz Lima',
     updatedAt: '2026-04-26T09:00:00-03:00',
     importedDemandCode: 'DEM-00014',
-    lupCodes: ['ED2756'],
-    targetTable: 'silver.iot_sensor_anomaly',
+    projectCodes: ['ED2756'],
+    targetTable: 'sot.iot_sensor_anomaly',
     responsible: 'Beatriz Lima',
     squadId: 'squad-c',
     domain: 'Operações',
@@ -88,8 +88,8 @@ export const PROJECT_JOURNEYS_SEED: ProjectJourney[] = [
     createdBy: 'Felipe Souza',
     updatedAt: '2026-03-12T17:40:00-03:00',
     importedDemandCode: 'DEM-00002',
-    lupCodes: ['ED2701'],
-    targetTable: 'mart.kpi_marketing_daily',
+    projectCodes: ['ED2701'],
+    targetTable: 'spec.kpi_marketing_daily',
     responsible: 'Felipe Souza',
     squadId: 'squad-b',
     domain: 'Marketing',
@@ -104,7 +104,7 @@ export const PROJECT_JOURNEYS_SEED: ProjectJourney[] = [
     createdAt: '2026-04-19T11:05:00-03:00',
     createdBy: 'Ana Reis',
     updatedAt: '2026-04-24T15:18:00-03:00',
-    lupCodes: ['EA1180'],
+    projectCodes: ['EA1180'],
     targetTable: 'spec.product_bundle_recommendation',
     responsible: 'Ana Reis',
     squadId: 'squad-b',
@@ -123,8 +123,8 @@ export const PROJECT_JOURNEYS_SEED: ProjectJourney[] = [
     deletedAt: '2026-04-02T09:10:00-03:00',
     deletedBy: 'Rafael Carvalho',
     importedDemandCode: 'DEM-00007',
-    lupCodes: ['ED2724'],
-    targetTable: 'bronze.erp_master',
+    projectCodes: ['ED2724'],
+    targetTable: 'sor.erp_master',
     responsible: 'Rafael Carvalho',
     squadId: 'squad-c',
     domain: 'Operações',
